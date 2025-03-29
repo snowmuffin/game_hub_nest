@@ -16,9 +16,16 @@ export class ItemController {
 
   @Post('upload')
   async uploadItem(@Body() body: any) {
-    const { steamid, itemName, quantity } = body;
-    this.logger.log(`POST /items/upload: Steam ID=${steamid}, Item=${itemName}, Quantity=${quantity}`);
-    return this.itemService.uploadItem(steamid, itemName, quantity);
+    const { steamid, identifier, quantity } = body;
+
+    // 요청 데이터 로그 출력
+    this.logger.log(`Received upload request: ${JSON.stringify(body)}`);
+
+    if (!identifier) {
+      this.logger.error(`Identifier is missing in the request body: ${JSON.stringify(body)}`);
+    }
+
+    return this.itemService.uploadItem(steamid, identifier, quantity);
   }
 
   @Post('download')

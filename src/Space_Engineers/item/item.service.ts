@@ -55,15 +55,78 @@ export class ItemService {
   }
 
   // 아이템 업로드
-  async uploadItem(steamId: string, itemName: string, quantity: number): Promise<any> {
-    this.logger.log(`Uploading item: Steam ID=${steamId}, Item=${itemName}, Quantity=${quantity}`);
-    const query = `
-      UPDATE online_storage
-      SET ${itemName} = COALESCE(${itemName}, 0) + $1
-      WHERE steam_id = $2
-    `;
-    await this.userRepository.query(query, [quantity, steamId]);
-    return { message: `${quantity}x '${itemName}' added to storage.` };
+  async uploadItem(steamId: string, identifier: string, quantity: number): Promise<any> {
+    this.logger.log(`Uploading item: Steam ID=${steamId}, Identifier=${identifier}, Quantity=${quantity}`);
+
+    if (!identifier) {
+      this.logger.error(`Failed to upload item: Identifier is missing. Steam ID=${steamId}, Quantity=${quantity}`);
+      throw new Error('Identifier (itemName or itemId) is required.');
+    }
+
+    try {
+      // Step 1: Ensure steamId exists in online_storage
+      const storageCheckQuery = `
+        SELECT id FROM online_storage WHERE steam_id = $1
+      `;
+      const storageExists = await this.userRepository.query(storageCheckQuery, [steamId]);
+
+      if (storageExists.length === 0) {
+        const insertStorageQuery = `
+          INSERT INTO online_storage (steam_id) VALUES ($1)
+        `;
+        await this.userRepository.query(insertStorageQuery, [steamId]);
+        this.logger.log(`Created new storage for Steam ID=${steamId}`);
+      }
+
+      // Step 2: Check if the item exists
+      const isIndexName = identifier.includes('/');
+      const columnName = isIndexName ? 'index_name' : 'id';
+
+      const itemCheckQuery = `
+        SELECT * FROM items
+        WHERE ${columnName} = $1
+      `;
+      const itemExists = await this.userRepository.query(itemCheckQuery, [identifier]);
+
+      if (itemExists.length === 0) {
+        this.logger.error(`Item not found: ${columnName}="${identifier}". Steam ID=${steamId}`);
+        throw new Error(`Item with ${columnName} "${identifier}" does not exist in the items table.`);
+      }
+
+      // Step 3: Check for conflicts and update or insert
+      const conflictCheckQuery = `
+        SELECT * FROM online_storage_items
+        WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
+          AND item_id = (SELECT id FROM items WHERE ${columnName} = $2)
+      `;
+      const existingRecord = await this.userRepository.query(conflictCheckQuery, [steamId, identifier]);
+
+      if (existingRecord.length > 0) {
+        const updateQuery = `
+          UPDATE online_storage_items
+          SET quantity = quantity + $3
+          WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
+            AND item_id = (SELECT id FROM items WHERE ${columnName} = $2)
+        `;
+        await this.userRepository.query(updateQuery, [steamId, identifier, quantity]);
+      } else {
+        const insertQuery = `
+          INSERT INTO online_storage_items (storage_id, item_id, quantity)
+          VALUES (
+            (SELECT id FROM online_storage WHERE steam_id = $1),
+            (SELECT id FROM items WHERE ${columnName} = $2),
+            $3
+          )
+        `;
+        await this.userRepository.query(insertQuery, [steamId, identifier, quantity]);
+      }
+
+      this.logger.log(`Successfully uploaded ${quantity}x '${identifier}' for Steam ID=${steamId}`);
+      return { message: `${quantity}x '${identifier}' added to storage.` };
+    } catch (error) {
+      this.logger.error(`Error uploading item: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   // 아이템 다운로드
