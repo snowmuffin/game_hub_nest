@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Req, Logger } from '@nestjs/common';
 import { ItemService } from './item.service';
 
-@Controller('items')
+@Controller('space-engineers/item') // 네임스페이스 추가
 export class ItemController {
   private readonly logger = new Logger(ItemController.name);
 

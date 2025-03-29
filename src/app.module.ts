@@ -3,7 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';@Module({
+import { AuthModule } from './auth/auth.module';
+import { SpaceEngineersModule } from './Space_Engineers/space-engineers.module';
+
+@Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // ConfigModule을 전역 모듈로 설정
@@ -18,7 +21,7 @@ import { AuthModule } from './auth/auth.module';@Module({
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
     }),
     AuthModule,
-
+    SpaceEngineersModule, // Space_Engineers 모듈 등록
   ],
   controllers: [AppController],
   providers: [AppService],

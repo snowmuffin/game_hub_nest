@@ -145,18 +145,29 @@ export class ItemService {
   // items 테이블 업데이트
   async updateItems(itemList: any[]): Promise<any> {
     this.logger.log(`Updating items: ${JSON.stringify(itemList)}`);
+
     const query = `
-      REPLACE INTO items (index_name, display_name, description, icons, category)
-      VALUES ?
+      INSERT INTO items (index_name, display_name, description, icons, category)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (index_name)
+      DO UPDATE SET
+        display_name = EXCLUDED.display_name,
+        description = EXCLUDED.description,
+        icons = EXCLUDED.icons,
+        category = EXCLUDED.category
     `;
-    const values = itemList.map((item) => [
-      item.Id,
-      item.DisplayName,
-      item.Description,
-      JSON.stringify(item.Icons || []),
-      this.determineCategory(item.Id),
-    ]);
-    await this.userRepository.query(query, [values]);
+
+    for (const item of itemList) {
+      const values = [
+        item.Id,
+        item.DisplayName,
+        item.Description,
+        JSON.stringify(item.Icons || []),
+        this.determineCategory(item.Id),
+      ];
+      await this.userRepository.query(query, values);
+    }
+
     return { message: 'Items updated successfully' };
   }
 
