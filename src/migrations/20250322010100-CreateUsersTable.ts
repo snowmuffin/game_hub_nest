@@ -8,8 +8,9 @@ export class CreateUsersTable20250322010100 implements MigrationInterface {
         columns: [
           { name: 'id', type: 'int', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
           { name: 'username', type: 'varchar', isUnique: true },
-          { name: 'email', type: 'varchar', isUnique: true },
-          { name: 'password', type: 'varchar' },
+          { name: 'email', type: 'varchar', isUnique: true, isNullable: true },
+          { name: 'password', type: 'varchar', isNullable: true },
+          { name: 'steam_id', type: 'varchar', isUnique: true },
           { name: 'created_at', type: 'timestamp', default: 'now()' },
           { name: 'updated_at', type: 'timestamp', default: 'now()' },
         ],

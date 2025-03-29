@@ -19,15 +19,27 @@ export class AuthController {
   @UseGuards(AuthGuard('steam'))
   async steamLoginReturn(@Req() req, @Res() res: Response) {
     if (req.user) {
-      const token = this.authService.generateJwtToken(req.user);
-      const userData = this.authService.formatUserData(req.user);
+      // 유저 데이터 생성 또는 조회
+      const user = await this.authService.findOrCreateUser(req.user);
 
-      res.setHeader('Authorization', `Bearer ${token}`);
+      // JWT 토큰 생성
+      const accessToken = this.authService.generateJwtToken(user);
+      const refreshToken = this.authService.generateRefreshToken(user);
+      const userData = this.authService.formatUserData(user);
+
+      // 리프레시 토큰을 쿠키에 저장
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true, // HTTPS 환경에서만 전송
+        sameSite: 'strict',
+      });
+
+      res.setHeader('Authorization', `Bearer ${accessToken}`);
       res.send(`
         <script>
           if (window.opener) {
             window.opener.postMessage(
-              { status: 200, user: ${JSON.stringify(userData)}, token: "${token}" },
+              { status: 200, user: ${JSON.stringify(userData)}, token: "${accessToken}" },
               '*'
             );
             window.close();

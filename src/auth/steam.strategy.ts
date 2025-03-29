@@ -14,10 +14,9 @@ export class SteamStrategy extends PassportStrategy(Strategy, 'steam') {
 
   async validate(identifier: string, profile: any): Promise<any> {
     return {
-      id: profile.id,
-      displayName: profile.displayName,
-      _json: profile._json,
+      steam_id: profile.id, // Steam ID를 steam_id로 매핑
+      username: profile.displayName,
+      email: null, // Steam 프로필에는 이메일 정보가 없으므로 null로 설정
     };
   }
 }
- 

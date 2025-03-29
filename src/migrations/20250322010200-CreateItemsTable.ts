@@ -6,13 +6,13 @@ export class CreateItemsTable20250322010200 implements MigrationInterface {
       new Table({
         name: 'items',
         columns: [
-          { name: 'id', type: 'int', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
-          { name: 'name', type: 'varchar' },
-          { name: 'rarity', type: 'int' },
+          { name: 'id', type: 'serial', isPrimary: true },
+          { name: 'name', type: 'varchar', isNullable: false },
+          { name: 'rarity', type: 'int', isNullable: false },
           { name: 'description', type: 'text', isNullable: true },
-          { name: 'category', type: 'varchar', precision: 10, scale: 2 },
-          { name: 'created_at', type: 'timestamp', default: 'now()' },
-          { name: 'updated_at', type: 'timestamp', default: 'now()' },
+          { name: 'category', type: 'varchar', length: '10', isNullable: false },
+          { name: 'created_at', type: 'timestamp', default: 'now()', isNullable: false },
+          { name: 'updated_at', type: 'timestamp', default: 'now()', isNullable: false },
         ],
       }),
       true
