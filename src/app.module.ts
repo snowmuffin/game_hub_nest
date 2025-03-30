@@ -1,15 +1,17 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { SpaceEngineersModule } from './Space_Engineers/space-engineers.module';
+import { LoggingMiddleware } from './middleware/logging.middleware';
+import { ItemModule } from './Space_Engineers/item/item.module'; // 예시로 ItemModule 추가
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // ConfigModule을 전역 모듈로 설정
+      isGlobal: true, // 전역 모듈로 설정
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -21,9 +23,14 @@ import { SpaceEngineersModule } from './Space_Engineers/space-engineers.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
     }),
     AuthModule,
-    SpaceEngineersModule, // Space_Engineers 모듈 등록
+    SpaceEngineersModule,
+    ItemModule, 
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggingMiddleware).forRoutes('*');
+  }
+}

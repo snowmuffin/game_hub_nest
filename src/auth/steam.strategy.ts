@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-steam';
+import * as dotenv from 'dotenv';
+dotenv.config();
+if (!process.env.STEAM_API_KEY) {
+  throw new Error('STEAM_API_KEY is not defined in the environment variables');
+}
 
 @Injectable()
 export class SteamStrategy extends PassportStrategy(Strategy, 'steam') {

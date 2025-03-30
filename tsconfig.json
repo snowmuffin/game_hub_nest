@@ -14,7 +14,8 @@
       "@entities/*": ["src/entities/*"], // 엔티티 경로
       "@Space_Engineers/*": ["src/Space_Engineers/*"], // 아이템 관련 경로
       "@shared/*": ["src/shared/*"], // 공유 모듈 경로
-      "@auth/*": ["src/auth/*"] // 인증 관련 경로
+      "@auth/*": ["src/auth/*"], // 인증 관련 경로
+      "@middleware/*": ["src/middleware/*"], // 미들웨어 경로
     },
     "incremental": true,
     "skipLibCheck": true,

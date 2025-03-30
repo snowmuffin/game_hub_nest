@@ -13,69 +13,134 @@ export class ItemService {
   ) {}
 
   // 아이템 조회
-  async getItems(steamId: string): Promise<any> {
-    this.logger.log(`Fetching items for Steam ID: ${steamId}`);
-    const query = `
-      SELECT * FROM online_storage WHERE steam_id = $1
-    `;
-    const results = await this.userRepository.query(query, [steamId]);
+  async getItems(userId: string): Promise<any> {
+    if (!userId) {
+      throw new Error('User ID is required.');
+    }
 
-    if (results.length === 0) {
-      const insertQuery = `
-        INSERT INTO online_storage (steam_id) VALUES ($1)
+    this.logger.log(`Fetching items for User ID: ${userId}`);
+
+    const storageQuery = `
+      SELECT id FROM online_storage WHERE id = $1
+    `;
+    const storageResults = await this.userRepository.query(storageQuery, [
+      userId,
+    ]);
+
+    if (storageResults.length === 0) {
+      const insertStorageQuery = `
+        INSERT INTO online_storage (id) VALUES ($1) RETURNING id
       `;
-      await this.userRepository.query(insertQuery, [steamId]);
+      const newStorage = await this.userRepository.query(insertStorageQuery, [
+        userId,
+      ]);
+      this.logger.log(`Created new storage for User ID=${userId}`);
       return [];
     }
 
-    const resourceKeys = Object.keys(results[0]).filter(
-      (key) => key !== 'steam_id' && results[0][key] > 0,
-    );
+    const storageId = storageResults[0].id;
 
-    if (resourceKeys.length === 0) {
-      return [];
-    }
-
-    const placeholders = resourceKeys.map(() => '?').join(', ');
-    const itemInfoQuery = `
-      SELECT index_name, display_name, category, description, rarity
-      FROM items_info
-      WHERE index_name IN (${placeholders})
+    const storageItemsQuery = `
+      SELECT osi.item_id, osi.quantity, i.id, i.display_name, i.rarity, i.description, 
+             i.category, i.icons, i.index_name
+      FROM online_storage_items osi
+      INNER JOIN items i ON osi.item_id = i.id
+      WHERE osi.storage_id = $1
     `;
-    const itemInfoResults = await this.userRepository.query(itemInfoQuery, resourceKeys);
+    const items = await this.userRepository.query(storageItemsQuery, [
+      storageId,
+    ]);
 
-    return itemInfoResults.map((info) => ({
-      indexName: info.index_name,
-      displayName: info.display_name,
-      category: info.category,
-      description: info.description,
-      rarity: info.rarity,
-      quantity: results[0][info.index_name],
+    const formattedItems = items.map((item) => ({
+      id: item.id,
+      displayName: item.display_name,
+      rarity: item.rarity,
+      description: item.description,
+      category: item.category,
+      icons: this.extractFileName(item.icons), // 파일명만 추출
+      indexName: item.index_name,
+      quantity: item.quantity,
     }));
+
+    this.logger.log(
+      `Fetched ${formattedItems.length} items for User ID=${userId}`,
+    );
+    return formattedItems;
+  }
+
+  // 아이콘 경로에서 파일명만 추출하는 유틸리티 함수
+  private extractFileName(iconPath: any): string {
+    if (!iconPath) {
+      this.logger.warn('Icon path is empty or undefined.');
+      return '';
+    }
+
+    try {
+      // 배열인 경우 처리
+      if (Array.isArray(iconPath)) {
+        if (iconPath.length === 0) {
+          this.logger.warn('Icon path array is empty.');
+          return '';
+        }
+
+        // 배열의 첫 번째 요소에서 파일명 추출
+        const normalizedPath = iconPath[0].replace(/\\/g, '/');
+        const fileName = normalizedPath.split('/').pop();
+        return fileName || '';
+      }
+
+      // 문자열인 경우 처리
+      if (typeof iconPath === 'string') {
+        const normalizedPath = iconPath.replace(/\\/g, '/');
+        const fileName = normalizedPath.split('/').pop();
+        return fileName || '';
+      }
+
+      // 예상치 못한 데이터 타입 처리
+      this.logger.warn(
+        `Invalid icon path type: ${typeof iconPath}. Expected a string or array.`,
+      );
+      return '';
+    } catch (error) {
+      this.logger.warn(
+        `Failed to parse or extract file name from icon path: ${JSON.stringify(iconPath)}. Error: ${error.message}`,
+      );
+      return '';
+    }
   }
 
   // 아이템 업로드
-  async uploadItem(steamId: string, identifier: string, quantity: number): Promise<any> {
-    this.logger.log(`Uploading item: Steam ID=${steamId}, Identifier=${identifier}, Quantity=${quantity}`);
+  async uploadItem(
+    userId: string,
+    identifier: string,
+    quantity: number,
+  ): Promise<any> {
+    this.logger.log(
+      `Uploading item: User ID=${userId}, Identifier=${identifier}, Quantity=${quantity}`,
+    );
 
     if (!identifier) {
-      this.logger.error(`Failed to upload item: Identifier is missing. Steam ID=${steamId}, Quantity=${quantity}`);
+      this.logger.error(
+        `Failed to upload item: Identifier is missing. User ID=${userId}, Quantity=${quantity}`,
+      );
       throw new Error('Identifier (itemName or itemId) is required.');
     }
 
     try {
-      // Step 1: Ensure steamId exists in online_storage
+      // Step 1: Ensure userId exists in online_storage
       const storageCheckQuery = `
-        SELECT id FROM online_storage WHERE steam_id = $1
+        SELECT id FROM online_storage WHERE id = $1
       `;
-      const storageExists = await this.userRepository.query(storageCheckQuery, [steamId]);
+      const storageExists = await this.userRepository.query(storageCheckQuery, [
+        userId,
+      ]);
 
       if (storageExists.length === 0) {
         const insertStorageQuery = `
-          INSERT INTO online_storage (steam_id) VALUES ($1)
+          INSERT INTO online_storage (id) VALUES ($1)
         `;
-        await this.userRepository.query(insertStorageQuery, [steamId]);
-        this.logger.log(`Created new storage for Steam ID=${steamId}`);
+        await this.userRepository.query(insertStorageQuery, [userId]);
+        this.logger.log(`Created new storage for User ID=${userId}`);
       }
 
       // Step 2: Check if the item exists
@@ -86,42 +151,61 @@ export class ItemService {
         SELECT * FROM items
         WHERE ${columnName} = $1
       `;
-      const itemExists = await this.userRepository.query(itemCheckQuery, [identifier]);
+      const itemExists = await this.userRepository.query(itemCheckQuery, [
+        identifier,
+      ]);
 
       if (itemExists.length === 0) {
-        this.logger.error(`Item not found: ${columnName}="${identifier}". Steam ID=${steamId}`);
-        throw new Error(`Item with ${columnName} "${identifier}" does not exist in the items table.`);
+        this.logger.error(
+          `Item not found: ${columnName}="${identifier}". User ID=${userId}`,
+        );
+        throw new Error(
+          `Item with ${columnName} "${identifier}" does not exist in the items table.`,
+        );
       }
 
       // Step 3: Check for conflicts and update or insert
       const conflictCheckQuery = `
         SELECT * FROM online_storage_items
-        WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
+        WHERE storage_id = (SELECT id FROM online_storage WHERE id = $1)
           AND item_id = (SELECT id FROM items WHERE ${columnName} = $2)
       `;
-      const existingRecord = await this.userRepository.query(conflictCheckQuery, [steamId, identifier]);
+      const existingRecord = await this.userRepository.query(
+        conflictCheckQuery,
+        [userId, identifier],
+      );
 
       if (existingRecord.length > 0) {
         const updateQuery = `
           UPDATE online_storage_items
           SET quantity = quantity + $3
-          WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
+          WHERE storage_id = (SELECT id FROM online_storage WHERE id = $1)
             AND item_id = (SELECT id FROM items WHERE ${columnName} = $2)
         `;
-        await this.userRepository.query(updateQuery, [steamId, identifier, quantity]);
+        await this.userRepository.query(updateQuery, [
+          userId,
+          identifier,
+          quantity,
+        ]);
       } else {
         const insertQuery = `
           INSERT INTO online_storage_items (storage_id, item_id, quantity)
           VALUES (
-            (SELECT id FROM online_storage WHERE steam_id = $1),
+            (SELECT id FROM online_storage WHERE id = $1),
             (SELECT id FROM items WHERE ${columnName} = $2),
             $3
           )
         `;
-        await this.userRepository.query(insertQuery, [steamId, identifier, quantity]);
+        await this.userRepository.query(insertQuery, [
+          userId,
+          identifier,
+          quantity,
+        ]);
       }
 
-      this.logger.log(`Successfully uploaded ${quantity}x '${identifier}' for Steam ID=${steamId}`);
+      this.logger.log(
+        `Successfully uploaded ${quantity}x '${identifier}' for User ID=${userId}`,
+      );
       return { message: `${quantity}x '${identifier}' added to storage.` };
     } catch (error) {
       this.logger.error(`Error uploading item: ${error.message}`, error.stack);
@@ -130,8 +214,14 @@ export class ItemService {
   }
 
   // 아이템 다운로드
-  async downloadItem(steamId: string, itemName: string, quantity: number): Promise<any> {
-    this.logger.log(`Downloading item: Steam ID=${steamId}, Item=${itemName}, Quantity=${quantity}`);
+  async downloadItem(
+    steamId: string,
+    itemName: string,
+    quantity: number,
+  ): Promise<any> {
+    this.logger.log(
+      `Downloading item: Steam ID=${steamId}, Item=${itemName}, Quantity=${quantity}`,
+    );
     const query = `
       SELECT ${itemName} AS availableQuantity
       FROM online_storage
@@ -155,13 +245,17 @@ export class ItemService {
 
   // 아이템 업그레이드
   async upgradeItem(steamId: string, targetItem: string): Promise<any> {
-    this.logger.log(`Upgrading item: Steam ID=${steamId}, Target Item=${targetItem}`);
+    this.logger.log(
+      `Upgrading item: Steam ID=${steamId}, Target Item=${targetItem}`,
+    );
     const blueprintQuery = `
       SELECT ingredient1, quantity1, ingredient2, quantity2, ingredient3, quantity3
       FROM blue_prints
       WHERE index_name = $1
     `;
-    const blueprint = await this.userRepository.query(blueprintQuery, [targetItem]);
+    const blueprint = await this.userRepository.query(blueprintQuery, [
+      targetItem,
+    ]);
 
     if (blueprint.length === 0) {
       throw new Error(`No blueprint found for ${targetItem}`);
@@ -210,23 +304,26 @@ export class ItemService {
     this.logger.log(`Updating items: ${JSON.stringify(itemList)}`);
 
     const query = `
-      INSERT INTO items (index_name, display_name, description, icons, category)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO items (id, display_name, rarity, description, category, icons, index_name)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (index_name)
       DO UPDATE SET
         display_name = EXCLUDED.display_name,
+        rarity = EXCLUDED.rarity,
         description = EXCLUDED.description,
-        icons = EXCLUDED.icons,
-        category = EXCLUDED.category
+        category = EXCLUDED.category,
+        icons = EXCLUDED.icons
     `;
 
     for (const item of itemList) {
       const values = [
-        item.Id,
-        item.DisplayName,
-        item.Description,
-        JSON.stringify(item.Icons || []),
-        this.determineCategory(item.Id),
+        item.id,
+        item.displayName,
+        item.rarity,
+        item.description,
+        item.category,
+        JSON.stringify(item.icons || []), // Convert icons to JSON string
+        item.indexName,
       ];
       await this.userRepository.query(query, values);
     }

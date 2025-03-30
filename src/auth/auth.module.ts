@@ -11,9 +11,11 @@ import { User } from '../entities/user.entity';
   imports: [
     PassportModule,
     TypeOrmModule.forFeature([User]),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'defaultSecret', // JWT 비밀 키 설정
-      signOptions: { expiresIn: '1h' }, // 토큰 만료 시간 설정
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET || 'defaultSecret',
+        signOptions: { expiresIn: '1h' },
+      }),
     }),
   ],
   controllers: [AuthController],
