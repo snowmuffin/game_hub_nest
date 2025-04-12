@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { SpaceEngineersModule } from './Space_Engineers/space-engineers.module';
 import { LoggingMiddleware } from './middleware/logging.middleware';
 import { ItemModule } from './Space_Engineers/item/item.module'; // 예시로 ItemModule 추가
+import { DamageLogsModule } from './damage-logs/damage-logs.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { ItemModule } from './Space_Engineers/item/item.module'; // 예시로 It
     }),
     AuthModule,
     SpaceEngineersModule,
-    ItemModule, 
+    ItemModule,
+    DamageLogsModule, 
   ],
   controllers: [AppController],
   providers: [AppService],
