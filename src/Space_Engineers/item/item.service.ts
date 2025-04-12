@@ -303,9 +303,38 @@ export class ItemService {
   async updateItems(itemList: any[]): Promise<any> {
     this.logger.log(`Updating items: ${JSON.stringify(itemList)}`);
 
+    // Step 1: Check if the 'items' table exists
+    const tableCheckQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'items'
+      )
+    `;
+    const tableExistsResult = await this.userRepository.query(tableCheckQuery);
+    const tableExists = tableExistsResult[0]?.exists;
+
+    // Step 2: Create the table if it does not exist
+    if (!tableExists) {
+      this.logger.warn(`'items' table does not exist. Creating the table...`);
+      const createTableQuery = `
+        CREATE TABLE items (
+          id SERIAL PRIMARY KEY,
+          display_name TEXT NOT NULL,
+          rarity TEXT,
+          description TEXT,
+          category TEXT,
+          icons JSONB,
+          index_name TEXT UNIQUE NOT NULL
+        )
+      `;
+      await this.userRepository.query(createTableQuery);
+      this.logger.log(`'items' table created successfully.`);
+    }
+
+    // Step 3: Insert or update items
     const query = `
-      INSERT INTO items (id, display_name, rarity, description, category, icons, index_name)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO items (display_name, rarity, description, category, icons, index_name)
+      VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (index_name)
       DO UPDATE SET
         display_name = EXCLUDED.display_name,
@@ -316,15 +345,31 @@ export class ItemService {
     `;
 
     for (const item of itemList) {
+      if (!item.DisplayName || !item.Id) {
+        this.logger.error(`Invalid item data: ${JSON.stringify(item)}`);
+        throw new Error('Each item must have a DisplayName and Id.');
+      }
+
+      const mappedItem = {
+        displayName: item.DisplayName,
+        rarity: item.Rarity || null,
+        description: item.Description || null,
+        category: item.Category || this.determineCategory(item.Id), // 카테고리 결정
+        icons: item.Icons || [],
+        indexName: item.Id,
+      };
+
       const values = [
-        item.id,
-        item.displayName,
-        item.rarity,
-        item.description,
-        item.category,
-        JSON.stringify(item.icons || []), // Convert icons to JSON string
-        item.indexName,
+        mappedItem.displayName,
+        mappedItem.rarity,
+        mappedItem.description,
+        mappedItem.category,
+        JSON.stringify(mappedItem.icons),
+        mappedItem.indexName,
       ];
+
+      this.logger.log(`Executing query: ${query}`);
+      this.logger.log(`With values: ${JSON.stringify(values)}`);
       await this.userRepository.query(query, values);
     }
 
@@ -342,7 +387,10 @@ export class ItemService {
         return 'Ingot';
       case 'MyObjectBuilder_Ore':
         return 'Ore';
+      case 'MyObjectBuilder_AmmoMagazine': // 추가된 처리
+        return 'Ammo';
       default:
+        this.logger.warn(`Unknown category prefix: ${prefix}`);
         return 'Unknown';
     }
   }
