@@ -11,8 +11,8 @@ async function bootstrap() {
 
   // Enable CORS with specific settings
   app.enableCors({
-    origin: 'http://localhost:3000', // 클라이언트 도메인
-    credentials: true, // 쿠키를 포함한 요청 허용
+    origin: '*', // 모든 도메인 허용
+    credentials: true,
   });
 
   // Register cookie-parser middleware
