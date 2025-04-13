@@ -6,7 +6,7 @@ export class CreateOnlineStorageTable20250322020300 implements MigrationInterfac
       new Table({
         name: 'online_storage',
         columns: [
-          { name: 'id', type: 'serial', isPrimary: true },
+          { name: 'id', type: 'bigserial', isPrimary: true },
           { name: 'steam_id', type: 'varchar', isUnique: true },
           { name: 'items', type: 'jsonb', default: "'{}'" },
         ],

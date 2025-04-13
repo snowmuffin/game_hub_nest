@@ -13,9 +13,9 @@ export class RefactorOnlineStorageTable20250329000600 implements MigrationInterf
       new Table({
         name: 'online_storage_items',
         columns: [
-          { name: 'id', type: 'serial', isPrimary: true },
-          { name: 'storage_id', type: 'int', isNullable: false },
-          { name: 'item_id', type: 'int', isNullable: false }, // item_id는 items 테이블의 id를 참조
+          { name: 'id', type: 'bigserial', isPrimary: true },
+          { name: 'storage_id', type: 'bigint', isNullable: false }, // Updated to bigint
+          { name: 'item_id', type: 'bigint', isNullable: false }, // Updated to bigint
           { name: 'quantity', type: 'int', default: '0', isNullable: false },
         ],
       }),

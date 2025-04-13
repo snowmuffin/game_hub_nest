@@ -6,7 +6,7 @@ export class CreateItemsTable20250322010200 implements MigrationInterface {
       new Table({
         name: 'items',
         columns: [
-          { name: 'id', type: 'serial', isPrimary: true },
+          { name: 'id', type: 'bigserial', isPrimary: true },
           { name: 'name', type: 'varchar', isNullable: false },
           { name: 'rarity', type: 'int', isNullable: false },
           { name: 'description', type: 'text', isNullable: true },

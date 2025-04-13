@@ -7,7 +7,7 @@ export class CreateWalletsAndCurrenciesTables20250329000100 implements Migration
       new Table({
         name: 'currencies',
         columns: [
-          { name: 'id', type: 'int', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
+          { name: 'id', type: 'bigint', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
           { name: 'code', type: 'varchar', length: '10', isUnique: true }, // 화폐 코드 (예: USD, EUR)
           { name: 'name', type: 'varchar', length: '50' }, // 화폐 이름 (예: US Dollar, Euro)
           { name: 'symbol', type: 'varchar', length: '5', isNullable: true }, // 화폐 기호 (예: $, €)
@@ -23,7 +23,7 @@ export class CreateWalletsAndCurrenciesTables20250329000100 implements Migration
       new Table({
         name: 'wallets',
         columns: [
-          { name: 'id', type: 'int', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
+          { name: 'id', type: 'bigint', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
           { name: 'user_id', type: 'int', isNullable: false },
           { name: 'balance', type: 'decimal', precision: 10, scale: 2, default: 0 }, // 소수점 2자리까지 지원
           { name: 'currency_id', type: 'int', isNullable: false }, // currencies 테이블 참조

@@ -6,7 +6,7 @@ export class CreateMarketplaceItemsTable20250322020400 implements MigrationInter
       new Table({
         name: 'marketplace_items',
         columns: [
-          { name: 'id', type: 'serial', isPrimary: true },
+          { name: 'id', type: 'bigserial', isPrimary: true },
           { name: 'seller_steam_id', type: 'varchar' },
           { name: 'item_name', type: 'varchar' },
           { name: 'price', type: 'integer' },

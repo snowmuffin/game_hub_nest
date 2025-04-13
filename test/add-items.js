@@ -11,8 +11,8 @@ async function addItems() {
     try {
       console.log(`Sending request for identifier: ${identifier}`);
       const response = await axios.post(BASE_URL, {
-        steamid: STEAM_ID,
-        identifier: identifier,
+        userId: STEAM_ID,
+        itemName: identifier,
         quantity: quantity,
       });
 

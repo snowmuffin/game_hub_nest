@@ -127,9 +127,9 @@ export class ItemService {
     }
 
     try {
-      // Step 1: Ensure userId exists in online_storage
+      // Step 1: Ensure steam_id exists in online_storage
       const storageCheckQuery = `
-        SELECT id FROM online_storage WHERE id = $1
+        SELECT id FROM online_storage WHERE steam_id = $1
       `;
       const storageExists = await this.userRepository.query(storageCheckQuery, [
         userId,
@@ -137,10 +137,10 @@ export class ItemService {
 
       if (storageExists.length === 0) {
         const insertStorageQuery = `
-          INSERT INTO online_storage (id) VALUES ($1)
+          INSERT INTO online_storage (steam_id) VALUES ($1)
         `;
         await this.userRepository.query(insertStorageQuery, [userId]);
-        this.logger.log(`Created new storage for User ID=${userId}`);
+        this.logger.log(`Created new storage for Steam ID=${userId}`);
       }
 
       // Step 2: Check if the item exists
@@ -157,7 +157,7 @@ export class ItemService {
 
       if (itemExists.length === 0) {
         this.logger.error(
-          `Item not found: ${columnName}="${identifier}". User ID=${userId}`,
+          `Item not found: ${columnName}="${identifier}". Steam ID=${userId}`,
         );
         throw new Error(
           `Item with ${columnName} "${identifier}" does not exist in the items table.`,
@@ -167,7 +167,7 @@ export class ItemService {
       // Step 3: Check for conflicts and update or insert
       const conflictCheckQuery = `
         SELECT * FROM online_storage_items
-        WHERE storage_id = (SELECT id FROM online_storage WHERE id = $1)
+        WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
           AND item_id = (SELECT id FROM items WHERE ${columnName} = $2)
       `;
       const existingRecord = await this.userRepository.query(
@@ -179,7 +179,7 @@ export class ItemService {
         const updateQuery = `
           UPDATE online_storage_items
           SET quantity = quantity + $3
-          WHERE storage_id = (SELECT id FROM online_storage WHERE id = $1)
+          WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
             AND item_id = (SELECT id FROM items WHERE ${columnName} = $2)
         `;
         await this.userRepository.query(updateQuery, [
@@ -191,7 +191,7 @@ export class ItemService {
         const insertQuery = `
           INSERT INTO online_storage_items (storage_id, item_id, quantity)
           VALUES (
-            (SELECT id FROM online_storage WHERE id = $1),
+            (SELECT id FROM online_storage WHERE steam_id = $1),
             (SELECT id FROM items WHERE ${columnName} = $2),
             $3
           )
@@ -204,7 +204,7 @@ export class ItemService {
       }
 
       this.logger.log(
-        `Successfully uploaded ${quantity}x '${identifier}' for User ID=${userId}`,
+        `Successfully uploaded ${quantity}x '${identifier}' for Steam ID=${userId}`,
       );
       return { message: `${quantity}x '${identifier}' added to storage.` };
     } catch (error) {

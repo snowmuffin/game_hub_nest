@@ -6,7 +6,7 @@ export class CreateUsersTable20250322010100 implements MigrationInterface {
       new Table({
         name: 'users',
         columns: [
-          { name: 'id', type: 'int', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
+          { name: 'id', type: 'bigint', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
           { name: 'username', type: 'varchar', isUnique: true },
           { name: 'email', type: 'varchar', isUnique: true, isNullable: true },
           { name: 'password', type: 'varchar', isNullable: true },
