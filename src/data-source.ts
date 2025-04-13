@@ -11,5 +11,5 @@ export const AppDataSource = new DataSource({
   entities: [path.join(process.cwd(), 'src/**/*.entity{.ts,.js}')], // 절대 경로 사용
   migrations: [path.join(process.cwd(), 'src/migrations/*{.ts,.js}')], // 절대 경로 사용
   synchronize: false, // 프로덕션 환경에서는 false로 설정
-  logging: true,
+  logging: false,
 });
