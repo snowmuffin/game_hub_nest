@@ -3,6 +3,6 @@ import { ItemModule } from './item/item.module';
 import { DamageLogsModule } from './damage-logs/damage-logs.module';
 
 @Module({
-  imports: [ItemModule, DamageLogsModule], // Space_Engineers 모듈에 ItemModule 포함
+  imports: [ItemModule, DamageLogsModule],
 })
 export class SpaceEngineersModule {}
