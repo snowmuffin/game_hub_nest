@@ -23,20 +23,20 @@ export class ItemController {
   @Post('upload')
   async uploadItem(@Body() body: any) {
     const { userId, itemName, quantity } = body;
-    this.logger.log(`POST /space_engineers/items/upload: User ID=${userId}, Item=${itemName}, Quantity=${quantity}`);
+    this.logger.log(`POST /space_engineers/item/upload: User ID=${userId}, Item=${itemName}, Quantity=${quantity}`);
     return this.itemService.uploadItem(userId, itemName, quantity);
   }
 
   @Post('download')
   async downloadItem(@Body() body: any) {
     const { userId, itemName, quantity } = body;
-    this.logger.log(`POST /space_engineers/items/download: User ID=${userId}, Item=${itemName}, Quantity=${quantity}`);
+    this.logger.log(`POST /space_engineers/item/download: User ID=${userId}, Item=${itemName}, Quantity=${quantity}`);
     return this.itemService.downloadItem(userId, itemName, quantity);
   }
 
   @Post('update-items')
   async updateItems(@Body() itemList: any[]) {
-    this.logger.log(`POST /space_engineers/items/update-items`);
+    this.logger.log(`POST /space_engineers/item/update-items`);
     return this.itemService.updateItems(itemList);
   }
 
@@ -45,13 +45,13 @@ export class ItemController {
   async upgradeItem(@Body() body: any, @Req() req) {
     const userId = req.user.id; // steamId 대신 id 사용
     const { targetItem } = body;
-    this.logger.log(`POST /space_engineers/items/upgrade: User ID=${userId}, Target Item=${targetItem}`);
+    this.logger.log(`POST /space_engineers/item/upgrade: User ID=${userId}, Target Item=${targetItem}`);
     return this.itemService.upgradeItem(userId, targetItem);
   }
 
   @Get('blueprints')
   async getBlueprints() {
-    this.logger.log(`GET /space_engineers/items/blueprints`);
+    this.logger.log(`GET /space_engineers/item/blueprints`);
     return this.itemService.getBlueprints();
   }
 }
