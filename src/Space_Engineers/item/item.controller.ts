@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Req, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, Logger, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { ItemService } from './item.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard'; // Guard 경로
 
@@ -12,11 +12,11 @@ export class ItemController {
   @UseGuards(JwtAuthGuard) // 인증 Guard 적용
   async getItems(@Req() req) {
     const userId = req.user?.id; // steamId 대신 id 사용
-    this.logger.log(`User ID from request: ${userId}`);
     if (!userId) {
-      this.logger.error(`User ID is missing in the request.`);
-      throw new Error('User ID is required.');
+      this.logger.error(`Authorization header is missing or invalid.`);
+      throw new UnauthorizedException('Authorization header is missing or invalid.');
     }
+    this.logger.log(`User ID from request: ${userId}`);
     return this.itemService.getItems(userId);
   }
 

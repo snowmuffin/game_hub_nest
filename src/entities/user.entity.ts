@@ -17,6 +17,9 @@ export class User {
   @Column({ type: 'varchar', length: 50, unique: true })
   steam_id: string; // Steam ID (고유)
 
+  @Column({ type: 'float', default: 0 })
+  score: number; // 유저 점수 (기본값 0)
+
   @CreateDateColumn()
   created_at: Date; // 생성 시간
 
