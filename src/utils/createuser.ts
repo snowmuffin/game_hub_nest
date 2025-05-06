@@ -18,6 +18,7 @@ export async function createuser(
       steam_id: profile.steam_id,
       username: profile.username,
       email: profile.email,
+      score: 0, // Initialize score with a default value of 0
       created_at: new Date(), // Set current timestamp for created_at
       updated_at: new Date(), // Set current timestamp for updated_at
     });
