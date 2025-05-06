@@ -18,6 +18,8 @@ export async function createuser(
       steam_id: profile.steam_id,
       username: profile.username,
       email: profile.email,
+      created_at: new Date(), // Set current timestamp for created_at
+      updated_at: new Date(), // Set current timestamp for updated_at
     });
     await userRepository.save(user);
   }
