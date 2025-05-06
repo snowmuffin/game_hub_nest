@@ -13,7 +13,7 @@ export class DamageLogsService {
 
   async processDamageLogs(logs: any[]): Promise<void> {
     for (const log of logs) {
-      const { steam_id, damage, username, email } = log;
+      const { steam_id, damage,server_id } = log;
 
       if (!steam_id || damage == null) {
         console.error(`Invalid log entry: ${JSON.stringify(log)}`);
@@ -25,7 +25,10 @@ export class DamageLogsService {
       if (!user) {
         console.log(`User not found for steam_id=${steam_id}, creating user...`);
         try {
-          user = await createuser({ steam_id, username, email }, this.userRepository);
+          user = await createuser(
+            { steam_id, username:'', email:'' },
+            this.userRepository
+          );
         } catch (error) {
           console.error(`Error creating user for steam_id=${steam_id}:`, error);
           continue; // Skip if user creation fails
