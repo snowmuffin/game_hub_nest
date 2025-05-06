@@ -17,7 +17,11 @@ export class UserService {
 
     if (!user) {
       this.logger.log(`User not found for steamid=${steamid}, creating new user...`);
-      user = this.userRepository.create({ steam_id: steamid, username: nickname });
+      user = this.userRepository.create({
+        steam_id: steamid,
+        username: nickname,
+        created_at: new Date(), // Set created_at to the current timestamp
+      });
       await this.userRepository.save(user);
       this.logger.log(`New user created: ${JSON.stringify(user)}`);
     } else {

@@ -17,7 +17,7 @@ export async function createuser(
     user = userRepository.create({
       steam_id: profile.steam_id,
       username: profile.username,
-      email: profile.email, // Email might be null as Steam API may not provide it
+      email: profile.email,
     });
     await userRepository.save(user);
   }
