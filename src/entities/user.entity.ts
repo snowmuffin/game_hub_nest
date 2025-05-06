@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity('users') // 테이블 이름을 'users'로 설정
+@Entity({ name: 'users', schema: 'spaceengineers' }) // 스키마 명시
 export class User {
   @PrimaryGeneratedColumn()
   id: number; // 자동 증가하는 기본 키
