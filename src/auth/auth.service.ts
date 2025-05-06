@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
+import { createuser } from 'src/utils/createuser';
 
 @Injectable()
 export class AuthService {
@@ -48,14 +49,12 @@ export class AuthService {
 
     // 유저가 없으면 생성
     if (!user) {
-      user = this.userRepository.create({
-        steam_id: profile.steam_id, // steam_id가 null이 아니어야 함
-        username: profile.username,
-        email: profile.email, // Steam API에서 이메일은 제공되지 않으므로 null일 수 있음
-      });
-      await this.userRepository.save(user);
+      await createuser(profile, this.userRepository);
     }
 
+    if (!user) {
+      throw new Error('User not found or could not be created');
+    }
     return user;
   }
 }

@@ -30,7 +30,7 @@ export class JwtAuthGuard implements CanActivate {
       const decoded = this.jwtService.verify(token, { secret });
       this.logger.log(`Decoded Token: ${JSON.stringify(decoded)}`);
       request.user = {
-        id: decoded.sub, // id를 sub에서 가져옴
+        id: decoded.sub,
         username: decoded.username,
         ...decoded,
       };
