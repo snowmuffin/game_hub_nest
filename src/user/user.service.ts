@@ -21,12 +21,14 @@ export class UserService {
         steam_id: steamid,
         username: nickname,
         created_at: new Date(), // Set created_at to the current timestamp
+        updated_at: new Date(), // Set updated_at to the current timestamp
       });
       await this.userRepository.save(user);
       this.logger.log(`New user created: ${JSON.stringify(user)}`);
     } else {
       this.logger.log(`User found for steamid=${steamid}, updating nickname...`);
       user.username = nickname;
+      user.updated_at = new Date(); // Update the updated_at timestamp
       await this.userRepository.save(user);
       this.logger.log(`User updated: ${JSON.stringify(user)}`);
     }
