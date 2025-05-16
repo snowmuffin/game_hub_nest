@@ -325,7 +325,8 @@ export class ItemService {
           category TEXT,
           icons JSONB,
           index_name TEXT NOT NULL UNIQUE,
-          created_at TIMESTAMP NOT NULL DEFAULT NOW()
+          created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMP NOT NULL DEFAULT NOW()
         )
       `;
       await this.userRepository.query(createTableQuery);
@@ -360,15 +361,16 @@ export class ItemService {
 
     // Step 3: Insert or update items
     const query = `
-      INSERT INTO spaceengineers.items (display_name, rarity, description, category, icons, index_name, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      INSERT INTO spaceengineers.items (display_name, rarity, description, category, icons, index_name, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
       ON CONFLICT (index_name)
       DO UPDATE SET
         display_name = EXCLUDED.display_name,
         rarity = EXCLUDED.rarity,
         description = EXCLUDED.description,
         category = EXCLUDED.category,
-        icons = EXCLUDED.icons
+        icons = EXCLUDED.icons,
+        updated_at = NOW()
     `;
 
     for (const item of itemList) {
