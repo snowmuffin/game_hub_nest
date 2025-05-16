@@ -148,7 +148,7 @@ export class ItemService {
       const columnName = isIndexName ? 'index_name' : 'id';
 
       const itemCheckQuery = `
-        SELECT * FROM items
+        SELECT * FROM spaceengineers.items
         WHERE ${columnName} = $1
       `;
       const itemExists = await this.userRepository.query(itemCheckQuery, [
@@ -168,7 +168,7 @@ export class ItemService {
       const conflictCheckQuery = `
         SELECT * FROM online_storage_items
         WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
-          AND item_id = (SELECT id FROM items WHERE ${columnName} = $2)
+          AND item_id = (SELECT id FROM spaceengineers.items WHERE ${columnName} = $2)
       `;
       const existingRecord = await this.userRepository.query(
         conflictCheckQuery,
@@ -180,7 +180,7 @@ export class ItemService {
           UPDATE online_storage_items
           SET quantity = quantity + $3
           WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
-            AND item_id = (SELECT id FROM items WHERE ${columnName} = $2)
+            AND item_id = (SELECT id FROM spaceengineers.items WHERE ${columnName} = $2)
         `;
         await this.userRepository.query(updateQuery, [
           userId,
@@ -192,7 +192,7 @@ export class ItemService {
           INSERT INTO online_storage_items (storage_id, item_id, quantity)
           VALUES (
             (SELECT id FROM online_storage WHERE steam_id = $1),
-            (SELECT id FROM items WHERE ${columnName} = $2),
+            (SELECT id FROM spaceengineers.items WHERE ${columnName} = $2),
             $3
           )
         `;
@@ -250,7 +250,7 @@ export class ItemService {
     );
     const blueprintQuery = `
       SELECT ingredient1, quantity1, ingredient2, quantity2, ingredient3, quantity3
-      FROM blue_prints
+      FROM spaceengineers.blue_prints
       WHERE index_name = $1
     `;
     const blueprint = await this.userRepository.query(blueprintQuery, [
@@ -282,7 +282,7 @@ export class ItemService {
   async getBlueprints(): Promise<any> {
     this.logger.log(`Fetching blueprints`);
     const query = `
-      SELECT * FROM blue_prints
+      SELECT * FROM spaceengineers.blue_prints
     `;
     const blueprints = await this.userRepository.query(query);
 
@@ -317,7 +317,7 @@ export class ItemService {
     if (!tableExists) {
       this.logger.warn(`'items' table does not exist. Creating the table...`);
       const createTableQuery = `
-        CREATE TABLE items (
+        CREATE TABLE spaceengineers.items (
           id SERIAL PRIMARY KEY,
           display_name TEXT NOT NULL,
           rarity TEXT,
@@ -333,7 +333,7 @@ export class ItemService {
 
     // Step 3: Insert or update items
     const query = `
-      INSERT INTO items (display_name, rarity, description, category, icons, index_name)
+      INSERT INTO spaceengineers.items (display_name, rarity, description, category, icons, index_name)
       VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (index_name)
       DO UPDATE SET
