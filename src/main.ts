@@ -13,7 +13,7 @@ async function bootstrap() {
 
   // Enable CORS with specific settings
   app.enableCors({
-    origin: process.env.REALM,
+    origin: process.env.Whitelist || 'http://localhost:3000',
     credentials: true,
   });
 
