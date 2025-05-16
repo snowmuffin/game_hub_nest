@@ -360,8 +360,8 @@ export class ItemService {
 
     // Step 3: Insert or update items
     const query = `
-      INSERT INTO spaceengineers.items (display_name, rarity, description, category, icons, index_name)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO spaceengineers.items (display_name, rarity, description, category, icons, index_name, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
       ON CONFLICT (index_name)
       DO UPDATE SET
         display_name = EXCLUDED.display_name,
