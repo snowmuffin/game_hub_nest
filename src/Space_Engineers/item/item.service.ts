@@ -324,7 +324,8 @@ export class ItemService {
           description TEXT,
           category TEXT,
           icons JSONB,
-          index_name TEXT NOT NULL UNIQUE
+          index_name TEXT NOT NULL UNIQUE,
+          created_at TIMESTAMP NOT NULL DEFAULT NOW()
         )
       `;
       await this.userRepository.query(createTableQuery);
