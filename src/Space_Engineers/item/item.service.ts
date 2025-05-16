@@ -21,7 +21,7 @@ export class ItemService {
     this.logger.log(`Fetching items for User ID: ${userId}`);
 
     const storageQuery = `
-      SELECT id FROM online_storage WHERE id = $1
+      SELECT id FROM spaceengineers.online_storage WHERE id = $1
     `;
     const storageResults = await this.userRepository.query(storageQuery, [
       userId,
@@ -29,7 +29,7 @@ export class ItemService {
 
     if (storageResults.length === 0) {
       const insertStorageQuery = `
-        INSERT INTO online_storage (id) VALUES ($1) RETURNING id
+        INSERT INTO spaceengineers.online_storage (id) VALUES ($1) RETURNING id
       `;
       const newStorage = await this.userRepository.query(insertStorageQuery, [
         userId,
@@ -43,8 +43,8 @@ export class ItemService {
     const storageItemsQuery = `
       SELECT osi.item_id, osi.quantity, i.id, i.display_name, i.rarity, i.description, 
              i.category, i.icons, i.index_name
-      FROM online_storage_items osi
-      INNER JOIN items i ON osi.item_id = i.id
+      FROM spaceengineers.online_storage_items osi
+      INNER JOIN spaceengineers.items i ON osi.item_id = i.id
       WHERE osi.storage_id = $1
     `;
     const items = await this.userRepository.query(storageItemsQuery, [
@@ -127,9 +127,9 @@ export class ItemService {
     }
 
     try {
-      // Step 1: Ensure steam_id exists in online_storage
+      // Step 1: Ensure steam_id exists in spaceengineers.online_storage
       const storageCheckQuery = `
-        SELECT id FROM online_storage WHERE steam_id = $1
+        SELECT id FROM spaceengineers.online_storage WHERE steam_id = $1
       `;
       const storageExists = await this.userRepository.query(storageCheckQuery, [
         userId,
@@ -137,7 +137,7 @@ export class ItemService {
 
       if (storageExists.length === 0) {
         const insertStorageQuery = `
-          INSERT INTO online_storage (steam_id) VALUES ($1)
+          INSERT INTO spaceengineers.online_storage (steam_id) VALUES ($1)
         `;
         await this.userRepository.query(insertStorageQuery, [userId]);
         this.logger.log(`Created new storage for Steam ID=${userId}`);
@@ -166,8 +166,8 @@ export class ItemService {
 
       // Step 3: Check for conflicts and update or insert
       const conflictCheckQuery = `
-        SELECT * FROM online_storage_items
-        WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
+        SELECT * FROM spaceengineers.online_storage_items
+        WHERE storage_id = (SELECT id FROM spaceengineers.online_storage WHERE steam_id = $1)
           AND item_id = (SELECT id FROM spaceengineers.items WHERE ${columnName} = $2)
       `;
       const existingRecord = await this.userRepository.query(
@@ -177,9 +177,9 @@ export class ItemService {
 
       if (existingRecord.length > 0) {
         const updateQuery = `
-          UPDATE online_storage_items
+          UPDATE spaceengineers.online_storage_items
           SET quantity = quantity + $3
-          WHERE storage_id = (SELECT id FROM online_storage WHERE steam_id = $1)
+          WHERE storage_id = (SELECT id FROM spaceengineers.online_storage WHERE steam_id = $1)
             AND item_id = (SELECT id FROM spaceengineers.items WHERE ${columnName} = $2)
         `;
         await this.userRepository.query(updateQuery, [
@@ -189,9 +189,9 @@ export class ItemService {
         ]);
       } else {
         const insertQuery = `
-          INSERT INTO online_storage_items (storage_id, item_id, quantity)
+          INSERT INTO spaceengineers.online_storage_items (storage_id, item_id, quantity)
           VALUES (
-            (SELECT id FROM online_storage WHERE steam_id = $1),
+            (SELECT id FROM spaceengineers.online_storage WHERE steam_id = $1),
             (SELECT id FROM spaceengineers.items WHERE ${columnName} = $2),
             $3
           )
@@ -224,7 +224,7 @@ export class ItemService {
     );
     const query = `
       SELECT ${itemName} AS availableQuantity
-      FROM online_storage
+      FROM spaceengineers.online_storage
       WHERE steam_id = $1
       FOR UPDATE
     `;
@@ -235,7 +235,7 @@ export class ItemService {
     }
 
     const updateQuery = `
-      UPDATE online_storage
+      UPDATE spaceengineers.online_storage
       SET ${itemName} = ${itemName} - $1
       WHERE steam_id = $2
     `;
