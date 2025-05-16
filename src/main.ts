@@ -9,9 +9,11 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  console.log('REALM env:', process.env.REALM); // 실제 값 확인
+
   // Enable CORS with specific settings
   app.enableCors({
-    origin: '*', // 모든 도메인 허용
+    origin: process.env.REALM,
     credentials: true,
   });
 

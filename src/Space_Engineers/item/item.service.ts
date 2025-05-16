@@ -306,7 +306,7 @@ export class ItemService {
     // Step 1: Check if the 'items' table exists
     const tableCheckQuery = `
       SELECT EXISTS (
-        SELECT FROM information_schema.tables 
+        SELECT FROM spaceengineers.tables 
         WHERE table_name = 'items'
       )
     `;
