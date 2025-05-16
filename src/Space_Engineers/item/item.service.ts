@@ -306,8 +306,8 @@ export class ItemService {
     // Step 1: Check if the 'items' table exists
     const tableCheckQuery = `
       SELECT EXISTS (
-        SELECT FROM spaceengineers 
-        WHERE table_name = 'items'
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'spaceengineers' AND table_name = 'items'
       )
     `;
     const tableExistsResult = await this.userRepository.query(tableCheckQuery);
