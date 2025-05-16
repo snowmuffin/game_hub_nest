@@ -324,11 +324,37 @@ export class ItemService {
           description TEXT,
           category TEXT,
           icons JSONB,
-          index_name TEXT UNIQUE NOT NULL
+          index_name TEXT NOT NULL UNIQUE
         )
       `;
       await this.userRepository.query(createTableQuery);
       this.logger.log(`'items' table created successfully.`);
+    } else {
+      // Ensure unique constraint exists on index_name
+      const uniqueConstraintCheckQuery = `
+        SELECT COUNT(*) AS count
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.constraint_column_usage ccu
+          ON tc.constraint_name = ccu.constraint_name
+        WHERE tc.table_schema = 'spaceengineers'
+          AND tc.table_name = 'items'
+          AND tc.constraint_type = 'UNIQUE'
+          AND ccu.column_name = 'index_name'
+      `;
+      const uniqueConstraintResult = await this.userRepository.query(uniqueConstraintCheckQuery);
+      const hasUnique = Number(uniqueConstraintResult[0]?.count) > 0;
+      if (!hasUnique) {
+        this.logger.warn(`Adding UNIQUE constraint to spaceengineers.items.index_name`);
+        const addUniqueQuery = `
+          ALTER TABLE spaceengineers.items
+          ADD CONSTRAINT items_index_name_unique UNIQUE (index_name)
+        `;
+        try {
+          await this.userRepository.query(addUniqueQuery);
+        } catch (e) {
+          this.logger.error(`Failed to add UNIQUE constraint: ${e.message}`);
+        }
+      }
     }
 
     // Step 3: Insert or update items
