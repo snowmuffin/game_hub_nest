@@ -378,7 +378,7 @@ export class ItemService {
 
       const mappedItem = {
         displayName: item.DisplayName,
-        rarity: item.Rarity || null,
+        rarity: '1', // 레어리티를 일괄적으로 1로 설정
         description: item.Description || null,
         category: item.Category || this.determineCategory(item.Id), // 카테고리 결정
         icons: item.Icons || [],
