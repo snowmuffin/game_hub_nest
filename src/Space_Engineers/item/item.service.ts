@@ -374,9 +374,14 @@ export class ItemService {
     `;
 
     for (const item of itemList) {
-      if (!item.DisplayName || !item.Id) {
-        this.logger.error(`Invalid item data: ${JSON.stringify(item)}`);
-        throw new Error('Each item must have a DisplayName and Id.');
+      // MyObjectBuilder_TreeObject가 포함된 index_name은 제외
+      if (
+        !item.DisplayName ||
+        !item.Id ||
+        (typeof item.Id === 'string' && item.Id.includes('MyObjectBuilder_TreeObject'))
+      ) {
+        this.logger.warn(`Skipping item (invalid or excluded): ${JSON.stringify(item)}`);
+        continue;
       }
 
       const mappedItem = {

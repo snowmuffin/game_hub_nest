@@ -4,7 +4,7 @@ const BASE_URL = 'http://localhost:4000/space-engineers/item/upload'; // API 엔
 const STEAM_ID = '76561198267339203'; // 대상 유저의 Steam ID
 
 async function addItems() {
-  for (let i = 1; i <= 100; i++) {
+  for (let i = 1; i <= 250; i++) {
     const identifier = `${i}`; // 아이템 이름 또는 ID
     const quantity = 10; // 추가할 수량
 
