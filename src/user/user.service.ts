@@ -35,7 +35,8 @@ export class UserService {
     const userIdQuery = `
       SELECT id FROM spaceengineers.user WHERE steam_id = $1
     `;
-    const userId = await this.userRepository.query(userIdQuery, [steamid]);
+    const userIdResult = await this.userRepository.query(userIdQuery, [steamid]);
+    const userId = userIdResult?.[0]?.id;
     const storageQuery = `
       SELECT id FROM spaceengineers.online_storage WHERE id = $1
     `;
