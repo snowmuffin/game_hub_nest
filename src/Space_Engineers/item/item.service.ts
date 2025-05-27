@@ -213,34 +213,188 @@ export class ItemService {
     }
   }
 
-  // 아이템 다운로드
-  async downloadItem(
-    steamId: string,
-    itemName: string,
+  // 아이템 다운로드 요청 (확정 전 처리)
+  async requestDownloadItem(
+    steamid: string,
+    index_name: string,
+    quantity: number,
+  ): Promise<any> {
+    if (!steamid || !index_name) {
+      this.logger.error(`requestDownloadItem: steamid or index_name is undefined. steamid=${steamid}, index_name=${index_name}`);
+      throw new Error('steamid and index_name are required.');
+    }
+    this.logger.log(
+      `Requesting download: Steam ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
+    );
+
+    // item_download_log 테이블이 없으면 생성
+    try {
+      await this.userRepository.query(`
+        CREATE TABLE IF NOT EXISTS spaceengineers.item_download_log (
+          id SERIAL PRIMARY KEY,
+          storage_id INTEGER NOT NULL,
+          item_id INTEGER NOT NULL,
+          quantity INTEGER NOT NULL,
+          status TEXT NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+      `);
+    } catch (e) {
+      this.logger.error(`Failed to create 'item_download_log' table: ${e.message}`);
+      throw e;
+    }
+
+    // storage_id, item_id 조회
+    const userResult = await this.userRepository.query(
+      `SELECT id AS storage_id FROM spaceengineers.online_storage WHERE steam_id = $1`,
+      [steamid],
+    );
+    if (!userResult.length) {
+      throw new Error(`User with steam_id "${steamid}" not found.`);
+    }
+    const storageId = userResult[0].storage_id;
+
+    const itemIdResult = await this.userRepository.query(
+      `SELECT id FROM spaceengineers.items WHERE index_name = $1`,
+      [index_name],
+    );
+    if (!itemIdResult.length) {
+      throw new Error(`Item with index_name "${index_name}" not found.`);
+    }
+    const itemId = itemIdResult[0].id;
+
+    // 지급 요청 로그 기록 (수량 차감 X)
+    await this.userRepository.query(
+      `INSERT INTO spaceengineers.item_download_log (storage_id, item_id, quantity, status) VALUES ($1, $2, $3, 'PENDING')`,
+      [storageId, itemId, quantity]
+    );
+
+    return {
+      success: true,
+      data: {
+        storageId,
+        itemId,
+        indexName: index_name,
+        requested: quantity,
+        status: 'PENDING',
+      },
+      message: `Download request for ${quantity}x '${index_name}' is pending confirmation.`,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // 아이템 다운로드 확정(실제 차감)
+  async confirmDownloadItem(
+    steamid: string,
+    index_name: string,
     quantity: number,
   ): Promise<any> {
     this.logger.log(
-      `Downloading item: Steam ID=${steamId}, Item=${itemName}, Quantity=${quantity}`,
+      `Confirming download: Steam ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
     );
-    const query = `
-      SELECT ${itemName} AS availableQuantity
-      FROM spaceengineers.online_storage
-      WHERE steam_id = $1
-      FOR UPDATE
-    `;
-    const results = await this.userRepository.query(query, [steamId]);
 
-    if (results.length === 0 || results[0].availableQuantity < quantity) {
-      throw new Error(`Not enough ${itemName} in storage.`);
+    // storage_id, item_id 조회
+    const userResult = await this.userRepository.query(
+      `SELECT id AS storage_id FROM spaceengineers.online_storage WHERE steam_id = $1`,
+      [steamid],
+    );
+    if (!userResult.length) {
+      throw new Error(`User with steam_id "${steamid}" not found.`);
     }
+    const storageId = userResult[0].storage_id;
 
-    const updateQuery = `
-      UPDATE spaceengineers.online_storage
-      SET ${itemName} = ${itemName} - $1
-      WHERE steam_id = $2
-    `;
-    await this.userRepository.query(updateQuery, [quantity, steamId]);
-    return { message: `${quantity}x '${itemName}' deducted from storage.` };
+    const itemIdResult = await this.userRepository.query(
+      `SELECT id FROM spaceengineers.items WHERE index_name = $1`,
+      [index_name],
+    );
+    if (!itemIdResult.length) {
+      throw new Error(`Item with index_name "${index_name}" not found.`);
+    }
+    const itemId = itemIdResult[0].id;
+
+    // 실제 수량 차감
+    await this.userRepository.query(
+      `UPDATE spaceengineers.online_storage_items SET quantity = quantity - $1 WHERE storage_id = $2 AND item_id = $3`,
+      [quantity, storageId, itemId]
+    );
+
+    // 로그 상태 CONFIRMED로 변경
+    await this.userRepository.query(
+      `UPDATE spaceengineers.item_download_log SET status = 'CONFIRMED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
+      [storageId, itemId]
+    );
+
+    // 남은 수량 조회
+    const remainResult = await this.userRepository.query(
+      `SELECT quantity FROM spaceengineers.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
+      [storageId, itemId]
+    );
+    const remain = remainResult.length > 0 ? remainResult[0].quantity : 0;
+
+    return {
+      success: true,
+      data: {
+        storageId,
+        itemId,
+        indexName: index_name,
+        deducted: quantity,
+        remain,
+        status: 'CONFIRMED',
+      },
+      message: `Successfully confirmed and deducted ${quantity}x '${index_name}' from storage.`,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // 아이템 다운로드 취소(복구)
+  async cancelDownloadItem(
+    steamid: string,
+    index_name: string,
+    quantity: number,
+  ): Promise<any> {
+    this.logger.log(
+      `Cancelling download: Steam ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
+    );
+
+    // storage_id, item_id 조회
+    const userResult = await this.userRepository.query(
+      `SELECT id AS storage_id FROM spaceengineers.online_storage WHERE steam_id = $1`,
+      [steamid],
+    );
+    if (!userResult.length) {
+      throw new Error(`User with steam_id "${steamid}" not found.`);
+    }
+    const storageId = userResult[0].storage_id;
+
+    const itemIdResult = await this.userRepository.query(
+      `SELECT id FROM spaceengineers.items WHERE index_name = $1`,
+      [index_name],
+    );
+    if (!itemIdResult.length) {
+      throw new Error(`Item with index_name "${index_name}" not found.`);
+    }
+    const itemId = itemIdResult[0].id;
+
+    // 로그 상태 CANCELED로 변경
+    await this.userRepository.query(
+      `UPDATE spaceengineers.item_download_log SET status = 'CANCELED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
+      [storageId, itemId]
+    );
+
+    // 복구(차감 취소) 필요시 로직 추가 (여기서는 실제 차감 전이므로 별도 복구 불필요)
+    return {
+      success: true,
+      data: {
+        storageId,
+        itemId,
+        indexName: index_name,
+        canceled: quantity,
+        status: 'CANCELED',
+      },
+      message: `Download request for ${quantity}x '${index_name}' has been canceled.`,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   // 아이템 업그레이드
@@ -271,7 +425,7 @@ export class ItemService {
     }
 
     for (const [itemName, quantity] of Object.entries(requiredItems)) {
-      await this.downloadItem(steamId, itemName, quantity as number);
+      await this.requestDownloadItem(steamId, itemName, quantity as number);
     }
 
     await this.uploadItem(steamId, targetItem, 1);

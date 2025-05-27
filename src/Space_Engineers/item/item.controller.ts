@@ -28,10 +28,17 @@ export class ItemController {
   }
 
   @Post('download')
-  async downloadItem(@Body() body: any) {
-    const { userId, itemName, quantity } = body;
-    this.logger.log(`POST /space_engineers/item/download: User ID=${userId}, Item=${itemName}, Quantity=${quantity}`);
-    return this.itemService.downloadItem(userId, itemName, quantity);
+  async downloadItem(@Body() body: { steamid: string; index_name: string; quantity: number }) {
+    const { steamid, index_name, quantity } = body;
+    this.logger.log(`POST /space_engineers/item/download: User ID=${steamid}, Item=${index_name}, Quantity=${quantity}`);
+    return this.itemService.requestDownloadItem(steamid, index_name, quantity);
+  }
+
+  @Post('download/confirm')
+  async confirmDownloadItem(@Body() body: { steamid: string; index_name: string; quantity: number }) {
+    const { steamid, index_name, quantity } = body;
+    this.logger.log(`POST /space_engineers/item/download/confirm: User ID=${steamid}, Item=${index_name}, Quantity=${quantity}`);
+    return this.itemService.confirmDownloadItem(steamid, index_name, quantity);
   }
 
   @Post('update-items')
