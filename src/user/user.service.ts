@@ -32,6 +32,26 @@ export class UserService {
       await this.userRepository.save(user);
       this.logger.log(`User updated: ${JSON.stringify(user)}`);
     }
+    const userIdQuery = `
+      SELECT id FROM spaceengineers.user WHERE steam_id = $1
+    `;
+    const userId = await this.userRepository.query(userIdQuery, [steamid]);
+    const storageQuery = `
+      SELECT id FROM spaceengineers.online_storage WHERE id = $1
+    `;
+    const storageResults = await this.userRepository.query(storageQuery, [
+      userId,
+    ]);
+    if (storageResults.length === 0) {
+      const insertStorageQuery = `
+        INSERT INTO spaceengineers.online_storage (id) VALUES ($1) RETURNING id
+      `;
+      const newStorage = await this.userRepository.query(insertStorageQuery, [
+        userId,
+      ]);
+      this.logger.log(`Created new storage for User ID=${userId}`);
+      return ;
+    }
   }
 
   async getRankings(): Promise<User[]> {
