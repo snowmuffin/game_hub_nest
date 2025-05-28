@@ -264,6 +264,19 @@ export class ItemService {
     }
     const itemId = itemIdResult[0].id;
 
+    // 현재 보유 수량 조회 및 체크
+    const currentQtyResult = await this.userRepository.query(
+      `SELECT quantity FROM spaceengineers.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
+      [storageId, itemId]
+    );
+    const currentQty = currentQtyResult.length > 0 ? Number(currentQtyResult[0].quantity) : 0;
+    if (quantity > currentQty) {
+      this.logger.warn(
+        `Download request exceeds available quantity: requested=${quantity}, available=${currentQty}, steamid=${steamid}, item=${index_name}`
+      );
+      throw new Error(`Not enough items in storage. Requested: ${quantity}, Available: ${currentQty}`);
+    }
+
     // 지급 요청 로그 기록 (수량 차감 X)
     await this.userRepository.query(
       `INSERT INTO spaceengineers.item_download_log (storage_id, item_id, quantity, status) VALUES ($1, $2, $3, 'PENDING')`,
