@@ -13,7 +13,7 @@ console.log('Generated Test Token:', token);
 
 // 테스트 요청 보내기
 async function testGetItems() {
-  const apiUrl = 'http://localhost:4000/items'; // API 엔드포인트 URL
+  const apiUrl = 'http://localhost:4000/space-engineers/item'; // API 엔드포인트 URL
 
   try {
     console.log(`Sending request to ${apiUrl} with token...`);
