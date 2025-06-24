@@ -17,7 +17,6 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
     "migration:run": "npx ts-node ./node_modules/typeorm/cli.js migration:run --dataSource src/data-source.ts",
     "migration:revert": "npx ts-node ./node_modules/typeorm/cli.js migration:revert --dataSource src/data-source.ts",
     "migration:generate": "npx ts-node ./node_modules/typeorm/cli.js migration:generate --dataSource src/data-source.ts --name",
