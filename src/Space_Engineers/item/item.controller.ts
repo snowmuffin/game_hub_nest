@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Req, Logger, UseGuards, UnauthorizedExcept
 import { ItemService } from './item.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard'; // Guard 경로
 
-@Controller('space-engineers/item') // 엔드포인트에 space_engineers 추가
+@Controller('space-engineers/item') // 엔드포인트에 space-engineers 추가
 export class ItemController {
   private readonly logger = new Logger(ItemController.name);
 
