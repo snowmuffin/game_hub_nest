@@ -80,15 +80,15 @@ sudo systemctl restart nginx
 
 ### 3.2 도메인 설정
 `/etc/nginx/sites-available/game-hub-nest` 파일에서:
-- `your-domain.com`을 실제 도메인으로 변경
-- `your-frontend-domain.com`을 프론트엔드 도메인으로 변경
+- `api.snowmuffingame.com`이 올바르게 설정되어 있는지 확인
+- `https://snowmuffingame.com`이 프론트엔드 도메인으로 설정되어 있는지 확인
 
 ## 4. SSL 인증서 설정
 
 ### 4.1 Let's Encrypt 인증서 발급
 ```bash
 # 인증서 발급 및 자동 Nginx 설정
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+sudo certbot --nginx -d api.snowmuffingame.com
 
 # 자동 갱신 테스트
 sudo certbot renew --dry-run
@@ -97,9 +97,8 @@ sudo certbot renew --dry-run
 ## 5. 도메인 및 DNS 설정
 
 ### 5.1 DNS 설정
-- A 레코드: `your-domain.com` → 서버 IP
-- A 레코드: `www.your-domain.com` → 서버 IP
-- CNAME 레코드: `api.your-domain.com` → `your-domain.com` (선택사항)
+- A 레코드: `api.snowmuffingame.com` → 서버 IP
+- CNAME 레코드 (선택사항): `*.snowmuffingame.com` → `snowmuffingame.com`
 
 ## 6. PM2 관리 명령어
 
@@ -276,14 +275,27 @@ docker-compose logs -f
 - `/api/health` 엔드포인트 추가 권장
 - 모니터링 도구 연동 (예: DataDog, New Relic)
 
-## 6. 예시 URL 구조
+## 6. 접근 방법
 
+### 6.1 도메인 접근 (프로덕션)
 배포 후 다음과 같은 URL로 접근 가능합니다:
 
-- API Base: `https://api.yourdomain.com/api`
-- Steam Auth: `https://api.yourdomain.com/api/auth/steam`
-- Users: `https://api.yourdomain.com/api/users`
-- Items: `https://api.yourdomain.com/api/space-engineers/item`
+- API Base: `https://api.snowmuffingame.com/api`
+- Steam Auth: `https://api.snowmuffingame.com/api/auth/steam`
+- Users: `https://api.snowmuffingame.com/api/users`
+- Items: `https://api.snowmuffingame.com/api/space-engineers/item`
+- Health Check: `https://api.snowmuffingame.com/health`
+
+### 6.2 IP 직접 접근 (개발/테스트)
+SSL 설정 전이나 프론트엔드 업데이트 전까지 IP로 직접 접근 가능:
+
+- API Base: `http://your-server-ip/api` (Nginx 사용시)
+- 또는: `http://your-server-ip:4000/api` (직접 접근)
+- Health Check: `http://your-server-ip/health`
+
+### 6.3 로컬 개발
+- API Base: `http://localhost:4000/api`
+- 시작 명령어: `./start-dev.sh` 또는 `npm run start:dev`
 
 ## 7. 트러블슈팅
 
