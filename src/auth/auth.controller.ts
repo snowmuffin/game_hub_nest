@@ -32,7 +32,7 @@ export class AuthController {
           if (window.opener) {
             window.opener.postMessage(
               { status: 401, error: 'Steam authentication failed' },
-              'http://se.snowmuffingame.com'
+              'https://se.snowmuffingame.com'
             );
             window.close();
           } else {
@@ -77,7 +77,7 @@ export class AuthController {
                 token: "${accessToken}",
                 success: true
               },
-              'http://se.snowmuffingame.com'
+              'https://se.snowmuffingame.com'
             );
             
             // 짧은 지연 후 창 닫기
@@ -99,7 +99,7 @@ export class AuthController {
           if (window.opener) {
             window.opener.postMessage(
               { status: 500, error: 'Server error during authentication' },
-              'http://se.snowmuffingame.com'
+              'https://se.snowmuffingame.com'
             );
             window.close();
           } else {
