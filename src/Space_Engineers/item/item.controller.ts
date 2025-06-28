@@ -48,9 +48,9 @@ export class ItemController {
   }
 
   @Post('upgrade')
-  @UseGuards(JwtAuthGuard) // 인증 Guard 적용
+  @UseGuards(JwtAuthGuard)
   async upgradeItem(@Body() body: any, @Req() req) {
-    const userId = req.user.id; // steamId 대신 id 사용
+    const userId = req.user.id;
     const { targetItem } = body;
     this.logger.log(`POST /space_engineers/item/upgrade: User ID=${userId}, Target Item=${targetItem}`);
     return this.itemService.upgradeItem(userId, targetItem);

@@ -12,7 +12,6 @@ export class ItemService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // 아이템 조회
   async getItems(userId: string): Promise<any> {
     if (!userId) {
       throw new Error('User ID is required.');
@@ -57,7 +56,7 @@ export class ItemService {
       rarity: item.rarity,
       description: item.description,
       category: item.category,
-      icons: this.extractFileName(item.icons), // 파일명만 추출
+      icons: this.extractFileName(item.icons),
       indexName: item.index_name,
       quantity: item.quantity,
     }));
@@ -68,7 +67,6 @@ export class ItemService {
     return formattedItems;
   }
 
-  // 아이콘 경로에서 파일명만 추출하는 유틸리티 함수
   private extractFileName(iconPath: any): string {
     if (!iconPath) {
       this.logger.warn('Icon path is empty or undefined.');
@@ -76,27 +74,23 @@ export class ItemService {
     }
 
     try {
-      // 배열인 경우 처리
       if (Array.isArray(iconPath)) {
         if (iconPath.length === 0) {
           this.logger.warn('Icon path array is empty.');
           return '';
         }
 
-        // 배열의 첫 번째 요소에서 파일명 추출
         const normalizedPath = iconPath[0].replace(/\\/g, '/');
         const fileName = normalizedPath.split('/').pop();
         return fileName || '';
       }
 
-      // 문자열인 경우 처리
       if (typeof iconPath === 'string') {
         const normalizedPath = iconPath.replace(/\\/g, '/');
         const fileName = normalizedPath.split('/').pop();
         return fileName || '';
       }
 
-      // 예상치 못한 데이터 타입 처리
       this.logger.warn(
         `Invalid icon path type: ${typeof iconPath}. Expected a string or array.`,
       );
@@ -109,7 +103,6 @@ export class ItemService {
     }
   }
 
-  // 아이템 업로드
   async uploadItem(
     userId: string,
     identifier: string,
@@ -127,7 +120,6 @@ export class ItemService {
     }
 
     try {
-      // Step 1: Ensure steam_id exists in spaceengineers.online_storage
       const storageCheckQuery = `
         SELECT id FROM spaceengineers.online_storage WHERE steam_id = $1
       `;
@@ -143,7 +135,6 @@ export class ItemService {
         this.logger.log(`Created new storage for Steam ID=${userId}`);
       }
 
-      // Step 2: Check if the item exists
       const isIndexName = identifier.includes('/');
       const columnName = isIndexName ? 'index_name' : 'id';
 
@@ -164,7 +155,6 @@ export class ItemService {
         );
       }
 
-      // Step 3: Check for conflicts and update or insert
       const conflictCheckQuery = `
         SELECT * FROM spaceengineers.online_storage_items
         WHERE storage_id = (SELECT id FROM spaceengineers.online_storage WHERE steam_id = $1)
@@ -213,7 +203,6 @@ export class ItemService {
     }
   }
 
-  // 아이템 다운로드 요청 (확정 전 처리)
   async requestDownloadItem(
     steamid: string,
     index_name: string,
@@ -227,7 +216,6 @@ export class ItemService {
       `Requesting download: Steam ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
     );
 
-    // item_download_log 테이블이 없으면 생성
     try {
       await this.userRepository.query(`
         CREATE TABLE IF NOT EXISTS spaceengineers.item_download_log (
@@ -245,7 +233,6 @@ export class ItemService {
       throw e;
     }
 
-    // storage_id, item_id 조회
     const userResult = await this.userRepository.query(
       `SELECT id AS storage_id FROM spaceengineers.online_storage WHERE steam_id = $1`,
       [steamid],
@@ -264,7 +251,6 @@ export class ItemService {
     }
     const itemId = itemIdResult[0].id;
 
-    // 현재 보유 수량 조회 및 체크
     const currentQtyResult = await this.userRepository.query(
       `SELECT quantity FROM spaceengineers.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
       [storageId, itemId]
@@ -277,7 +263,6 @@ export class ItemService {
       throw new Error(`Not enough items in storage. Requested: ${quantity}, Available: ${currentQty}`);
     }
 
-    // 지급 요청 로그 기록 (수량 차감 X)
     await this.userRepository.query(
       `INSERT INTO spaceengineers.item_download_log (storage_id, item_id, quantity, status) VALUES ($1, $2, $3, 'PENDING')`,
       [storageId, itemId, quantity]
@@ -297,7 +282,6 @@ export class ItemService {
     };
   }
 
-  // 아이템 다운로드 확정(실제 차감)
   async confirmDownloadItem(
     steamid: string,
     index_name: string,
@@ -307,7 +291,6 @@ export class ItemService {
       `Confirming download: Steam ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
     );
 
-    // storage_id, item_id 조회
     const userResult = await this.userRepository.query(
       `SELECT id AS storage_id FROM spaceengineers.online_storage WHERE steam_id = $1`,
       [steamid],
@@ -326,19 +309,16 @@ export class ItemService {
     }
     const itemId = itemIdResult[0].id;
 
-    // 실제 수량 차감
     await this.userRepository.query(
       `UPDATE spaceengineers.online_storage_items SET quantity = quantity - $1 WHERE storage_id = $2 AND item_id = $3`,
       [quantity, storageId, itemId]
     );
 
-    // 로그 상태 CONFIRMED로 변경
     await this.userRepository.query(
       `UPDATE spaceengineers.item_download_log SET status = 'CONFIRMED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
       [storageId, itemId]
     );
 
-    // 남은 수량 조회
     const remainResult = await this.userRepository.query(
       `SELECT quantity FROM spaceengineers.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
       [storageId, itemId]
@@ -360,7 +340,6 @@ export class ItemService {
     };
   }
 
-  // 아이템 다운로드 취소(복구)
   async cancelDownloadItem(
     steamid: string,
     index_name: string,
@@ -370,7 +349,6 @@ export class ItemService {
       `Cancelling download: Steam ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
     );
 
-    // storage_id, item_id 조회
     const userResult = await this.userRepository.query(
       `SELECT id AS storage_id FROM spaceengineers.online_storage WHERE steam_id = $1`,
       [steamid],
@@ -389,13 +367,11 @@ export class ItemService {
     }
     const itemId = itemIdResult[0].id;
 
-    // 로그 상태 CANCELED로 변경
     await this.userRepository.query(
       `UPDATE spaceengineers.item_download_log SET status = 'CANCELED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
       [storageId, itemId]
     );
 
-    // 복구(차감 취소) 필요시 로직 추가 (여기서는 실제 차감 전이므로 별도 복구 불필요)
     return {
       success: true,
       data: {
@@ -410,7 +386,6 @@ export class ItemService {
     };
   }
 
-  // 아이템 업그레이드
   async upgradeItem(steamId: string, targetItem: string): Promise<any> {
     this.logger.log(
       `Upgrading item: Steam ID=${steamId}, Target Item=${targetItem}`,
@@ -445,7 +420,6 @@ export class ItemService {
     return { message: `Upgraded to ${targetItem}` };
   }
 
-  // 블루프린트 조회
   async getBlueprints(): Promise<any> {
     this.logger.log(`Fetching blueprints`);
     const query = `
@@ -466,11 +440,9 @@ export class ItemService {
     });
   }
 
-  // items 테이블 업데이트
   async updateItems(itemList: any[]): Promise<any> {
     this.logger.log(`Updating items: ${JSON.stringify(itemList)}`);
 
-    // Step 1: Check if the 'items' table exists
     const tableCheckQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -480,7 +452,6 @@ export class ItemService {
     const tableExistsResult = await this.userRepository.query(tableCheckQuery);
     const tableExists = tableExistsResult[0]?.exists;
 
-    // Step 2: Create the table if it does not exist
     if (!tableExists) {
       this.logger.warn(`'items' table does not exist. Creating the table...`);
       const createTableQuery = `
@@ -499,7 +470,6 @@ export class ItemService {
       await this.userRepository.query(createTableQuery);
       this.logger.log(`'items' table created successfully.`);
     } else {
-      // Ensure unique constraint exists on index_name
       const uniqueConstraintCheckQuery = `
         SELECT COUNT(*) AS count
         FROM information_schema.table_constraints tc
@@ -526,7 +496,6 @@ export class ItemService {
       }
     }
 
-    // Step 3: Insert or update items
     const query = `
       INSERT INTO spaceengineers.items (display_name, rarity, description, category, icons, index_name, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
@@ -541,7 +510,6 @@ export class ItemService {
     `;
 
     for (const item of itemList) {
-      // MyObjectBuilder_TreeObject가 포함된 index_name은 제외
       if (
         !item.DisplayName ||
         !item.Id ||
@@ -553,9 +521,9 @@ export class ItemService {
 
       const mappedItem = {
         displayName: item.DisplayName,
-        rarity: '1', // 레어리티를 일괄적으로 1로 설정
+        rarity: '1',
         description: item.Description || null,
-        category: item.Category || this.determineCategory(item.Id), // 카테고리 결정
+        category: item.Category || this.determineCategory(item.Id),
         icons: item.Icons || [],
         indexName: item.Id,
       };
@@ -577,7 +545,6 @@ export class ItemService {
     return { message: 'Items updated successfully' };
   }
 
-  // 카테고리 결정
   private determineCategory(itemId: string): string {
     const prefix = itemId.split('/')[0];
     switch (prefix) {
@@ -588,7 +555,7 @@ export class ItemService {
         return 'Ingot';
       case 'MyObjectBuilder_Ore':
         return 'Ore';
-      case 'MyObjectBuilder_AmmoMagazine': // 추가된 처리
+      case 'MyObjectBuilder_AmmoMagazine':
         return 'Ammo';
       default:
         this.logger.warn(`Unknown category prefix: ${prefix}`);
