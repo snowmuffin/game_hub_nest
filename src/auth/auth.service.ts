@@ -38,16 +38,14 @@ export class AuthService {
   }
 
   async findOrCreateUser(profile: any): Promise<User> {
-    console.log('Profile received:', profile); // 디버깅용 로그 추가
+    console.log('Profile received:', profile);
 
     if (!profile.steam_id || !profile.username) {
       throw new Error('Invalid profile data received from Steam');
     }
 
-    // 유저를 steam_id로 조회
     let user = await this.userRepository.findOne({ where: { steam_id: profile.steam_id } });
 
-    // 유저가 없으면 생성
     if (!user) {
       await createuser(profile, this.userRepository);
     }
