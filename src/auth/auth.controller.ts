@@ -13,6 +13,9 @@ export class AuthController {
 
   @Get('steam')
   @UseGuards(AuthGuard('steam'))
+  async steamLogin(@Req() req, @Res() res: Response) {
+    // Steam 인증으로 리다이렉트 (passport-steam이 자동 처리)
+  }
 
 
   @Get('steam/return')
