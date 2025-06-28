@@ -21,49 +21,93 @@ export class AuthController {
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
   async steamLoginReturn(@Req() req, @Res() res: Response) {
+    console.log('Steam return endpoint hit'); // 디버깅용
+    console.log('User:', req.user); // 디버깅용
+
     if (!req.user) {
+      console.log('No user found in request'); // 디버깅용
       res.status(401).send(`
         <script>
+          console.log('Authentication failed - no user');
           if (window.opener) {
             window.opener.postMessage(
               { status: 401, error: 'Steam authentication failed' },
-              '*'
+              'http://se.snowmuffingame.com'
             );
             window.close();
           } else {
-            alert('Cannot close the window after authentication.');
+            alert('Cannot close the window after authentication. No opener found.');
           }
         </script>
       `);
       return;
     }
 
-    const user = await this.authService.findOrCreateUser(req.user);
+    try {
+      const user = await this.authService.findOrCreateUser(req.user);
+      console.log('User found/created:', user); // 디버깅용
 
-    const accessToken = this.authService.generateJwtToken(user);
-    const refreshToken = this.authService.generateRefreshToken(user);
-    const userData = this.authService.formatUserData(user);
+      const accessToken = this.authService.generateJwtToken(user);
+      const refreshToken = this.authService.generateRefreshToken(user);
+      const userData = this.authService.formatUserData(user);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-    });
+      console.log('Tokens generated successfully'); // 디버깅용
 
-    res.setHeader('Authorization', `Bearer ${accessToken}`);
-    res.send(`
-      <script>
-        if (window.opener) {
-          window.opener.postMessage(
-            { status: 200, user: ${JSON.stringify(userData)}, token: "${accessToken}" },
-            '*'
-          );
-          window.close();
-        } else {
-          alert('Cannot close the window after authentication.');
-        }
-      </script>
-    `);
+      // HTTP 환경에서는 secure: false로 설정
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: false, // HTTP 환경에서는 false
+        sameSite: 'lax', // 'strict'에서 'lax'로 변경
+        domain: '.snowmuffingame.com', // 도메인 설정
+      });
+
+      res.setHeader('Authorization', `Bearer ${accessToken}`);
+      res.send(`
+        <script>
+          console.log('Steam authentication successful');
+          console.log('User data:', ${JSON.stringify(userData)});
+          console.log('Token:', "${accessToken}");
+          
+          if (window.opener) {
+            console.log('Sending message to opener');
+            window.opener.postMessage(
+              { 
+                status: 200, 
+                user: ${JSON.stringify(userData)}, 
+                token: "${accessToken}",
+                success: true
+              },
+              'http://se.snowmuffingame.com'
+            );
+            
+            // 짧은 지연 후 창 닫기
+            setTimeout(() => {
+              window.close();
+            }, 1000);
+          } else {
+            console.log('No opener found');
+            alert('Authentication successful but cannot close window. Please close manually.');
+            document.body.innerHTML = '<h2>로그인 성공!</h2><p>이 창을 닫아주세요.</p><p>Token: ${accessToken}</p>';
+          }
+        </script>
+      `);
+    } catch (error) {
+      console.error('Error in steamLoginReturn:', error); // 디버깅용
+      res.status(500).send(`
+        <script>
+          console.error('Server error during authentication');
+          if (window.opener) {
+            window.opener.postMessage(
+              { status: 500, error: 'Server error during authentication' },
+              'http://se.snowmuffingame.com'
+            );
+            window.close();
+          } else {
+            alert('Server error during authentication.');
+          }
+        </script>
+      `);
+    }
   }
 
   @Get('generate-test-token')
