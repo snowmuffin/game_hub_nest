@@ -43,7 +43,7 @@ export class ItemService {
       SELECT osi.item_id, osi.quantity, i.id, i.display_name, i.rarity, i.description, 
              i.category, i.icons, i.index_name
       FROM space_engineers.online_storage_items osi
-      INNER JOIN items i ON osi.item_id = i.id
+      INNER JOIN space_engineers.items i ON osi.item_id = i.id
       WHERE osi.storage_id = $1
     `;
     const items = await this.userRepository.query(storageItemsQuery, [
@@ -65,42 +65,6 @@ export class ItemService {
       `Fetched ${formattedItems.length} items for User ID=${userId}`,
     );
     return formattedItems;
-  }
-
-  private extractFileName(iconPath: any): string {
-    if (!iconPath) {
-      this.logger.warn('Icon path is empty or undefined.');
-      return '';
-    }
-
-    try {
-      if (Array.isArray(iconPath)) {
-        if (iconPath.length === 0) {
-          this.logger.warn('Icon path array is empty.');
-          return '';
-        }
-
-        const normalizedPath = iconPath[0].replace(/\\/g, '/');
-        const fileName = normalizedPath.split('/').pop();
-        return fileName || '';
-      }
-
-      if (typeof iconPath === 'string') {
-        const normalizedPath = iconPath.replace(/\\/g, '/');
-        const fileName = normalizedPath.split('/').pop();
-        return fileName || '';
-      }
-
-      this.logger.warn(
-        `Invalid icon path type: ${typeof iconPath}. Expected a string or array.`,
-      );
-      return '';
-    } catch (error) {
-      this.logger.warn(
-        `Failed to parse or extract file name from icon path: ${JSON.stringify(iconPath)}. Error: ${error.message}`,
-      );
-      return '';
-    }
   }
 
   async uploadItem(
@@ -167,7 +131,7 @@ export class ItemService {
 
       if (existingRecord.length > 0) {
         const updateQuery = `
-          UPDATE space_engineers.space_engineers.online_storage_items
+          UPDATE space_engineers.online_storage_items
           SET quantity = quantity + $3
           WHERE storage_id = (SELECT id FROM space_engineers.online_storage WHERE steam_id = $1)
             AND item_id = (SELECT id FROM space_engineers.items WHERE ${columnName} = $2)
@@ -179,7 +143,7 @@ export class ItemService {
         ]);
       } else {
         const insertQuery = `
-          INSERT INTO space_engineers.space_engineers.online_storage_items (storage_id, item_id, quantity)
+          INSERT INTO space_engineers.online_storage_items (storage_id, item_id, quantity)
           VALUES (
             (SELECT id FROM space_engineers.online_storage WHERE steam_id = $1),
             (SELECT id FROM space_engineers.items WHERE ${columnName} = $2),
@@ -218,7 +182,7 @@ export class ItemService {
 
     try {
       await this.userRepository.query(`
-        CREATE TABLE IF NOT EXISTS item_download_log (
+        CREATE TABLE IF NOT EXISTS space_engineers.item_download_log (
           id SERIAL PRIMARY KEY,
           storage_id INTEGER NOT NULL,
           item_id INTEGER NOT NULL,
@@ -264,7 +228,7 @@ export class ItemService {
     }
 
     await this.userRepository.query(
-      `INSERT INTO item_download_log (storage_id, item_id, quantity, status) VALUES ($1, $2, $3, 'PENDING')`,
+      `INSERT INTO space_engineers.item_download_log (storage_id, item_id, quantity, status) VALUES ($1, $2, $3, 'PENDING')`,
       [storageId, itemId, quantity]
     );
 
@@ -310,12 +274,12 @@ export class ItemService {
     const itemId = itemIdResult[0].id;
 
     await this.userRepository.query(
-      `UPDATE space_engineers.space_engineers.online_storage_items SET quantity = quantity - $1 WHERE storage_id = $2 AND item_id = $3`,
+      `UPDATE space_engineers.online_storage_items SET quantity = quantity - $1 WHERE storage_id = $2 AND item_id = $3`,
       [quantity, storageId, itemId]
     );
 
     await this.userRepository.query(
-      `UPDATE item_download_log SET status = 'CONFIRMED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
+      `UPDATE space_engineers.item_download_log SET status = 'CONFIRMED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
       [storageId, itemId]
     );
 
@@ -368,7 +332,7 @@ export class ItemService {
     const itemId = itemIdResult[0].id;
 
     await this.userRepository.query(
-      `UPDATE item_download_log SET status = 'CANCELED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
+      `UPDATE space_engineers.item_download_log SET status = 'CANCELED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
       [storageId, itemId]
     );
 
@@ -386,13 +350,49 @@ export class ItemService {
     };
   }
 
+  private extractFileName(iconPath: any): string {
+    if (!iconPath) {
+      this.logger.warn('Icon path is empty or undefined.');
+      return '';
+    }
+
+    try {
+      if (Array.isArray(iconPath)) {
+        if (iconPath.length === 0) {
+          this.logger.warn('Icon path array is empty.');
+          return '';
+        }
+
+        const normalizedPath = iconPath[0].replace(/\\/g, '/');
+        const fileName = normalizedPath.split('/').pop();
+        return fileName || '';
+      }
+
+      if (typeof iconPath === 'string') {
+        const normalizedPath = iconPath.replace(/\\/g, '/');
+        const fileName = normalizedPath.split('/').pop();
+        return fileName || '';
+      }
+
+      this.logger.warn(
+        `Invalid icon path type: ${typeof iconPath}. Expected a string or array.`,
+      );
+      return '';
+    } catch (error) {
+      this.logger.warn(
+        `Failed to parse or extract file name from icon path: ${JSON.stringify(iconPath)}. Error: ${error.message}`,
+      );
+      return '';
+    }
+  }
+
   async upgradeItem(steamId: string, targetItem: string): Promise<any> {
     this.logger.log(
       `Upgrading item: Steam ID=${steamId}, Target Item=${targetItem}`,
     );
     const blueprintQuery = `
       SELECT ingredient1, quantity1, ingredient2, quantity2, ingredient3, quantity3
-      FROM blue_prints
+      FROM space_engineers.blue_prints
       WHERE index_name = $1
     `;
     const blueprint = await this.userRepository.query(blueprintQuery, [
@@ -423,7 +423,7 @@ export class ItemService {
   async getBlueprints(): Promise<any> {
     this.logger.log(`Fetching blueprints`);
     const query = `
-      SELECT * FROM blue_prints
+      SELECT * FROM space_engineers.blue_prints
     `;
     const blueprints = await this.userRepository.query(query);
 
@@ -446,7 +446,7 @@ export class ItemService {
     const tableCheckQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' AND table_name = 'items'
+        WHERE table_schema = 'space_engineers' AND table_name = 'items'
       )
     `;
     const tableExistsResult = await this.userRepository.query(tableCheckQuery);
@@ -455,7 +455,7 @@ export class ItemService {
     if (!tableExists) {
       this.logger.warn(`'items' table does not exist. Creating the table...`);
       const createTableQuery = `
-        CREATE TABLE items (
+        CREATE TABLE space_engineers.items (
           id SERIAL PRIMARY KEY,
           display_name TEXT NOT NULL,
           rarity TEXT,
@@ -475,7 +475,7 @@ export class ItemService {
         FROM information_schema.table_constraints tc
         JOIN information_schema.constraint_column_usage ccu
           ON tc.constraint_name = ccu.constraint_name
-        WHERE tc.table_schema = 'public'
+        WHERE tc.table_schema = 'space_engineers'
           AND tc.table_name = 'items'
           AND tc.constraint_type = 'UNIQUE'
           AND ccu.column_name = 'index_name'
@@ -485,7 +485,7 @@ export class ItemService {
       if (!hasUnique) {
         this.logger.warn(`Adding UNIQUE constraint to items.index_name`);
         const addUniqueQuery = `
-          ALTER TABLE items
+          ALTER TABLE space_engineers.items
           ADD CONSTRAINT items_index_name_unique UNIQUE (index_name)
         `;
         try {
