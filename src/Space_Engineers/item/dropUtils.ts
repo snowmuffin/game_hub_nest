@@ -1,4 +1,4 @@
-import logger from './logger';
+import logger from '../../utils/logger';
 
 const dropTable: Record<string, number> = {
   PrototechFrame: 11, PrototechPanel: 4, PrototechCapacitor: 4, PrototechPropulsionUnit: 4,
