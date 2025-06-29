@@ -448,7 +448,7 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
 
     // 4. 인덱스 생성
     await queryRunner.createIndex(
-      'valheim_inventories',
+      'valheim.inventories',
       new TableIndex({
         name: 'idx_valheim_inventory_user_item',
         columnNames: ['user_id', 'item_id'],
@@ -458,11 +458,11 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // 인덱스 삭제
-    await queryRunner.dropIndex('valheim_inventories', 'idx_valheim_inventory_user_item');
+    await queryRunner.dropIndex('valheim.inventories', 'idx_valheim_inventory_user_item');
 
     // 테이블 삭제 (역순)
-    await queryRunner.dropTable('valheim_characters');
-    await queryRunner.dropTable('valheim_inventories');
-    await queryRunner.dropTable('valheim_items');
+    await queryRunner.dropTable('valheim.characters');
+    await queryRunner.dropTable('valheim.inventories');
+    await queryRunner.dropTable('valheim.items');
   }
 }
