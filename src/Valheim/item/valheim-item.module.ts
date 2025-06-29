@@ -1,11 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 import { ValheimItemController } from './valheim-item.controller';
 import { ValheimItemService } from './valheim-item.service';
 import { ValheimItem } from './valheim-item.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ValheimItem])],
+  imports: [
+    TypeOrmModule.forFeature([ValheimItem]),
+    JwtModule,
+    ConfigModule,
+  ],
   controllers: [ValheimItemController],
   providers: [ValheimItemService],
   exports: [ValheimItemService],
