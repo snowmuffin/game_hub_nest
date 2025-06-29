@@ -6,7 +6,7 @@ export class AddPrimaryKeyToUsersTable20250629000050 implements MigrationInterfa
     
     // id 컬럼에 PRIMARY KEY 제약조건 추가
     await queryRunner.query(`
-      ALTER TABLE spaceengineers.users 
+      ALTER TABLE users 
       ADD CONSTRAINT users_pkey PRIMARY KEY (id);
     `);
     
@@ -17,7 +17,7 @@ export class AddPrimaryKeyToUsersTable20250629000050 implements MigrationInterfa
     console.log('🔄 Removing primary key from users table...');
     
     await queryRunner.query(`
-      ALTER TABLE spaceengineers.users 
+      ALTER TABLE users 
       DROP CONSTRAINT IF EXISTS users_pkey;
     `);
     

@@ -61,7 +61,7 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
         columnNames: ['game_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'games',
-        referencedSchema: 'spaceengineers',
+        
         onDelete: 'SET NULL',
       })
     );

@@ -8,7 +8,7 @@ export class MigrateExistingWalletData20250629000500 implements MigrationInterfa
     const backupTables = await queryRunner.query(`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_schema = 'spaceengineers' 
+      WHERE table_schema = 'public' 
       AND table_name LIKE 'wallets_backup_%'
       ORDER BY table_name DESC
       LIMIT 1;
@@ -24,18 +24,18 @@ export class MigrateExistingWalletData20250629000500 implements MigrationInterfa
 
     // Space Engineers 게임 ID 가져오기
     const spaceEngineersGame = await queryRunner.query(`
-      SELECT id FROM spaceengineers.games WHERE code = 'space_engineers' LIMIT 1;
+      SELECT id FROM games WHERE code = 'space_engineers' LIMIT 1;
     `);
 
     if (spaceEngineersGame.length === 0) {
       console.log('⚠️ Space Engineers game not found, creating it first...');
       await queryRunner.query(`
-        INSERT INTO spaceengineers.games (code, name, description, is_active) 
+        INSERT INTO games (code, name, description, is_active) 
         VALUES ('space_engineers', 'Space Engineers', 'Legacy game entry', true);
       `);
       
       const newGame = await queryRunner.query(`
-        SELECT id FROM spaceengineers.games WHERE code = 'space_engineers' LIMIT 1;
+        SELECT id FROM games WHERE code = 'space_engineers' LIMIT 1;
       `);
       var gameId = newGame[0].id;
     } else {
@@ -44,18 +44,18 @@ export class MigrateExistingWalletData20250629000500 implements MigrationInterfa
 
     // Space Engineers Credits 화폐 ID 가져오기 (또는 생성)
     let currencyResult = await queryRunner.query(`
-      SELECT id FROM spaceengineers.currencies WHERE code = 'SE_CREDITS' LIMIT 1;
+      SELECT id FROM currencies WHERE code = 'SE_CREDITS' LIMIT 1;
     `);
 
     if (currencyResult.length === 0) {
       console.log('💰 Creating SE_CREDITS currency...');
       await queryRunner.query(`
-        INSERT INTO spaceengineers.currencies (game_id, code, name, symbol, type, decimal_places, is_active, created_at, updated_at) 
+        INSERT INTO currencies (game_id, code, name, symbol, type, decimal_places, is_active, created_at, updated_at) 
         VALUES (${gameId}, 'SE_CREDITS', 'Space Credits', 'SC', 'GAME_SPECIFIC', 2, true, now(), now());
       `);
       
       currencyResult = await queryRunner.query(`
-        SELECT id FROM spaceengineers.currencies WHERE code = 'SE_CREDITS' LIMIT 1;
+        SELECT id FROM currencies WHERE code = 'SE_CREDITS' LIMIT 1;
       `);
     }
 
@@ -76,7 +76,7 @@ export class MigrateExistingWalletData20250629000500 implements MigrationInterfa
         NULL as metadata,
         created_at,
         updated_at
-      FROM spaceengineers.${backupTableName}
+      FROM ${backupTableName}
       WHERE user_id IS NOT NULL;
     `);
 
@@ -86,7 +86,7 @@ export class MigrateExistingWalletData20250629000500 implements MigrationInterfa
       for (const wallet of convertedData) {
         try {
           await queryRunner.query(`
-            INSERT INTO spaceengineers.wallets (
+            INSERT INTO wallets (
               user_id, game_id, server_id, currency_id, balance, locked_balance, 
               is_active, metadata, created_at, updated_at
             ) VALUES (
@@ -109,7 +109,7 @@ export class MigrateExistingWalletData20250629000500 implements MigrationInterfa
 
     // 마이그레이션 성공 로그
     const finalCount = await queryRunner.query(`
-      SELECT COUNT(*) as count FROM spaceengineers.wallets;
+      SELECT COUNT(*) as count FROM wallets;
     `);
     
     console.log(`📊 Total wallets after migration: ${finalCount[0].count}`);
@@ -120,13 +120,13 @@ export class MigrateExistingWalletData20250629000500 implements MigrationInterfa
     
     // 마이그레이션된 데이터만 삭제 (Space Engineers 게임의 지갑들)
     const spaceEngineersGame = await queryRunner.query(`
-      SELECT id FROM spaceengineers.games WHERE code = 'space_engineers' LIMIT 1;
+      SELECT id FROM games WHERE code = 'space_engineers' LIMIT 1;
     `);
 
     if (spaceEngineersGame.length > 0) {
       const gameId = spaceEngineersGame[0].id;
       await queryRunner.query(`
-        DELETE FROM spaceengineers.wallets WHERE game_id = ${gameId};
+        DELETE FROM wallets WHERE game_id = ${gameId};
       `);
       console.log('✅ Migrated wallet data rolled back');
     }
