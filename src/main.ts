@@ -18,15 +18,38 @@ async function bootstrap() {
   const baseUrl = process.env.BASE_URL;
 
   // Enable CORS with specific settings
+  const isProduction = process.env.NODE_ENV === 'production';
   const allowedOrigins = process.env.Whitelist 
     ? process.env.Whitelist.split(',').map(origin => origin.trim())
-    : ['http://localhost:3000'];
+    : isProduction
+      ? [
+          'https://se.snowmuffingame.com',
+          'https://snowmuffingame.com'
+        ]
+      : [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'https://se.snowmuffingame.com',
+          'https://snowmuffingame.com'
+        ];
   
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // 서버간 요청 허용 (origin이 undefined인 경우)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log(`CORS 차단된 origin: ${origin}`);
+        callback(new Error('CORS 정책에 의해 차단됨'), false);
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+    exposedHeaders: ['Content-Length', 'X-Total-Count'],
+    optionsSuccessStatus: 200, // IE11 대응
   });
 
   // Register cookie-parser middleware
