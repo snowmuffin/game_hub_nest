@@ -19,9 +19,12 @@ async function bootstrap() {
 
   // Enable CORS with specific settings
   const isProduction = process.env.NODE_ENV === 'production';
-  const allowedOrigins = process.env.Whitelist 
-    ? process.env.Whitelist.split(',').map(origin => origin.trim())
-    : isProduction
+  let allowedOrigins: string[] = [];
+  
+  if (process.env.Whitelist) {
+    allowedOrigins = process.env.Whitelist.split(',').map(origin => origin.trim());
+  } else {
+    allowedOrigins = isProduction
       ? [
           'https://se.snowmuffingame.com',
           'https://snowmuffingame.com'
@@ -32,24 +35,34 @@ async function bootstrap() {
           'https://se.snowmuffingame.com',
           'https://snowmuffingame.com'
         ];
+  }
+  
+  // 항상 se.snowmuffingame.com 포함
+  if (!allowedOrigins.includes('https://se.snowmuffingame.com')) {
+    allowedOrigins.push('https://se.snowmuffingame.com');
+  }
+  
+  console.log('허용된 CORS origins:', allowedOrigins);
   
   app.enableCors({
-    origin: (origin, callback) => {
-      // 서버간 요청 허용 (origin이 undefined인 경우)
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log(`CORS 차단된 origin: ${origin}`);
-        callback(new Error('CORS 정책에 의해 차단됨'), false);
-      }
-    },
+    origin: allowedOrigins,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+    allowedHeaders: [
+      'Accept',
+      'Accept-Language',
+      'Content-Language',
+      'Content-Type',
+      'Authorization', 
+      'Cookie', 
+      'X-Requested-With',
+      'X-HTTP-Method-Override',
+      'Cache-Control',
+      'Pragma'
+    ],
     exposedHeaders: ['Content-Length', 'X-Total-Count'],
-    optionsSuccessStatus: 200, // IE11 대응
+    optionsSuccessStatus: 200,
+    preflightContinue: false,
   });
 
   // Register cookie-parser middleware
