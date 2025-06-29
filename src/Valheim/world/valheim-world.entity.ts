@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Up
 import { GameServer } from '../../entities/game-server.entity';
 import { ValheimCharacter } from '../character/valheim-character.entity';
 
-@Entity('valheim_worlds')
+@Entity({ name: 'worlds', schema: 'valheim' })
 export class ValheimWorld {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -64,7 +64,7 @@ export class ValheimWorld {
   characters: ValheimCharacter[];
 }
 
-@Entity('valheim_biomes')
+@Entity({ name: 'biomes', schema: 'valheim' })
 export class ValheimBiome {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -105,7 +105,7 @@ export class ValheimBiome {
   world: ValheimWorld;
 }
 
-@Entity('valheim_boss_encounters')
+@Entity({ name: 'boss_encounters', schema: 'valheim' })
 export class ValheimBossEncounter {
   @PrimaryGeneratedColumn('uuid')
   id: string;

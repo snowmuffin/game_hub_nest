@@ -7,14 +7,31 @@ set -e  # 오류 발생시 스크립트 중단
 echo "🚀 Starting deployment process..."
 
 # 환경 변수 확인
-if [ ! -f .env ]; then
-    echo "❌ .env file not found! Please create .env file from .env.example"
+ENV_FILE=".env"
+if [ "$NODE_ENV" = "production" ]; then
+    ENV_FILE=".env.production"
+fi
+
+if [ ! -f $ENV_FILE ]; then
+    echo "❌ $ENV_FILE file not found! Please create environment file"
     exit 1
+fi
+
+echo "📋 Using environment file: $ENV_FILE"
+
+# Git 최신 상태로 업데이트 (프로덕션에서)
+if [ "$NODE_ENV" = "production" ]; then
+    echo "📥 Pulling latest changes..."
+    git pull origin main
 fi
 
 # Node.js 의존성 설치
 echo "📦 Installing dependencies..."
 npm ci --production=false
+
+# 데이터베이스 마이그레이션 실행
+echo "🗄️ Running database migrations..."
+npm run migration:run
 
 # TypeScript 빌드
 echo "🔨 Building application..."
@@ -45,9 +62,36 @@ pm2 status
 # PM2 자동 시작 설정
 echo "🔄 Setting up PM2 startup..."
 pm2 save
-pm2 startup
+
+# 프로덕션 환경에서만 startup 설정
+if [ "$NODE_ENV" = "production" ]; then
+    pm2 startup
+fi
+
+# Health check
+echo "🏥 Performing health check..."
+sleep 10
+
+# 여러 번 시도하여 health check
+for i in {1..5}; do
+    echo "Attempt $i/5: Checking health..."
+    if curl -f http://localhost:4000/health; then
+        echo "✅ Health check passed!"
+        break
+    else
+        echo "⚠️ Health check failed, retrying in 5 seconds..."
+        sleep 5
+        if [ $i -eq 5 ]; then
+            echo "❌ Health check failed after 5 attempts"
+            echo "📝 Check logs: pm2 logs game-hub-nest"
+            exit 1
+        fi
+    fi
+done
 
 echo "✅ Deployment completed successfully!"
+echo "📊 Check status: pm2 status"
+echo "📝 Check logs: pm2 logs game-hub-nest"
 echo "🌐 Application is running on port 4000"
 echo "📝 Check logs with: pm2 logs game-hub-nest"
 echo "📊 Check status with: pm2 status"

@@ -7,7 +7,8 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
     // 1. Valheim Items 테이블 생성
     await queryRunner.createTable(
       new Table({
-        name: 'valheim_items',
+        name: 'items',
+        schema: 'valheim',
         columns: [
           {
             name: 'id',
@@ -114,7 +115,8 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
     // 2. Valheim Inventories 테이블 생성
     await queryRunner.createTable(
       new Table({
-        name: 'valheim_inventories',
+        name: 'inventories',
+        schema: 'valheim',
         columns: [
           {
             name: 'id',
@@ -203,7 +205,8 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
     // 3. Valheim Characters 테이블 생성
     await queryRunner.createTable(
       new Table({
-        name: 'valheim_characters',
+        name: 'characters',
+        schema: 'valheim',
         columns: [
           {
             name: 'id',

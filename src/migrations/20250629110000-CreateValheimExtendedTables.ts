@@ -7,7 +7,8 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     // 1. Valheim Buildings 테이블 생성
     await queryRunner.createTable(
       new Table({
-        name: 'valheim_buildings',
+        name: 'buildings',
+        schema: 'valheim',
         columns: [
           {
             name: 'id',
@@ -120,7 +121,8 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     // 2. Valheim Worlds 테이블 생성
     await queryRunner.createTable(
       new Table({
-        name: 'valheim_worlds',
+        name: 'worlds',
+        schema: 'valheim',
         columns: [
           {
             name: 'id',
@@ -228,7 +230,8 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     // 3. Valheim Biomes 테이블 생성
     await queryRunner.createTable(
       new Table({
-        name: 'valheim_biomes',
+        name: 'biomes',
+        schema: 'valheim',
         columns: [
           {
             name: 'id',
@@ -304,7 +307,8 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     // 4. Valheim Boss Encounters 테이블 생성
     await queryRunner.createTable(
       new Table({
-        name: 'valheim_boss_encounters',
+        name: 'boss_encounters',
+        schema: 'valheim',
         columns: [
           {
             name: 'id',
@@ -390,7 +394,8 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     // 5. Valheim Character Skills 테이블 생성
     await queryRunner.createTable(
       new Table({
-        name: 'valheim_character_skills',
+        name: 'character_skills',
+        schema: 'valheim',
         columns: [
           {
             name: 'id',
