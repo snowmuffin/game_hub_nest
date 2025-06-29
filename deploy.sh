@@ -19,6 +19,18 @@ fi
 
 echo "📋 Using environment file: $ENV_FILE"
 
+# Node.js 버전 확인
+NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+echo "📊 Current Node.js version: $(node --version)"
+
+if [ "$NODE_VERSION" -lt 20 ]; then
+    echo "❌ Node.js 20 or higher is required. Current version: $(node --version)"
+    echo "💡 Please run: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs"
+    exit 1
+fi
+
+echo "✅ Node.js version check passed"
+
 # Git 최신 상태로 업데이트 (프로덕션에서)
 if [ "$NODE_ENV" = "production" ]; then
     echo "📥 Pulling latest changes..."
