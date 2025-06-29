@@ -17,10 +17,14 @@ Game Hub is a RESTful API backend built with NestJS and TypeORM for managing use
 
 ## Features
 - User authentication with JWT and Steam OAuth
+- **Multi-game wallet system** with currency management
+- **Multi-game support**: Space Engineers & Valheim with dedicated schemas
+- **Hybrid schema architecture**: Common data in public, game-specific data in separate schemas
 - CRUD operations for items, storage and marketplace
 - Role-based access control via guards and decorators
 - Centralized logging middleware
 - Database migrations managed by TypeORM
+- Safe migration tools with automatic backup
 
 ## Architecture
 This project is implemented with:
@@ -57,6 +61,25 @@ STEAM_API_KEY=your_steam_api_key
 ```
 
 ## Database Migrations
+
+### Safe Migration Tool (Recommended)
+Use the safe migration script that automatically backs up your data:
+
+```bash
+# Step-by-step migration (recommended)
+./safe-migration.sh step
+
+# Full migration (after testing)
+./safe-migration.sh all
+
+# Rollback if needed
+./safe-migration.sh rollback
+
+# Restore from backup
+./safe-migration.sh restore
+```
+
+### Manual Migration Commands
 Generate and apply migrations with the npm scripts:
 ```bash
 # Generate a new migration (provide a name)
@@ -68,6 +91,55 @@ npm run migration:run
 # Revert last migration
 npm run migration:revert
 ```
+
+### 🛡️ Important Notes
+- **Always backup your database before running migrations**
+- Test migrations in development environment first
+- Check `MIGRATION_SAFETY_GUIDE.md` for detailed instructions
+- Wallet system migration will backup existing data automatically
+
+### New Wallet System
+The new multi-game wallet system includes:
+- Support for multiple games (Space Engineers, Valheim, etc.)
+- Server-specific wallets within games
+- Multiple currencies (game-specific + global currencies)
+- Complete transaction history tracking
+- Safe migration from existing wallet data
+
+### Game-Specific Modules
+
+### Game-Specific Modules
+
+#### Space Engineers (space_engineers schema)
+- Damage logs tracking
+- Item management
+- User profiles
+
+#### Valheim (valheim schema)
+- Character management with skills system
+- Item and inventory management
+- Building and construction tracking
+- World and biome exploration
+- Boss encounter tracking
+- Skills progression system
+
+### Database Architecture
+
+The project uses a **hybrid schema approach**:
+
+- **Public Schema**: Common data (users, games, wallets, currencies, transactions)
+- **Game Schemas**: Game-specific data isolated in dedicated schemas
+  - `space_engineers.*` - All Space Engineers specific tables
+  - `valheim.*` - All Valheim specific tables
+  - `minecraft.*` - Ready for future Minecraft integration
+
+This design provides:
+- ✅ **Data Isolation**: Game data completely separated
+- ✅ **Shared Resources**: Common user and wallet data accessible across games  
+- ✅ **Scalability**: Easy to add new games with dedicated schemas
+- ✅ **Security**: Fine-grained access control per game
+
+See `WALLET_SYSTEM.md` for detailed documentation.
 
 ## Running the Application
 ```bash
@@ -96,12 +168,21 @@ npm run test:cov
 src/
 ├── auth/                  # Authentication module (JWT & Steam)
 ├── entities/              # TypeORM entity definitions
+├── game/                  # Game management module
+├── wallet/                # Multi-game wallet system
 ├── middleware/            # Application-wide middleware
 ├── migrations/            # Database migration files
-├── Space_Engineers/       # Game-specific modules
+├── Space_Engineers/       # Space Engineers game modules
 │   ├── damage-logs/       # Damage log API
 │   ├── item/              # Item management API
 │   └── user/              # User profile API
+├── Valheim/               # Valheim game modules
+│   ├── building/          # Building management API
+│   ├── character/         # Character management API
+│   ├── inventory/         # Inventory management API
+│   ├── item/              # Item management API
+│   ├── skills/            # Skills progression API
+│   └── world/             # World & biome management API
 ├── utils/                 # Helper functions and utilities
 ├── app.module.ts          # Root module
 ├── main.ts                # Entry point
