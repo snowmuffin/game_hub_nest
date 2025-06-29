@@ -7,8 +7,8 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
     if (walletsTableExists) {
       console.log('📋 Backing up existing wallets table...');
       await queryRunner.query(`
-        CREATE TABLE IF NOT EXISTS spaceengineers.wallets_backup_${Date.now()} AS 
-        SELECT * FROM spaceengineers.wallets;
+        CREATE TABLE IF NOT EXISTS wallets_backup_${Date.now()} AS 
+        SELECT * FROM wallets;
       `);
       console.log('✅ Wallets backup completed!');
       
@@ -22,7 +22,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
     await queryRunner.createTable(
       new Table({
         name: 'wallets',
-        schema: 'spaceengineers',
+        
         columns: [
           { name: 'id', type: 'bigint', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
           { name: 'user_id', type: 'int', isNullable: false },
@@ -45,7 +45,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
     await queryRunner.createTable(
       new Table({
         name: 'wallet_transactions',
-        schema: 'spaceengineers',
+        
         columns: [
           { name: 'id', type: 'bigint', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
           { name: 'wallet_id', type: 'bigint', isNullable: false },
@@ -84,7 +84,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
         columnNames: ['user_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'users',
-        referencedSchema: 'spaceengineers',
+        
         onDelete: 'CASCADE',
       })
     );
@@ -96,7 +96,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
         columnNames: ['game_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'games',
-        referencedSchema: 'spaceengineers',
+        
         onDelete: 'CASCADE',
       })
     );
@@ -108,7 +108,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
         columnNames: ['server_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'game_servers',
-        referencedSchema: 'spaceengineers',
+        
         onDelete: 'CASCADE',
       })
     );
@@ -120,7 +120,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
         columnNames: ['currency_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'currencies',
-        referencedSchema: 'spaceengineers',
+        
         onDelete: 'RESTRICT',
       })
     );
@@ -132,7 +132,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
         columnNames: ['wallet_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'wallets',
-        referencedSchema: 'spaceengineers',
+        
         onDelete: 'CASCADE',
       })
     );
@@ -144,7 +144,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
         columnNames: ['user_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'users',
-        referencedSchema: 'spaceengineers',
+        
         onDelete: 'CASCADE',
       })
     );
@@ -201,7 +201,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
     const backupTables = await queryRunner.query(`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_schema = 'spaceengineers' 
+      WHERE table_schema = 'public' 
       AND table_name LIKE 'wallets_backup_%'
       ORDER BY table_name DESC
       LIMIT 1;
@@ -212,8 +212,8 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
       console.log(`🔄 Restoring from backup: ${backupTableName}`);
       
       await queryRunner.query(`
-        CREATE TABLE spaceengineers.wallets AS 
-        SELECT * FROM spaceengineers.${backupTableName};
+        CREATE TABLE wallets AS 
+        SELECT * FROM ${backupTableName};
       `);
       
       console.log('✅ Wallets table restored from backup');
@@ -224,7 +224,7 @@ export class UpdateWalletsTable20250629000300 implements MigrationInterface {
       await queryRunner.createTable(
         new Table({
           name: 'wallets',
-          schema: 'spaceengineers',
+          
           columns: [
             { name: 'id', type: 'bigint', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
             { name: 'user_id', type: 'int', isNullable: false },

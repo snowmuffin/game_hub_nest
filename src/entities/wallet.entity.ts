@@ -4,7 +4,7 @@ import { Game } from './game.entity';
 import { GameServer } from './game-server.entity';
 import { Currency } from './currency.entity';
 
-@Entity({ name: 'wallets', schema: 'spaceengineers' })
+@Entity({ name: 'wallets' })
 @Index(['user_id', 'game_id', 'server_id', 'currency_id'], { unique: true }) // 유저+게임+서버+화폐 조합의 유일성 보장
 export class Wallet {
   @PrimaryGeneratedColumn('increment')

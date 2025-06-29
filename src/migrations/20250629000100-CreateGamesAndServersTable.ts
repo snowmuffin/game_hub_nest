@@ -6,7 +6,6 @@ export class CreateGamesAndServersTable20250629000100 implements MigrationInterf
     await queryRunner.createTable(
       new Table({
         name: 'games',
-        schema: 'spaceengineers',
         columns: [
           { name: 'id', type: 'int', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
           { name: 'code', type: 'varchar', length: '50', isUnique: true },
@@ -25,7 +24,6 @@ export class CreateGamesAndServersTable20250629000100 implements MigrationInterf
     await queryRunner.createTable(
       new Table({
         name: 'game_servers',
-        schema: 'spaceengineers',
         columns: [
           { name: 'id', type: 'int', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
           { name: 'game_id', type: 'int', isNullable: false },
@@ -50,7 +48,6 @@ export class CreateGamesAndServersTable20250629000100 implements MigrationInterf
         columnNames: ['game_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'games',
-        referencedSchema: 'spaceengineers',
         onDelete: 'CASCADE',
       })
     );

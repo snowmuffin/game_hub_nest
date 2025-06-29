@@ -18,6 +18,7 @@ Game Hub is a RESTful API backend built with NestJS and TypeORM for managing use
 ## Features
 - User authentication with JWT and Steam OAuth
 - **Multi-game wallet system** with currency management
+- **Multi-game support**: Space Engineers & Valheim
 - CRUD operations for items, storage and marketplace
 - Role-based access control via guards and decorators
 - Centralized logging middleware
@@ -98,11 +99,26 @@ npm run migration:revert
 
 ### New Wallet System
 The new multi-game wallet system includes:
-- Support for multiple games (Space Engineers, Minecraft, etc.)
+- Support for multiple games (Space Engineers, Valheim, etc.)
 - Server-specific wallets within games
 - Multiple currencies (game-specific + global currencies)
 - Complete transaction history tracking
 - Safe migration from existing wallet data
+
+### Game-Specific Modules
+
+#### Space Engineers
+- Damage logs tracking
+- Item management
+- User profiles
+
+#### Valheim
+- Character management with skills system
+- Item and inventory management
+- Building and construction tracking
+- World and biome exploration
+- Boss encounter tracking
+- Skills progression system
 
 See `WALLET_SYSTEM.md` for detailed documentation.
 
@@ -137,10 +153,17 @@ src/
 ├── wallet/                # Multi-game wallet system
 ├── middleware/            # Application-wide middleware
 ├── migrations/            # Database migration files
-├── Space_Engineers/       # Game-specific modules
+├── Space_Engineers/       # Space Engineers game modules
 │   ├── damage-logs/       # Damage log API
 │   ├── item/              # Item management API
 │   └── user/              # User profile API
+├── Valheim/               # Valheim game modules
+│   ├── building/          # Building management API
+│   ├── character/         # Character management API
+│   ├── inventory/         # Inventory management API
+│   ├── item/              # Item management API
+│   ├── skills/            # Skills progression API
+│   └── world/             # World & biome management API
 ├── utils/                 # Helper functions and utilities
 ├── app.module.ts          # Root module
 ├── main.ts                # Entry point

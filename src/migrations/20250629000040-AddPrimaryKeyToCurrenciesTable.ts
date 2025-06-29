@@ -6,7 +6,7 @@ export class AddPrimaryKeyToCurrenciesTable20250629000040 implements MigrationIn
     
     // currencies 테이블에 PRIMARY KEY 추가
     await queryRunner.query(`
-      ALTER TABLE spaceengineers.currencies 
+      ALTER TABLE currencies 
       ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
     `);
     
@@ -18,7 +18,7 @@ export class AddPrimaryKeyToCurrenciesTable20250629000040 implements MigrationIn
     
     // PRIMARY KEY 제거
     await queryRunner.query(`
-      ALTER TABLE spaceengineers.currencies 
+      ALTER TABLE currencies 
       DROP CONSTRAINT currencies_pkey;
     `);
     

@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { User } from '../user/user.entity';
 import { Wallet } from './wallet.entity';
 
-@Entity({ name: 'wallet_transactions', schema: 'spaceengineers' })
+@Entity({ name: 'wallet_transactions' })
 @Index(['wallet_id', 'created_at'])
 @Index(['user_id', 'created_at'])
 @Index(['transaction_type', 'created_at'])

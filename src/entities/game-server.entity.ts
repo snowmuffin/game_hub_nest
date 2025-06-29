@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 
-@Entity({ name: 'game_servers', schema: 'spaceengineers' })
+@Entity({ name: 'game_servers' })
 export class GameServer {
   @PrimaryGeneratedColumn()
   id: number;
