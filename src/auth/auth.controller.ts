@@ -3,12 +3,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { UserService } from '../user/user.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly jwtService: JwtService,
+    private readonly userService: UserService,
   ) {}
 
   @Get('steam')
@@ -111,11 +113,38 @@ export class AuthController {
   }
 
   @Get('generate-test-token')
-  generateTestToken(@Query('steam_id') steamId: string, @Query('username') username: string) {
-    const user = { id: 1, steam_id: steamId, username }; 
-    return {
-      accessToken: this.authService.generateJwtToken(user),
-    };
+  async generateTestToken(@Query('steam_id') steamId: string, @Query('username') username: string) {
+    try {
+      // 테스트 사용자를 생성하거나 기존 사용자 조회
+      const testSteamId = steamId || 'test_user_999999';
+      const testUsername = username || 'TestUser';
+      
+      // 데이터베이스에서 테스트 사용자 조회 또는 생성
+      let testUser = await this.userService.findBySteamId(testSteamId);
+      
+      if (!testUser) {
+        // 테스트 사용자가 없으면 생성
+        testUser = await this.userService.createTestUser(testSteamId, testUsername);
+      }
+      
+      const user = { 
+        id: testUser.id, 
+        steam_id: testUser.steam_id, 
+        username: testUser.username 
+      };
+      
+      return {
+        accessToken: this.authService.generateJwtToken(user),
+        user: {
+          id: testUser.id,
+          steam_id: testUser.steam_id,
+          username: testUser.username
+        }
+      };
+    } catch (error) {
+      console.error('Error generating test token:', error);
+      throw new Error('Failed to generate test token');
+    }
   }
 
   @Post('refresh')

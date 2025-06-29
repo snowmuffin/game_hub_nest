@@ -5,9 +5,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { SpaceEngineersModule } from './Space_Engineers/space-engineers.module';
+import { ValheimModule } from './Valheim/valheim.module';
 import { LoggingMiddleware } from './middleware/logging.middleware';
 import { ItemModule } from './Space_Engineers/item/item.module'; // 예시로 ItemModule 추가
 import { UserModule } from './user/user.module';
+import { WalletModule } from './wallet/wallet.module';
+import { GameModule } from './game/game.module';
 
 @Module({
   imports: [
@@ -27,8 +30,11 @@ import { UserModule } from './user/user.module';
     }),
     AuthModule,
     SpaceEngineersModule,
+    ValheimModule,
     ItemModule,
     UserModule,
+    WalletModule,
+    GameModule,
   ],
   controllers: [AppController],
   providers: [AppService],
