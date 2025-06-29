@@ -8,6 +8,8 @@ import { SpaceEngineersModule } from './Space_Engineers/space-engineers.module';
 import { LoggingMiddleware } from './middleware/logging.middleware';
 import { ItemModule } from './Space_Engineers/item/item.module'; // 예시로 ItemModule 추가
 import { UserModule } from './user/user.module';
+import { WalletModule } from './wallet/wallet.module';
+import { GameModule } from './game/game.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { UserModule } from './user/user.module';
     SpaceEngineersModule,
     ItemModule,
     UserModule,
+    WalletModule,
+    GameModule,
   ],
   controllers: [AppController],
   providers: [AppService],

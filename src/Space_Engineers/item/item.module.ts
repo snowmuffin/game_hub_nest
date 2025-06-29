@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ItemService } from './item.service';
 import { ItemController } from './item.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@entities/user.entity';
+import { User } from 'src/user/user.entity';
 import { JwtModule } from '@nestjs/jwt'; // JwtModule 추가
 
 @Module({
