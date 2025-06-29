@@ -188,12 +188,14 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
           {
             columnNames: ['user_id'],
             referencedTableName: 'users',
+            referencedSchema: 'public',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
           {
             columnNames: ['item_id'],
-            referencedTableName: 'valheim_items',
+            referencedTableName: 'items',
+            referencedSchema: 'valheim',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
@@ -435,6 +437,7 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
           {
             columnNames: ['user_id'],
             referencedTableName: 'users',
+            referencedSchema: 'public',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
