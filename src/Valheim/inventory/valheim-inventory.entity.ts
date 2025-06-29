@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { User } from '../../user/user.entity';
 import { ValheimItem, ValheimItemQuality } from '../item/valheim-item.entity';
 
-@Entity('valheim_inventories')
+@Entity({ name: 'inventories', schema: 'valheim' })
 @Index(['user_id', 'item_id'], { unique: false })
 export class ValheimInventory {
   @PrimaryGeneratedColumn('increment')

@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { User } from '../../user/user.entity';
 import { ValheimWorld } from '../world/valheim-world.entity';
 
-@Entity('valheim_characters')
+@Entity({ name: 'characters', schema: 'valheim' })
 export class ValheimCharacter {
   @PrimaryGeneratedColumn('increment')
   id: number;

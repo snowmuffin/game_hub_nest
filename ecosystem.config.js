@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'game-hub-nest',
       script: 'dist/main.js',
-      instances: 1, // 또는 'max'로 설정하여 CPU 코어 수만큼 인스턴스 생성
+      instances: 1, // 시작은 1개 인스턴스로
       exec_mode: 'cluster',
       autorestart: true,
       watch: false,
@@ -26,14 +26,19 @@ module.exports = {
       out_file: './logs/out.log',
       error_file: './logs/error.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
       
       // 재시작 정책
       restart_delay: 4000,
       max_restarts: 10,
       min_uptime: '10s',
       
-      // 환경변수 파일 로드
-      env_file: '.env'
+      // 환경변수 파일 로드 (환경에 따라)
+      env_file: process.env.NODE_ENV === 'production' ? '.env.production' : '.env',
+      
+      // 모니터링
+      monitoring: false,
+      pmx: false
     }
   ]
 };

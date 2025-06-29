@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
 import { ValheimCharacter } from '../character/valheim-character.entity';
 
-@Entity('valheim_character_skills')
+@Entity({ name: 'character_skills', schema: 'valheim' })
 export class ValheimCharacterSkill {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Up
 import { User } from '../../user/user.entity';
 import { GameServer } from '../../entities/game-server.entity';
 
-@Entity('valheim_buildings')
+@Entity({ name: 'buildings', schema: 'valheim' })
 export class ValheimBuilding {
   @PrimaryGeneratedColumn('uuid')
   id: string;

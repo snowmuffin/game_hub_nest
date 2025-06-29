@@ -18,7 +18,8 @@ Game Hub is a RESTful API backend built with NestJS and TypeORM for managing use
 ## Features
 - User authentication with JWT and Steam OAuth
 - **Multi-game wallet system** with currency management
-- **Multi-game support**: Space Engineers & Valheim
+- **Multi-game support**: Space Engineers & Valheim with dedicated schemas
+- **Hybrid schema architecture**: Common data in public, game-specific data in separate schemas
 - CRUD operations for items, storage and marketplace
 - Role-based access control via guards and decorators
 - Centralized logging middleware
@@ -107,18 +108,36 @@ The new multi-game wallet system includes:
 
 ### Game-Specific Modules
 
-#### Space Engineers
+### Game-Specific Modules
+
+#### Space Engineers (space_engineers schema)
 - Damage logs tracking
 - Item management
 - User profiles
 
-#### Valheim
+#### Valheim (valheim schema)
 - Character management with skills system
 - Item and inventory management
 - Building and construction tracking
 - World and biome exploration
 - Boss encounter tracking
 - Skills progression system
+
+### Database Architecture
+
+The project uses a **hybrid schema approach**:
+
+- **Public Schema**: Common data (users, games, wallets, currencies, transactions)
+- **Game Schemas**: Game-specific data isolated in dedicated schemas
+  - `space_engineers.*` - All Space Engineers specific tables
+  - `valheim.*` - All Valheim specific tables
+  - `minecraft.*` - Ready for future Minecraft integration
+
+This design provides:
+- ✅ **Data Isolation**: Game data completely separated
+- ✅ **Shared Resources**: Common user and wallet data accessible across games  
+- ✅ **Scalability**: Easy to add new games with dedicated schemas
+- ✅ **Security**: Fine-grained access control per game
 
 See `WALLET_SYSTEM.md` for detailed documentation.
 
