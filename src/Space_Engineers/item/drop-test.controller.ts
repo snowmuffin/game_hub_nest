@@ -69,7 +69,7 @@ export class DropTestController {
     const directDbResults: (string | null)[] = [];
 
     for (let i = 0; i < iterations; i++) {
-      legacyResults.push(getDrop(damage, mult, maxRarity));
+      legacyResults.push(await getDrop(damage, mult, maxRarity));
       dbResults.push(await getDropFromDB(damage, mult, maxRarity));
       directDbResults.push(await this.dropTableService.calculateGameDrop(damage, mult, maxRarity));
     }
