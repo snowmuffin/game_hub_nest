@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'game-hub-nest',
-      script: 'dist/main.js',
+      script: 'dist/src/main.js',
       instances: 1, // 시작은 1개 인스턴스로
       exec_mode: 'cluster',
       autorestart: true,
