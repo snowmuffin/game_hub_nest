@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { SpaceEngineersModule } from './Space_Engineers/space-engineers.module';
 import { ValheimModule } from './Valheim/valheim.module';
+import { MinecraftModule } from './Minecraft/minecraft.module';
 import { LoggingMiddleware } from './middleware/logging.middleware';
 import { ItemModule } from './Space_Engineers/item/item.module'; // 예시로 ItemModule 추가
 import { UserModule } from './user/user.module';
@@ -31,6 +32,7 @@ import { GameModule } from './game/game.module';
     AuthModule,
     SpaceEngineersModule,
     ValheimModule,
+    MinecraftModule,
     ItemModule,
     UserModule,
     WalletModule,

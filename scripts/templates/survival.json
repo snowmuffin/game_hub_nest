@@ -1,0 +1,38 @@
+{
+  "name": "Survival Game Template",
+  "description": "Survival game module with base building and resource management",
+  "game": {
+    "playerIdField": "player_id",
+    "playerIdType": "TEXT",
+    "supportsMultiplayer": true,
+    "hasInventorySystem": true,
+    "hasPlayerStats": true,
+    "hasBaseBuilding": true,
+    "hasResourceManagement": true
+  },
+  "modules": [
+    {
+      "name": "base",
+      "displayName": "Base Management",
+      "description": "Manage player bases and structures",
+      "enabled": true,
+      "dependencies": [
+        "item"
+      ],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get base information",
+          "requiresAuth": true
+        },
+        {
+          "method": "POST",
+          "path": "/build",
+          "description": "Build structure",
+          "requiresAuth": true
+        }
+      ]
+    }
+  ]
+}

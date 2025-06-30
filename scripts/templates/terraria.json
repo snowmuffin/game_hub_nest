@@ -1,0 +1,246 @@
+{
+  "name": "Terraria Template",
+  "description": "Terraria-specific module with items, world, and character management",
+  "game": {
+    "playerIdField": "character_name",
+    "playerIdType": "TEXT",
+    "supportsMultiplayer": true,
+    "hasInventorySystem": true,
+    "hasPlayerStats": true,
+    "hasAchievements": false,
+    "hasServerInfo": true,
+    "hasWorldData": true,
+    "supportsMods": true,
+    "hasCharacterProgression": true
+  },
+  "modules": [
+    {
+      "name": "item",
+      "displayName": "Item Management",
+      "description": "Manage Terraria items and player inventory",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get player inventory",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "POST",
+          "path": "/spawn",
+          "description": "Spawn item for player",
+          "requiresAuth": true,
+          "rateLimited": true,
+          "adminOnly": true
+        },
+        {
+          "method": "GET",
+          "path": "/recipes",
+          "description": "Get crafting recipes",
+          "requiresAuth": false,
+          "rateLimited": false
+        },
+        {
+          "method": "GET",
+          "path": "/wiki/:itemId",
+          "description": "Get item wiki information",
+          "requiresAuth": false,
+          "rateLimited": false
+        }
+      ]
+    },
+    {
+      "name": "character",
+      "displayName": "Character Management",
+      "description": "Manage Terraria character progression and stats",
+      "enabled": true,
+      "dependencies": ["item"],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get character information",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "POST",
+          "path": "/backup",
+          "description": "Backup character data",
+          "requiresAuth": true,
+          "rateLimited": true
+        },
+        {
+          "method": "PUT",
+          "path": "/stats",
+          "description": "Update character stats",
+          "requiresAuth": true,
+          "rateLimited": true
+        },
+        {
+          "method": "GET",
+          "path": "/progression",
+          "description": "Get character progression milestones",
+          "requiresAuth": true,
+          "rateLimited": false
+        }
+      ]
+    },
+    {
+      "name": "world",
+      "displayName": "World Management",
+      "description": "Manage Terraria world data and events",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/info",
+          "description": "Get world information",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "GET",
+          "path": "/events",
+          "description": "Get current world events",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "POST",
+          "path": "/event/trigger",
+          "description": "Trigger world event",
+          "requiresAuth": true,
+          "rateLimited": true,
+          "adminOnly": true
+        }
+      ]
+    }
+  ],
+  "database": {
+    "tables": [
+      {
+        "name": "items",
+        "description": "Terraria items database",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "item_id", "type": "INTEGER NOT NULL UNIQUE" },
+          { "name": "name", "type": "TEXT NOT NULL" },
+          { "name": "item_type", "type": "TEXT" },
+          { "name": "damage", "type": "INTEGER DEFAULT 0" },
+          { "name": "defense", "type": "INTEGER DEFAULT 0" },
+          { "name": "use_time", "type": "INTEGER" },
+          { "name": "knockback", "type": "FLOAT DEFAULT 0" },
+          { "name": "crit_chance", "type": "INTEGER DEFAULT 0" },
+          { "name": "value", "type": "INTEGER DEFAULT 0" },
+          { "name": "rarity", "type": "INTEGER DEFAULT 0" },
+          { "name": "max_stack", "type": "INTEGER DEFAULT 1" },
+          { "name": "is_consumable", "type": "BOOLEAN DEFAULT false" },
+          { "name": "is_accessory", "type": "BOOLEAN DEFAULT false" },
+          { "name": "tooltip", "type": "TEXT" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      },
+      {
+        "name": "characters",
+        "description": "Terraria character data",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "user_id", "type": "INTEGER NOT NULL" },
+          { "name": "character_name", "type": "TEXT NOT NULL" },
+          { "name": "max_health", "type": "INTEGER DEFAULT 100" },
+          { "name": "max_mana", "type": "INTEGER DEFAULT 20" },
+          { "name": "difficulty", "type": "INTEGER DEFAULT 0" },
+          { "name": "hair_style", "type": "INTEGER DEFAULT 0" },
+          { "name": "hair_color", "type": "JSONB" },
+          { "name": "skin_color", "type": "JSONB" },
+          { "name": "eye_color", "type": "JSONB" },
+          { "name": "shirt_color", "type": "JSONB" },
+          { "name": "undershirt_color", "type": "JSONB" },
+          { "name": "pants_color", "type": "JSONB" },
+          { "name": "shoe_color", "type": "JSONB" },
+          { "name": "spawn_x", "type": "INTEGER DEFAULT 0" },
+          { "name": "spawn_y", "type": "INTEGER DEFAULT 0" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      },
+      {
+        "name": "character_inventory",
+        "description": "Character inventory items",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "character_id", "type": "INTEGER NOT NULL" },
+          { "name": "slot_type", "type": "TEXT NOT NULL" },
+          { "name": "slot_index", "type": "INTEGER NOT NULL" },
+          { "name": "item_id", "type": "INTEGER" },
+          { "name": "stack_size", "type": "INTEGER DEFAULT 0" },
+          { "name": "prefix", "type": "INTEGER DEFAULT 0" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      },
+      {
+        "name": "character_progression",
+        "description": "Character progression flags",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "character_id", "type": "INTEGER NOT NULL" },
+          { "name": "defeated_eye_of_cthulhu", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_eater_of_worlds", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_brain_of_cthulhu", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_skeletron", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_wall_of_flesh", "type": "BOOLEAN DEFAULT false" },
+          { "name": "hardmode_enabled", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_destroyer", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_twins", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_skeletron_prime", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_plantera", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_golem", "type": "BOOLEAN DEFAULT false" },
+          { "name": "defeated_moon_lord", "type": "BOOLEAN DEFAULT false" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      },
+      {
+        "name": "worlds",
+        "description": "Terraria world data",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "world_name", "type": "TEXT NOT NULL" },
+          { "name": "world_size", "type": "INTEGER DEFAULT 1" },
+          { "name": "difficulty", "type": "INTEGER DEFAULT 0" },
+          { "name": "evil_type", "type": "TEXT" },
+          { "name": "hardmode", "type": "BOOLEAN DEFAULT false" },
+          { "name": "spawn_x", "type": "INTEGER" },
+          { "name": "spawn_y", "type": "INTEGER" },
+          { "name": "surface_y", "type": "INTEGER" },
+          { "name": "rock_layer_y", "type": "INTEGER" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      }
+    ]
+  },
+  "features": {
+    "authentication": {
+      "enabled": true,
+      "methods": ["steam", "custom"]
+    },
+    "rateLimit": {
+      "enabled": true,
+      "defaultWindow": 60000,
+      "defaultMax": 50
+    },
+    "adminPanel": {
+      "enabled": true,
+      "features": ["character_management", "world_management", "item_spawning"]
+    },
+    "websockets": {
+      "enabled": false
+    }
+  }
+}

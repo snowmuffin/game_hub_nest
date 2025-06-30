@@ -1,0 +1,300 @@
+{
+  "name": "Default Game Template",
+  "description": "Standard game module with basic features",
+  "game": {
+    "playerIdField": "player_id",
+    "playerIdType": "TEXT",
+    "supportsMultiplayer": true,
+    "hasInventorySystem": true,
+    "hasPlayerStats": true,
+    "hasAchievements": true,
+    "hasServerInfo": true
+  },
+  "modules": [
+    {
+      "name": "item",
+      "displayName": "Item Management",
+      "description": "Manage game items and player inventory",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get user items",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "POST",
+          "path": "/upload",
+          "description": "Upload item to storage",
+          "requiresAuth": true,
+          "rateLimited": true,
+          "rateLimit": {
+            "windowMs": 60000,
+            "maxRequests": 10
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/request-download",
+          "description": "Request item download",
+          "requiresAuth": true,
+          "rateLimited": true
+        },
+        {
+          "method": "POST",
+          "path": "/confirm-download",
+          "description": "Confirm item download",
+          "requiresAuth": true,
+          "rateLimited": true
+        },
+        {
+          "method": "POST",
+          "path": "/update",
+          "description": "Update items database",
+          "requiresAuth": true,
+          "requiresAdmin": true,
+          "rateLimited": false
+        }
+      ]
+    },
+    {
+      "name": "player-stats",
+      "displayName": "Player Statistics",
+      "description": "Track and manage player statistics",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get player statistics",
+          "requiresAuth": true,
+          "cacheable": true,
+          "cacheTime": 300
+        },
+        {
+          "method": "POST",
+          "path": "/update",
+          "description": "Update player statistics",
+          "requiresAuth": true,
+          "rateLimited": true
+        },
+        {
+          "method": "GET",
+          "path": "/leaderboard/:stat",
+          "description": "Get leaderboard for specific stat",
+          "requiresAuth": false,
+          "cacheable": true,
+          "cacheTime": 600
+        },
+        {
+          "method": "GET",
+          "path": "/achievements",
+          "description": "Get player achievements",
+          "requiresAuth": true,
+          "cacheable": true
+        }
+      ]
+    },
+    {
+      "name": "server-info",
+      "displayName": "Server Information",
+      "description": "Server status and information management",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get server information",
+          "requiresAuth": false,
+          "cacheable": true,
+          "cacheTime": 60
+        },
+        {
+          "method": "POST",
+          "path": "/update",
+          "description": "Update server status",
+          "requiresAuth": true,
+          "requiresAdmin": true
+        },
+        {
+          "method": "GET",
+          "path": "/players",
+          "description": "Get online players",
+          "requiresAuth": false,
+          "cacheable": true,
+          "cacheTime": 30
+        },
+        {
+          "method": "GET",
+          "path": "/status",
+          "description": "Get server status",
+          "requiresAuth": false,
+          "cacheable": true,
+          "cacheTime": 30
+        }
+      ]
+    }
+  ],
+  "database": {
+    "createSchema": true,
+    "tables": [
+      {
+        "name": "items",
+        "description": "Game items master data",
+        "module": "item",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY", "description": "Unique identifier" },
+          { "name": "item_id", "type": "TEXT NOT NULL UNIQUE", "description": "Game-specific item identifier" },
+          { "name": "display_name", "type": "TEXT NOT NULL", "description": "Human-readable item name" },
+          { "name": "description", "type": "TEXT", "description": "Item description" },
+          { "name": "category", "type": "TEXT DEFAULT 'misc'", "description": "Item category" },
+          { "name": "rarity", "type": "TEXT DEFAULT 'common'", "description": "Item rarity level" },
+          { "name": "max_stack_size", "type": "INTEGER DEFAULT 64", "description": "Maximum stack size" },
+          { "name": "is_tradeable", "type": "BOOLEAN DEFAULT true", "description": "Whether item can be traded" },
+          { "name": "metadata", "type": "JSONB", "description": "Additional item metadata" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Creation timestamp" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Last update timestamp" }
+        ],
+        "indexes": [
+          { "name": "idx_items_category", "columns": ["category"] },
+          { "name": "idx_items_rarity", "columns": ["rarity"] }
+        ]
+      },
+      {
+        "name": "online_storage",
+        "description": "Player online storage",
+        "module": "item",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY", "description": "Unique identifier" },
+          { "name": "player_id", "type": "TEXT UNIQUE NOT NULL", "description": "Game-specific player identifier" },
+          { "name": "storage_type", "type": "TEXT DEFAULT 'main'", "description": "Storage type (main, backup, etc.)" },
+          { "name": "max_slots", "type": "INTEGER DEFAULT 100", "description": "Maximum storage slots" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Creation timestamp" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Last update timestamp" }
+        ],
+        "indexes": [
+          { "name": "idx_storage_player_id", "columns": ["player_id"] }
+        ]
+      },
+      {
+        "name": "online_storage_items",
+        "description": "Player inventory items",
+        "module": "item",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY", "description": "Unique identifier" },
+          { "name": "storage_id", "type": "INTEGER NOT NULL", "description": "Reference to online_storage" },
+          { "name": "item_id", "type": "INTEGER NOT NULL", "description": "Reference to items" },
+          { "name": "quantity", "type": "INTEGER NOT NULL DEFAULT 0", "description": "Item quantity" },
+          { "name": "slot_position", "type": "INTEGER", "description": "Slot position in inventory" },
+          { "name": "item_data", "type": "JSONB", "description": "Item-specific data (enchantments, durability, etc.)" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Creation timestamp" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Last update timestamp" }
+        ],
+        "constraints": [
+          "UNIQUE(storage_id, item_id)",
+          "FOREIGN KEY (storage_id) REFERENCES {schema}.online_storage(id) ON DELETE CASCADE",
+          "FOREIGN KEY (item_id) REFERENCES {schema}.items(id) ON DELETE CASCADE"
+        ],
+        "indexes": [
+          { "name": "idx_storage_items_storage_id", "columns": ["storage_id"] },
+          { "name": "idx_storage_items_item_id", "columns": ["item_id"] }
+        ]
+      },
+      {
+        "name": "player_stats",
+        "description": "Player statistics",
+        "module": "player-stats",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY", "description": "Unique identifier" },
+          { "name": "user_id", "type": "INTEGER NOT NULL", "description": "Reference to users table" },
+          { "name": "player_id", "type": "TEXT NOT NULL", "description": "Game-specific player identifier" },
+          { "name": "level", "type": "INTEGER DEFAULT 1", "description": "Player level" },
+          { "name": "experience", "type": "BIGINT DEFAULT 0", "description": "Total experience points" },
+          { "name": "play_time_minutes", "type": "INTEGER DEFAULT 0", "description": "Total play time in minutes" },
+          { "name": "sessions_count", "type": "INTEGER DEFAULT 0", "description": "Total number of sessions" },
+          { "name": "last_login", "type": "TIMESTAMP", "description": "Last login timestamp" },
+          { "name": "last_logout", "type": "TIMESTAMP", "description": "Last logout timestamp" },
+          { "name": "stats_data", "type": "JSONB", "description": "Game-specific statistics" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Creation timestamp" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Last update timestamp" }
+        ],
+        "constraints": [
+          "UNIQUE(user_id, player_id)"
+        ],
+        "indexes": [
+          { "name": "idx_player_stats_user_id", "columns": ["user_id"] },
+          { "name": "idx_player_stats_player_id", "columns": ["player_id"] },
+          { "name": "idx_player_stats_level", "columns": ["level"] },
+          { "name": "idx_player_stats_experience", "columns": ["experience"] }
+        ]
+      },
+      {
+        "name": "server_status",
+        "description": "Server status and information",
+        "module": "server-info",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY", "description": "Unique identifier" },
+          { "name": "server_name", "type": "TEXT NOT NULL", "description": "Server name" },
+          { "name": "server_address", "type": "TEXT", "description": "Server IP address" },
+          { "name": "server_port", "type": "INTEGER", "description": "Server port" },
+          { "name": "is_online", "type": "BOOLEAN DEFAULT false", "description": "Server online status" },
+          { "name": "player_count", "type": "INTEGER DEFAULT 0", "description": "Current player count" },
+          { "name": "max_players", "type": "INTEGER DEFAULT 100", "description": "Maximum players" },
+          { "name": "version", "type": "TEXT", "description": "Game version" },
+          { "name": "motd", "type": "TEXT", "description": "Message of the day" },
+          { "name": "world_name", "type": "TEXT", "description": "World/map name" },
+          { "name": "game_mode", "type": "TEXT", "description": "Game mode" },
+          { "name": "difficulty", "type": "TEXT", "description": "Difficulty level" },
+          { "name": "last_ping", "type": "TIMESTAMP", "description": "Last successful ping" },
+          { "name": "ping_response_time", "type": "INTEGER", "description": "Ping response time in ms" },
+          { "name": "server_data", "type": "JSONB", "description": "Additional server data" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Creation timestamp" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()", "description": "Last update timestamp" }
+        ],
+        "indexes": [
+          { "name": "idx_server_status_name", "columns": ["server_name"] },
+          { "name": "idx_server_status_online", "columns": ["is_online"] }
+        ]
+      }
+    ]
+  },
+  "features": {
+    "authentication": {
+      "enabled": true,
+      "methods": ["jwt", "steam"],
+      "sessionTimeout": 3600
+    },
+    "rateLimit": {
+      "enabled": true,
+      "defaultWindow": 60000,
+      "defaultMaxRequests": 100
+    },
+    "caching": {
+      "enabled": true,
+      "defaultTtl": 300,
+      "driver": "memory"
+    },
+    "logging": {
+      "enabled": true,
+      "level": "info",
+      "logRequests": true,
+      "logResponses": false
+    },
+    "validation": {
+      "enabled": true,
+      "transformPayloads": true,
+      "validateResponses": false
+    },
+    "swagger": {
+      "enabled": true,
+      "title": "{gameName} API",
+      "description": "API for {gameName} game integration",
+      "version": "1.0.0"
+    }
+  }
+}

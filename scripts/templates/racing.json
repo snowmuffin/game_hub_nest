@@ -1,0 +1,35 @@
+{
+  "name": "Racing Game Template",
+  "description": "Racing game module with tracks, vehicles, and leaderboards",
+  "game": {
+    "playerIdField": "driver_id",
+    "playerIdType": "TEXT",
+    "supportsMultiplayer": true,
+    "hasVehicleSystem": true,
+    "hasTrackSystem": true,
+    "hasLeaderboards": true
+  },
+  "modules": [
+    {
+      "name": "race",
+      "displayName": "Race Management",
+      "description": "Manage races and results",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/leaderboard",
+          "description": "Get race leaderboard",
+          "requiresAuth": false
+        },
+        {
+          "method": "POST",
+          "path": "/result",
+          "description": "Submit race result",
+          "requiresAuth": true
+        }
+      ]
+    }
+  ]
+}
