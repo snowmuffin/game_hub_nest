@@ -11,7 +11,7 @@ import { ValheimSkillModule } from './skills/valheim-skill.module';
 
 @Module({
   imports: [
-    JwtModule,
+    JwtModule.register({}),
     ConfigModule,
     ValheimItemModule,
     ValheimInventoryModule,
@@ -21,6 +21,8 @@ import { ValheimSkillModule } from './skills/valheim-skill.module';
     ValheimSkillModule,
   ],
   exports: [
+    JwtModule,
+    ConfigModule,
     ValheimItemModule,
     ValheimInventoryModule,
     ValheimCharacterModule,
