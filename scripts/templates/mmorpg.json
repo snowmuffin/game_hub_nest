@@ -1,0 +1,74 @@
+{
+  "name": "MMORPG Template",
+  "description": "MMORPG-specific module with guilds, quests, and complex character systems",
+  "game": {
+    "playerIdField": "character_id",
+    "playerIdType": "UUID",
+    "supportsMultiplayer": true,
+    "hasInventorySystem": true,
+    "hasPlayerStats": true,
+    "hasAchievements": true,
+    "hasServerInfo": true,
+    "hasGuildSystem": true,
+    "hasQuestSystem": true,
+    "hasCraftingSystem": true
+  },
+  "modules": [
+    {
+      "name": "character",
+      "displayName": "Character Management",
+      "description": "Manage MMORPG character data and progression",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get character information",
+          "requiresAuth": true
+        },
+        {
+          "method": "POST",
+          "path": "/level-up",
+          "description": "Level up character",
+          "requiresAuth": true
+        },
+        {
+          "method": "PUT",
+          "path": "/stats",
+          "description": "Allocate stat points",
+          "requiresAuth": true
+        }
+      ]
+    },
+    {
+      "name": "guild",
+      "displayName": "Guild System",
+      "description": "Manage guilds and guild members",
+      "enabled": true,
+      "dependencies": [
+        "character"
+      ],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get guild information",
+          "requiresAuth": true
+        },
+        {
+          "method": "POST",
+          "path": "/create",
+          "description": "Create new guild",
+          "requiresAuth": true
+        },
+        {
+          "method": "POST",
+          "path": "/join",
+          "description": "Join guild",
+          "requiresAuth": true
+        }
+      ]
+    }
+  ]
+}

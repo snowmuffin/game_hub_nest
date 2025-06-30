@@ -1,0 +1,225 @@
+{
+  "name": "Minecraft Template",
+  "description": "Minecraft-specific module with blocks, items, and world management",
+  "game": {
+    "playerIdField": "minecraft_uuid",
+    "playerIdType": "UUID",
+    "supportsMultiplayer": true,
+    "hasInventorySystem": true,
+    "hasPlayerStats": true,
+    "hasAchievements": true,
+    "hasServerInfo": true,
+    "hasWorldData": true,
+    "supportsMods": true
+  },
+  "modules": [
+    {
+      "name": "item",
+      "displayName": "Item & Block Management",
+      "description": "Manage Minecraft items, blocks, and player inventory",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get player inventory",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "POST",
+          "path": "/give",
+          "description": "Give items to player",
+          "requiresAuth": true,
+          "rateLimited": true,
+          "adminOnly": true
+        },
+        {
+          "method": "GET",
+          "path": "/blocks",
+          "description": "Get block data",
+          "requiresAuth": false,
+          "rateLimited": false
+        },
+        {
+          "method": "POST",
+          "path": "/crafting-recipe",
+          "description": "Get crafting recipes",
+          "requiresAuth": true,
+          "rateLimited": false
+        }
+      ]
+    },
+    {
+      "name": "world",
+      "displayName": "World Management",
+      "description": "Manage Minecraft worlds and regions",
+      "enabled": true,
+      "dependencies": ["item"],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/info",
+          "description": "Get world information",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "POST",
+          "path": "/backup",
+          "description": "Create world backup",
+          "requiresAuth": true,
+          "rateLimited": true,
+          "adminOnly": true
+        },
+        {
+          "method": "GET",
+          "path": "/spawn",
+          "description": "Get world spawn point",
+          "requiresAuth": true,
+          "rateLimited": false
+        }
+      ]
+    },
+    {
+      "name": "player-stats",
+      "displayName": "Player Statistics",
+      "description": "Track Minecraft player statistics and achievements",
+      "enabled": true,
+      "dependencies": [],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "description": "Get player statistics",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "GET",
+          "path": "/achievements",
+          "description": "Get player achievements",
+          "requiresAuth": true,
+          "rateLimited": false
+        },
+        {
+          "method": "POST",
+          "path": "/playtime",
+          "description": "Update playtime",
+          "requiresAuth": true,
+          "rateLimited": false
+        }
+      ]
+    }
+  ],
+  "database": {
+    "tables": [
+      {
+        "name": "items",
+        "description": "Minecraft items and blocks",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "minecraft_id", "type": "TEXT NOT NULL UNIQUE" },
+          { "name": "display_name", "type": "TEXT NOT NULL" },
+          { "name": "item_type", "type": "TEXT DEFAULT 'item'" },
+          { "name": "is_block", "type": "BOOLEAN DEFAULT false" },
+          { "name": "max_stack_size", "type": "INTEGER DEFAULT 64" },
+          { "name": "durability", "type": "INTEGER" },
+          { "name": "enchantable", "type": "BOOLEAN DEFAULT false" },
+          { "name": "mod_id", "type": "TEXT" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      },
+      {
+        "name": "player_inventory",
+        "description": "Player inventory data",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "player_uuid", "type": "UUID NOT NULL" },
+          { "name": "item_id", "type": "INTEGER NOT NULL" },
+          { "name": "quantity", "type": "INTEGER NOT NULL DEFAULT 0" },
+          { "name": "slot", "type": "INTEGER" },
+          { "name": "nbt_data", "type": "JSONB" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      },
+      {
+        "name": "worlds",
+        "description": "Minecraft world data",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "world_name", "type": "TEXT NOT NULL UNIQUE" },
+          { "name": "world_type", "type": "TEXT DEFAULT 'default'" },
+          { "name": "difficulty", "type": "TEXT DEFAULT 'normal'" },
+          { "name": "gamemode", "type": "TEXT DEFAULT 'survival'" },
+          { "name": "spawn_x", "type": "INTEGER DEFAULT 0" },
+          { "name": "spawn_y", "type": "INTEGER DEFAULT 64" },
+          { "name": "spawn_z", "type": "INTEGER DEFAULT 0" },
+          { "name": "seed", "type": "BIGINT" },
+          { "name": "is_active", "type": "BOOLEAN DEFAULT true" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      },
+      {
+        "name": "player_stats",
+        "description": "Minecraft player statistics",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "user_id", "type": "INTEGER NOT NULL" },
+          { "name": "player_uuid", "type": "UUID NOT NULL" },
+          { "name": "level", "type": "INTEGER DEFAULT 0" },
+          { "name": "experience", "type": "INTEGER DEFAULT 0" },
+          { "name": "health", "type": "FLOAT DEFAULT 20.0" },
+          { "name": "food", "type": "INTEGER DEFAULT 20" },
+          { "name": "play_time_ticks", "type": "BIGINT DEFAULT 0" },
+          { "name": "blocks_broken", "type": "INTEGER DEFAULT 0" },
+          { "name": "blocks_placed", "type": "INTEGER DEFAULT 0" },
+          { "name": "deaths", "type": "INTEGER DEFAULT 0" },
+          { "name": "mob_kills", "type": "INTEGER DEFAULT 0" },
+          { "name": "player_kills", "type": "INTEGER DEFAULT 0" },
+          { "name": "last_login", "type": "TIMESTAMP" },
+          { "name": "last_logout", "type": "TIMESTAMP" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" },
+          { "name": "updated_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      },
+      {
+        "name": "achievements",
+        "description": "Minecraft achievements/advancements",
+        "fields": [
+          { "name": "id", "type": "SERIAL PRIMARY KEY" },
+          { "name": "player_uuid", "type": "UUID NOT NULL" },
+          { "name": "achievement_id", "type": "TEXT NOT NULL" },
+          { "name": "achievement_name", "type": "TEXT NOT NULL" },
+          { "name": "description", "type": "TEXT" },
+          { "name": "criteria_completed", "type": "JSONB" },
+          { "name": "completed_at", "type": "TIMESTAMP" },
+          { "name": "created_at", "type": "TIMESTAMP NOT NULL DEFAULT NOW()" }
+        ]
+      }
+    ]
+  },
+  "features": {
+    "authentication": {
+      "enabled": true,
+      "methods": ["steam", "minecraft_uuid"]
+    },
+    "rateLimit": {
+      "enabled": true,
+      "defaultWindow": 60000,
+      "defaultMax": 100
+    },
+    "adminPanel": {
+      "enabled": true,
+      "features": ["player_management", "world_management", "item_management"]
+    },
+    "websockets": {
+      "enabled": true,
+      "events": ["player_join", "player_leave", "chat_message"]
+    }
+  }
+}
