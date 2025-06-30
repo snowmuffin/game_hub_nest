@@ -1,5 +1,7 @@
 import logger from '../../utils/logger';
+import { DropTableService } from './drop-table.service';
 
+// Legacy hardcoded drop table (deprecated - use DB-based drops instead)
 const dropTable: Record<string, number> = {
   PrototechFrame: 11, PrototechPanel: 4, PrototechCapacitor: 4, PrototechPropulsionUnit: 4,
   PrototechMachinery: 4, PrototechCircuitry: 4, PrototechCoolingUnit: 8,
@@ -31,6 +33,39 @@ const dropTable: Record<string, number> = {
   ingot_cerium: 4, ingot_lanthanum: 4, ingot_uranium: 3, ingot_platinum: 3, ingot_gold: 2, ingot_silver: 2,
 };
 
+// Singleton instance for DropTableService
+let dropTableServiceInstance: DropTableService | null = null;
+
+/**
+ * Initialize the drop table service for DB-based drops
+ * This should be called during application startup
+ */
+export function initializeDropTableService(dropTableService: DropTableService): void {
+  dropTableServiceInstance = dropTableService;
+}
+
+/**
+ * Get drop using DB-based drop table
+ * This is the new recommended way to calculate drops
+ */
+export async function getDropFromDB(damage: number, mult: number, maxRarity: number): Promise<string | null> {
+  if (!dropTableServiceInstance) {
+    logger.error('DropTableService not initialized. Call initializeDropTableService() first.');
+    return null;
+  }
+
+  try {
+    return await dropTableServiceInstance.calculateGameDrop(damage, mult, maxRarity);
+  } catch (error) {
+    logger.error(`Failed to calculate drop from DB: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Legacy drop calculation function using hardcoded drop table
+ * @deprecated Use getDropFromDB instead
+ */
 export function getDrop(damage: number, mult: number, maxRarity: number): string | null {
   logger.info(`getDrop called with damage: ${damage}, mult: ${mult}, maxRarity: ${maxRarity}`);
 
