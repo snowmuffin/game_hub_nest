@@ -553,14 +553,29 @@ class AdvancedGameModuleGenerator {
       `    ${this.toPascalCase(module.name)}Module`
     ).join(',\n');
     
-    return `import { Module } from '@nestjs/common';
+    // Check if any module requires authentication
+    const requiresAuth = this.config.modules.some(module => 
+      module.endpoints && module.endpoints.some(endpoint => endpoint.requiresAuth)
+    );
+    
+    let additionalImports = '';
+    let additionalModules = '';
+    let additionalExports = '';
+    
+    if (requiresAuth) {
+      additionalImports = `\nimport { JwtModule } from '@nestjs/jwt';\nimport { ConfigModule } from '@nestjs/config';`;
+      additionalModules = `\n    JwtModule.register({}),\n    ConfigModule,`;
+      additionalExports = `\n    JwtModule,\n    ConfigModule,`;
+    }
+    
+    return `import { Module } from '@nestjs/common';${additionalImports}
 ${imports}
 
 @Module({
-  imports: [
+  imports: [${additionalModules}
 ${modulesList}
   ],
-  exports: [
+  exports: [${additionalExports}
 ${modulesList}
   ],
 })
@@ -660,11 +675,29 @@ ${endpoints}
   generateSubModuleFile(moduleConfig) {
     const className = this.toPascalCase(moduleConfig.name);
     
-    return `import { Module } from '@nestjs/common';
-import { ${className}Controller } from './${moduleConfig.name}.controller';
-import { ${className}Service } from './${moduleConfig.name}.service';
+    // Check if authentication is required for any endpoint
+    const requiresAuth = moduleConfig.endpoints.some(endpoint => endpoint.requiresAuth);
+    
+    let imports = `import { Module } from '@nestjs/common';`;
+    let moduleImports = [];
+    
+    if (requiresAuth) {
+      imports += `\nimport { JwtModule } from '@nestjs/jwt';`;
+      imports += `\nimport { ConfigModule } from '@nestjs/config';`;
+      moduleImports.push('JwtModule.register({})');
+      moduleImports.push('ConfigModule');
+    }
+    
+    imports += `\nimport { ${className}Controller } from './${moduleConfig.name}.controller';`;
+    imports += `\nimport { ${className}Service } from './${moduleConfig.name}.service';`;
+    
+    const importsSection = moduleImports.length > 0 
+      ? `\n  imports: [\n    ${moduleImports.join(',\n    ')}\n  ],`
+      : '';
+    
+    return `${imports}
 
-@Module({
+@Module({${importsSection}
   controllers: [${className}Controller],
   providers: [${className}Service],
   exports: [${className}Service],
