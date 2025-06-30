@@ -35,11 +35,20 @@ export class CreateDropTable20250630163000 implements MigrationInterface {
       `);
 
       // 인덱스 생성
-      await queryRunner.query(`CREATE INDEX "IDX_DROP_TABLE_ITEM_ID" ON "space_engineers"."drop_table" ("item_id")`);
-      await queryRunner.query(`CREATE INDEX "IDX_DROP_TABLE_RARITY" ON "space_engineers"."drop_table" ("rarity")`);
-      await queryRunner.query(`CREATE INDEX "IDX_DROP_TABLE_IS_ACTIVE" ON "space_engineers"."drop_table" ("is_active")`);
+      await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_DROP_TABLE_ITEM_ID" ON "space_engineers"."drop_table" ("item_id")`);
+      await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_DROP_TABLE_RARITY" ON "space_engineers"."drop_table" ("rarity")`);
+      await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_DROP_TABLE_IS_ACTIVE" ON "space_engineers"."drop_table" ("is_active")`);
+      
+      console.log('✅ Drop table created successfully');
     } else {
-      console.log('Drop table already exists, skipping creation...');
+      console.log('ℹ️  Drop table already exists, skipping creation...');
+      
+      // 인덱스가 없다면 생성 (기존 테이블에 인덱스 추가)
+      await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_DROP_TABLE_ITEM_ID" ON "space_engineers"."drop_table" ("item_id")`);
+      await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_DROP_TABLE_RARITY" ON "space_engineers"."drop_table" ("rarity")`);
+      await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_DROP_TABLE_IS_ACTIVE" ON "space_engineers"."drop_table" ("is_active")`);
+      
+      console.log('ℹ️  Indexes ensured for existing drop table');
     }
   }
 
