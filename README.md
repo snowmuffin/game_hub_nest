@@ -1,21 +1,22 @@
-# Game Hub NestJS Backend
+# Game Hub - Multi-Game Backend Platform
 
-Game Hub is a RESTful API backend built with NestJS and TypeORM for managing users, game items, online storage, and marketplace assets.
+🎮 Game Hub is a comprehensive RESTful API backend built with NestJS and TypeORM, designed to support multiple games with automated module generation capabilities.
 
-## Table of Contents
-- [Features](#features)
-- [Architecture](#architecture)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)
-- [Configuration](#configuration)
-- [Database Migrations](#database-migrations)
-- [Running the Application](#running-the-application)
-- [Testing](#testing)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+## 🌟 Key Features
 
-## Features
+### 🚀 Automated Module Generation
+- **Advanced CLI Generator**: Create complete game modules with a few commands
+- **Template-Based Generation**: Pre-built templates for popular games (Minecraft, Terraria, Space Engineers, etc.)
+- **Custom Configuration**: Fully customizable modules with detailed endpoint and database configuration
+
+### 🎮 Multi-Game Support
+- **Space Engineers**: Item management, damage logs, server status
+- **Minecraft**: Block/item management, world data, player statistics  
+- **Valheim**: Character progression, building system, world management
+- **Terraria**: Character data, progression tracking, world events
+- **MMORPG Templates**: Guild systems, quest management, complex character systems
+
+### 🛠️ Core Features
 - User authentication with JWT and Steam OAuth
 - **Multi-game wallet system** with currency management
 - **Multi-game support**: Space Engineers & Valheim with dedicated schemas
@@ -26,12 +27,47 @@ Game Hub is a RESTful API backend built with NestJS and TypeORM for managing use
 - Database migrations managed by TypeORM
 - Safe migration tools with automatic backup
 
+## 🚀 Quick Start - Generate Your First Game Module
+
+### Generate a new game module in 30 seconds:
+```bash
+# Use the advanced generator with templates
+npm run generate:game-module-v2
+
+# Choose from existing templates:
+# - minecraft: Full Minecraft server integration
+# - terraria: Character and world management
+# - mmorpg: Guild, quest, and character systems
+# - survival: Base building and resource management
+# - racing: Track, vehicle, and leaderboard systems
+
+# Or create completely custom modules with detailed configuration
+```
+
+### Project Management:
+```bash
+# List all projects and templates
+npm run project-manager list
+
+# Validate a project
+npm run project-manager validate MyGame
+
+# Generate documentation
+npm run project-manager generate-docs MyGame
+
+# Create backups
+npm run project-manager backup MyGame
+```
+
+📖 **Detailed Guide**: See [MODULE_GENERATOR_README.md](MODULE_GENERATOR_README.md) for comprehensive documentation.
+
 ## Architecture
 This project is implemented with:
 - NestJS framework (TypeScript)
 - TypeORM for database abstraction
 - PostgreSQL as the primary datastore
 - Passport.js strategies for authentication
+- **Automated Module Generation System** with CLI tools and templates
 
 ## Requirements
 - Node.js v18 or higher
