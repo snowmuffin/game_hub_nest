@@ -12,6 +12,7 @@ import { ItemModule } from './Space_Engineers/item/item.module'; // 예시로 It
 import { UserModule } from './user/user.module';
 import { WalletModule } from './wallet/wallet.module';
 import { GameModule } from './game/game.module';
+import { MuffinCraftModule } from './MuffinCraft/muffincraft.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { GameModule } from './game/game.module';
     UserModule,
     WalletModule,
     GameModule,
+    MuffinCraftModule,
   ],
   controllers: [AppController],
   providers: [AppService],
