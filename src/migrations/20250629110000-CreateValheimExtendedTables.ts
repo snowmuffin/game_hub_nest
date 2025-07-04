@@ -24,7 +24,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           },
           {
             name: 'server_id',
-            type: 'uuid',
+            type: 'int',
             isNullable: false,
           },
           {
@@ -104,12 +104,14 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           {
             columnNames: ['user_id'],
             referencedTableName: 'users',
+            referencedSchema: 'public',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
           {
             columnNames: ['server_id'],
             referencedTableName: 'game_servers',
+            referencedSchema: 'public',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
@@ -133,7 +135,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           },
           {
             name: 'server_id',
-            type: 'uuid',
+            type: 'int',
             isNullable: false,
           },
           {
@@ -219,6 +221,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           {
             columnNames: ['server_id'],
             referencedTableName: 'game_servers',
+            referencedSchema: 'public',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
@@ -295,7 +298,8 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
         foreignKeys: [
           {
             columnNames: ['world_id'],
-            referencedTableName: 'valheim_worlds',
+            referencedTableName: 'worlds',
+            referencedSchema: 'valheim',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
@@ -382,7 +386,8 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
         foreignKeys: [
           {
             columnNames: ['world_id'],
-            referencedTableName: 'valheim_worlds',
+            referencedTableName: 'worlds',
+            referencedSchema: 'valheim',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
@@ -449,7 +454,8 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
         foreignKeys: [
           {
             columnNames: ['character_id'],
-            referencedTableName: 'valheim_characters',
+            referencedTableName: 'characters',
+            referencedSchema: 'valheim',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
@@ -460,15 +466,15 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
 
     // 6. Valheim Characters 테이블에 world_id 컬럼 추가
     await queryRunner.query(`
-      ALTER TABLE valheim_characters 
+      ALTER TABLE valheim.characters 
       ADD COLUMN world_id uuid,
       ADD CONSTRAINT FK_valheim_characters_world 
-      FOREIGN KEY (world_id) REFERENCES valheim_worlds(id) ON DELETE SET NULL
+      FOREIGN KEY (world_id) REFERENCES valheim.worlds(id) ON DELETE SET NULL
     `);
 
     // 7. 인덱스 생성
     await queryRunner.createIndex(
-      'valheim_buildings',
+      'valheim.buildings',
       new TableIndex({
         name: 'idx_valheim_buildings_user_server',
         columnNames: ['user_id', 'server_id'],
@@ -476,7 +482,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     );
 
     await queryRunner.createIndex(
-      'valheim_buildings',
+      'valheim.buildings',
       new TableIndex({
         name: 'idx_valheim_buildings_type',
         columnNames: ['building_type'],
@@ -484,7 +490,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     );
 
     await queryRunner.createIndex(
-      'valheim_worlds',
+      'valheim.worlds',
       new TableIndex({
         name: 'idx_valheim_worlds_server',
         columnNames: ['server_id'],
@@ -492,7 +498,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     );
 
     await queryRunner.createIndex(
-      'valheim_biomes',
+      'valheim.biomes',
       new TableIndex({
         name: 'idx_valheim_biomes_world',
         columnNames: ['world_id'],
@@ -500,7 +506,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     );
 
     await queryRunner.createIndex(
-      'valheim_boss_encounters',
+      'valheim.boss_encounters',
       new TableIndex({
         name: 'idx_valheim_boss_encounters_world',
         columnNames: ['world_id'],
@@ -508,7 +514,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     );
 
     await queryRunner.createIndex(
-      'valheim_boss_encounters',
+      'valheim.boss_encounters',
       new TableIndex({
         name: 'idx_valheim_boss_encounters_defeated',
         columnNames: ['is_defeated'],
@@ -516,7 +522,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     );
 
     await queryRunner.createIndex(
-      'valheim_character_skills',
+      'valheim.character_skills',
       new TableIndex({
         name: 'idx_valheim_skills_character',
         columnNames: ['character_id'],
@@ -524,7 +530,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     );
 
     await queryRunner.createIndex(
-      'valheim_character_skills',
+      'valheim.character_skills',
       new TableIndex({
         name: 'idx_valheim_skills_character_skill',
         columnNames: ['character_id', 'skill_name'],
@@ -532,7 +538,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
     );
 
     await queryRunner.createIndex(
-      'valheim_character_skills',
+      'valheim.character_skills',
       new TableIndex({
         name: 'idx_valheim_skills_leaderboard',
         columnNames: ['skill_name', 'skill_level'],
@@ -542,28 +548,28 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // 인덱스 삭제
-    await queryRunner.dropIndex('valheim_character_skills', 'idx_valheim_skills_leaderboard');
-    await queryRunner.dropIndex('valheim_character_skills', 'idx_valheim_skills_character_skill');
-    await queryRunner.dropIndex('valheim_character_skills', 'idx_valheim_skills_character');
-    await queryRunner.dropIndex('valheim_boss_encounters', 'idx_valheim_boss_encounters_defeated');
-    await queryRunner.dropIndex('valheim_boss_encounters', 'idx_valheim_boss_encounters_world');
-    await queryRunner.dropIndex('valheim_biomes', 'idx_valheim_biomes_world');
-    await queryRunner.dropIndex('valheim_worlds', 'idx_valheim_worlds_server');
-    await queryRunner.dropIndex('valheim_buildings', 'idx_valheim_buildings_type');
-    await queryRunner.dropIndex('valheim_buildings', 'idx_valheim_buildings_user_server');
+    await queryRunner.dropIndex('valheim.character_skills', 'idx_valheim_skills_leaderboard');
+    await queryRunner.dropIndex('valheim.character_skills', 'idx_valheim_skills_character_skill');
+    await queryRunner.dropIndex('valheim.character_skills', 'idx_valheim_skills_character');
+    await queryRunner.dropIndex('valheim.boss_encounters', 'idx_valheim_boss_encounters_defeated');
+    await queryRunner.dropIndex('valheim.boss_encounters', 'idx_valheim_boss_encounters_world');
+    await queryRunner.dropIndex('valheim.biomes', 'idx_valheim_biomes_world');
+    await queryRunner.dropIndex('valheim.worlds', 'idx_valheim_worlds_server');
+    await queryRunner.dropIndex('valheim.buildings', 'idx_valheim_buildings_type');
+    await queryRunner.dropIndex('valheim.buildings', 'idx_valheim_buildings_user_server');
 
     // world_id 컬럼 삭제
     await queryRunner.query(`
-      ALTER TABLE valheim_characters 
+      ALTER TABLE valheim.characters 
       DROP CONSTRAINT IF EXISTS FK_valheim_characters_world,
       DROP COLUMN IF EXISTS world_id
     `);
 
     // 테이블 삭제 (역순)
-    await queryRunner.dropTable('valheim_character_skills');
-    await queryRunner.dropTable('valheim_boss_encounters');
-    await queryRunner.dropTable('valheim_biomes');
-    await queryRunner.dropTable('valheim_worlds');
-    await queryRunner.dropTable('valheim_buildings');
+    await queryRunner.dropTable('valheim.character_skills');
+    await queryRunner.dropTable('valheim.boss_encounters');
+    await queryRunner.dropTable('valheim.biomes');
+    await queryRunner.dropTable('valheim.worlds');
+    await queryRunner.dropTable('valheim.buildings');
   }
 }
