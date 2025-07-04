@@ -87,7 +87,7 @@ sleep 10
 # 여러 번 시도하여 health check
 for i in {1..5}; do
     echo "Attempt $i/5: Checking health..."
-    if curl -f http://localhost:4000/health; then
+    if curl -f http://localhost:4000/api/health; then
         echo "✅ Health check passed!"
         break
     else
