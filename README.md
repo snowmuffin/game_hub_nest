@@ -1,91 +1,158 @@
-# Game Hub - Multi-Game Backend Platform
+# 🎮 Game Hub NestJS Backend
 
-🎮 Game Hub is a comprehensive RESTful API backend built with NestJS and TypeORM, designed to support multiple games with automated module generation capabilities.
+**멀티게임 플랫폼을 위한 확장 가능한 백엔드 API**
 
-## 🌟 Key Features
+Game Hub는 NestJS와 TypeORM으로 구축된 RESTful API 백엔드로, 사용자 관리, 게임 아이템, 온라인 스토리지, 마켓플레이스 등을 관리합니다. 현재 Space Engineers와 Valheim을 지원하며, 새로운 게임을 쉽게 추가할 수 있는 모듈화된 구조를 제공합니다.
 
-### 🚀 Automated Module Generation
-- **Advanced CLI Generator**: Create complete game modules with a few commands
-- **Template-Based Generation**: Pre-built templates for popular games (Minecraft, Terraria, Space Engineers, etc.)
-- **Custom Configuration**: Fully customizable modules with detailed endpoint and database configuration
+## 📑 목차
+- [주요 기능](#-주요-기능)
+- [시스템 아키텍처](#-시스템-아키텍처)
+- [시스템 요구사항](#-시스템-요구사항)
+- [빠른 시작](#-빠른-시작)
+- [환경 설정](#-환경-설정)
+- [데이터베이스 관리](#-데이터베이스-관리)
+- [애플리케이션 실행](#-애플리케이션-실행)
+- [배포 가이드](#-배포-가이드)
+- [테스트](#-테스트)
+- [프로젝트 구조](#-프로젝트-구조)
+- [API 문서](#-api-문서)
+- [기여하기](#-기여하기)
 
-### 🎮 Multi-Game Support
-- **Space Engineers**: Item management, damage logs, server status
-- **Minecraft**: Block/item management, world data, player statistics  
-- **Valheim**: Character progression, building system, world management
-- **Terraria**: Character data, progression tracking, world events
-- **MMORPG Templates**: Guild systems, quest management, complex character systems
+## ✨ 주요 기능
 
-### 🛠️ Core Features
-- User authentication with JWT and Steam OAuth
-- **Multi-game wallet system** with currency management
-- **Multi-game support**: Space Engineers & Valheim with dedicated schemas
-- **Hybrid schema architecture**: Common data in public, game-specific data in separate schemas
-- CRUD operations for items, storage and marketplace
-- Role-based access control via guards and decorators
-- Centralized logging middleware
-- Database migrations managed by TypeORM
-- Safe migration tools with automatic backup
+### 🔐 인증 시스템
+- **JWT 토큰 기반 인증**: 안전한 API 접근 제어
+- **Steam OAuth 연동**: 게임 플랫폼과의 seamless 연동
+- **Role-based Access Control**: 권한 기반 세밀한 접근 제어
 
-## 🚀 Quick Start - Generate Your First Game Module
+### 💰 통합 지갑 시스템
+- **멀티게임 지갑**: 게임 간 화폐 공유 및 관리
+- **다중 화폐 지원**: 게임별 고유 화폐 시스템
+- **거래 내역 추적**: 모든 거래의 완전한 감사 로그
+- **안전한 거래**: 트랜잭션 기반 안전한 화폐 이동
 
-### Generate a new game module in 30 seconds:
-```bash
-# Use the advanced generator with templates
-npm run generate:game-module-v2
+### 🎮 멀티게임 지원
+- **Space Engineers**: 아이템 관리, 온라인 스토리지, 데미지 로그
+- **Valheim**: 캐릭터, 월드, 인벤토리, 건물 관리
+- **확장 가능한 구조**: 새 게임 추가를 위한 플러그인 방식
 
-# Choose from existing templates:
-# - minecraft: Full Minecraft server integration
-# - terraria: Character and world management
-# - mmorpg: Guild, quest, and character systems
-# - survival: Base building and resource management
-# - racing: Track, vehicle, and leaderboard systems
+### 🏗️ 하이브리드 스키마 아키텍처
+- **공통 데이터**: `public` 스키마에서 사용자, 지갑, 게임 정보 관리
+- **게임별 데이터**: 각 게임 전용 스키마로 독립적 데이터 관리
+- **크로스게임 쿼리**: 통합된 데이터 접근 및 분석
 
-# Or create completely custom modules with detailed configuration
+### 🛠️ 개발자 친화적
+- **TypeScript**: 완전한 타입 안전성
+- **자동 마이그레이션**: TypeORM 기반 안전한 DB 스키마 관리
+- **중앙집중식 로깅**: 모든 요청과 오류의 체계적 로깅
+## 🔧 시스템 아키텍처
+
+이 프로젝트는 다음 기술스택으로 구현되었습니다:
+
+- **Backend Framework**: NestJS (TypeScript)
+- **Database ORM**: TypeORM
+- **Database**: PostgreSQL
+- **Authentication**: Passport.js + JWT + Steam OAuth
+- **Process Manager**: PM2
+- **Reverse Proxy**: Nginx
+- **Containerization**: Docker & Docker Compose
+
+### 🏗️ 모듈 구조
+
+```
+AppModule
+├── 🔧 Core Modules
+│   ├── ConfigModule (Global)
+│   └── TypeOrmModule (Global)
+├── 🔐 Authentication
+│   ├── AuthModule
+│   └── UserModule
+├── 💰 Wallet System
+│   └── WalletModule
+├── 🎮 Game Management
+│   ├── GameModule
+│   ├── SpaceEngineersModule
+│   └── ValheimModule
 ```
 
-### Project Management:
+## 📋 시스템 요구사항
+
+### 최소 요구사항
+- **Node.js**: v20.0.0 이상
+- **npm**: v8.0.0 이상  
+- **PostgreSQL**: v13 이상
+- **메모리**: 최소 1GB RAM
+- **디스크**: 최소 2GB 여유 공간
+
+### 권장 사양 (프로덕션)
+- **Node.js**: v20 LTS
+- **메모리**: 4GB RAM 이상
+- **CPU**: 2코어 이상
+- **디스크**: SSD 10GB 이상
+
+## 🚀 빠른 시작
+
+### 1️⃣ 저장소 클론
 ```bash
-# List all projects and templates
-npm run project-manager list
-
-# Validate a project
-npm run project-manager validate MyGame
-
-# Generate documentation
-npm run project-manager generate-docs MyGame
-
-# Create backups
-npm run project-manager backup MyGame
-```
-
-📖 **Detailed Guide**: See [MODULE_GENERATOR_README.md](MODULE_GENERATOR_README.md) for comprehensive documentation.
-
-## Architecture
-This project is implemented with:
-- NestJS framework (TypeScript)
-- TypeORM for database abstraction
-- PostgreSQL as the primary datastore
-- Passport.js strategies for authentication
-- **Automated Module Generation System** with CLI tools and templates
-
-## Requirements
-- Node.js v18 or higher
-- npm (or yarn)
-- PostgreSQL database
-
-## Getting Started
-```bash
-# Clone the repository
-git clone https://github.com/<username>/game_hub_nest.git
+git clone https://github.com/your-username/game_hub_nest.git
 cd game_hub_nest
-
-# Install dependencies
-npm install
 ```
 
-## Configuration
-Create a `.env` file in the project root and set the following variables:
+### 2️⃣ 환경 설정
+```bash
+# 환경 파일 생성
+cp .env.example .env
+
+# 환경변수 수정 (에디터로 .env 파일 편집)
+nano .env
+```
+
+### 3️⃣ 개발 환경 시작
+```bash
+# 개발 환경 자동 설정 및 시작
+./start-dev.sh
+```
+
+### 4️⃣ 접속 확인
+```bash
+# Health check
+curl http://localhost:4000/api/health
+
+# API 문서 (브라우저에서)
+open http://localhost:4000/api
+```
+
+## ⚙️ 환경 설정
+
+환경변수는 `.env` 파일을 통해 관리됩니다. 주요 설정 항목:
+
+### 🗄️ 데이터베이스 설정
+```bash
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_NAME=game_hub_db
+DB_SSL=false  # 프로덕션에서는 true
+```
+
+### 🔐 인증 설정
+```bash
+JWT_SECRET=your_super_secret_jwt_key_here
+JWT_EXPIRES_IN=7d
+STEAM_API_KEY=your_steam_api_key_here
+STEAM_RETURN_URL=http://localhost:4000/auth/steam/return
+```
+
+### 🌐 서버 설정
+```bash
+NODE_ENV=development
+PORT=4000
+HOST=0.0.0.0
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+**전체 설정 옵션은 `.env.example` 파일을 참조하세요.**
 ```
 DB_HOST=localhost
 DB_PORT=5432
