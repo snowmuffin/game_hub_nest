@@ -6,7 +6,11 @@ module.exports = {
       instances: 1, // 시작은 1개 인스턴스로
       exec_mode: 'cluster',
       autorestart: true,
-      watch: false,
+      watch: ['src', 'dist'],
+      ignore_watch: ['node_modules', 'logs', '*.log', '.git'],
+      watch_options: {
+        followSymlinks: false
+      },
       max_memory_restart: '1G',
       
       // 환경별 설정
