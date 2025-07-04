@@ -10,6 +10,7 @@ import { User } from '../user/user.entity';
 import { Game } from '../entities/game.entity';
 import { GameServer } from '../entities/game-server.entity';
 import { Currency } from '../entities/currency.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -21,11 +22,16 @@ import { Currency } from '../entities/currency.entity';
       GameServer,
       Currency,
     ]),
-    JwtModule.register({}),
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET || 'defaultSecret',
+        signOptions: { expiresIn: '6h' },
+      }),
+    }),
     ConfigModule,
   ],
   controllers: [WalletController],
-  providers: [WalletService],
+  providers: [WalletService, JwtAuthGuard],
   exports: [WalletService],
 })
 export class WalletModule {}
