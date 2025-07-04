@@ -2,11 +2,27 @@ import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableColumn } 
 
 export class UpdateOnlineStorageStructure20250413000150 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1. online_storage 테이블의 id를 bigint로 변경
-    await queryRunner.query(`
-      ALTER TABLE online_storage
-      ALTER COLUMN id TYPE bigint
+    // Check if online_storage table exists first
+    const onlineStorageExists = await queryRunner.hasTable('online_storage');
+    if (!onlineStorageExists) {
+      console.log('Online storage table does not exist, skipping migration');
+      return;
+    }
+
+    // Check current id column type
+    const idColumnInfo = await queryRunner.query(`
+      SELECT data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'online_storage' AND column_name = 'id' AND table_schema = CURRENT_SCHEMA()
     `);
+
+    // 1. online_storage 테이블의 id를 bigint로 변경 (if not already bigint)
+    if (idColumnInfo.length > 0 && idColumnInfo[0].data_type !== 'bigint') {
+      await queryRunner.query(`
+        ALTER TABLE online_storage
+        ALTER COLUMN id TYPE bigint
+      `);
+    }
 
     // 2. steam_id 기본값 설정 (if not already set)
     const steamIdDefault = await queryRunner.query(`
@@ -26,8 +42,8 @@ export class UpdateOnlineStorageStructure20250413000150 implements MigrationInte
     `);
 
     // 4. online_storage_items 테이블 생성 (if not exists)
-    const tableExists = await queryRunner.hasTable('online_storage_items');
-    if (!tableExists) {
+    const storageItemsTableExists = await queryRunner.hasTable('online_storage_items');
+    if (!storageItemsTableExists) {
       await queryRunner.createTable(
         new Table({
           name: 'online_storage_items',
