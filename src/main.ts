@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import * as dotenv from 'dotenv';
@@ -7,42 +8,32 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+  });
 
-  console.log('REALM env:', process.env.REALM);
-
-  // Get configuration from environment variables
+  // 🌐 서버 설정
   const host = process.env.HOST || '0.0.0.0';
   const port = parseInt(process.env.PORT || '4000', 10);
   const domain = process.env.DOMAIN;
   const baseUrl = process.env.BASE_URL;
-
-  // Enable CORS with specific settings
   const isProduction = process.env.NODE_ENV === 'production';
+
+  console.log(`🚀 Starting Game Hub API in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode...`);
+
+  // 🔧 CORS 설정
   let allowedOrigins: string[] = [];
   
-  if (process.env.Whitelist) {
-    allowedOrigins = process.env.Whitelist.split(',').map(origin => origin.trim());
+  if (process.env.CORS_ORIGINS) {
+    allowedOrigins = process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
   } else {
+    // 기본값 설정
     allowedOrigins = isProduction
-      ? [
-          'https://se.snowmuffingame.com',
-          'https://snowmuffingame.com'
-        ]
-      : [
-          'http://localhost:3000',
-          'http://localhost:3001',
-          'https://se.snowmuffingame.com',
-          'https://snowmuffingame.com'
-        ];
+      ? ['https://se.snowmuffingame.com', 'https://snowmuffingame.com']
+      : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001'];
   }
   
-  // 항상 se.snowmuffingame.com 포함
-  if (!allowedOrigins.includes('https://se.snowmuffingame.com')) {
-    allowedOrigins.push('https://se.snowmuffingame.com');
-  }
-  
-  console.log('허용된 CORS origins:', allowedOrigins);
+  console.log('🔐 Allowed CORS origins:', allowedOrigins);
   
   app.enableCors({
     origin: allowedOrigins,
@@ -65,19 +56,54 @@ async function bootstrap() {
     preflightContinue: false,
   });
 
-  // Register cookie-parser middleware
+  // 🍪 Cookie parser 미들웨어
   app.use(cookieParser());
 
-  // Set global prefix for API routes (optional)
+  // 🔍 전역 검증 파이프
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }));
+
+  // 🌐 API 글로벌 프리픽스
   app.setGlobalPrefix('api');
 
+  // 🚀 서버 시작
   await app.listen(port, host, () => {
     const serverUrl = baseUrl || `http://${host}:${port}`;
-    console.log(`Server is running on ${serverUrl}`);
+    
+    console.log('');
+    console.log('🎉 ===============================================');
+    console.log('🎉 Game Hub API Server Started Successfully!');
+    console.log('🎉 ===============================================');
+    console.log('');
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Server URL: ${serverUrl}`);
+    console.log(`📝 API Base: ${serverUrl}/api`);
+    console.log(`🏥 Health Check: ${serverUrl}/api/health`);
+    
     if (domain) {
-      console.log(`Domain: ${domain}`);
+      console.log(`🔗 Domain: ${domain}`);
     }
-    console.log(`API available at: ${serverUrl}/api`);
+    
+    console.log('');
+    console.log('🔐 Security:');
+    console.log(`   • CORS Origins: ${allowedOrigins.length} configured`);
+    console.log(`   • Global Validation: Enabled`);
+    console.log(`   • Cookie Parser: Enabled`);
+    console.log('');
+    console.log('📝 Useful URLs:');
+    console.log(`   • API Documentation: ${serverUrl}/api/docs`);
+    console.log(`   • Metrics: ${serverUrl}/api/metrics`);
+    console.log('');
   });
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('❌ Failed to start Game Hub API:', error);
+  process.exit(1);
+});

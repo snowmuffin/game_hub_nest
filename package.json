@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -22,13 +23,19 @@
     "migration:revert": "npx ts-node ./node_modules/typeorm/cli.js migration:revert --dataSource src/data-source.ts",
     "migration:generate": "npx ts-node ./node_modules/typeorm/cli.js migration:generate --dataSource src/data-source.ts --name",
     "migration:create": "npx ts-node ./node_modules/typeorm/cli.js migration:create --name",
+    "migration:show": "npx ts-node ./node_modules/typeorm/cli.js migration:show --dataSource src/data-source.ts",
+    "schema:sync": "npx ts-node ./node_modules/typeorm/cli.js schema:sync --dataSource src/data-source.ts",
+    "schema:drop": "npx ts-node ./node_modules/typeorm/cli.js schema:drop --dataSource src/data-source.ts",
     "deploy": "./deploy.sh",
+    "dev": "./start-dev.sh",
     "pm2:start": "pm2 start ecosystem.config.js --env production",
     "pm2:stop": "pm2 stop game-hub-nest",
     "pm2:restart": "pm2 restart game-hub-nest",
     "pm2:reload": "pm2 reload game-hub-nest",
     "pm2:logs": "pm2 logs game-hub-nest",
-    "pm2:status": "pm2 status"
+    "pm2:status": "pm2 status",
+    "pm2:delete": "pm2 delete game-hub-nest",
+    "logs:clear": "rm -f logs/*.log && touch logs/app.log logs/error.log logs/out.log"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
