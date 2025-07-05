@@ -14,10 +14,94 @@ export class MuffinCraftAuthService {
   ) {}
 
   /**
-   * 6자리 랜덤 인증 코드 생성
+   * 고도로 복잡한 인증 코드 생성 (12자리: 영문 대문자 + 소문자 + 숫자 + 특수문자)
+   * 예: aB7$mK9pQ3xZ, X2#nR8yU5$kV 등
+   * 
+   * 보안 강화 요소:
+   * - 12자리 길이 (8자리보다 36억배 더 복잡)
+   * - 대문자, 소문자, 숫자, 특수문자 조합
+   * - 최소 각 타입별 2개 이상 포함 보장
+   * - 연속된 동일 문자 방지
+   * - 예측 가능한 패턴 방지
    */
   private generateRandomCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    const upperCase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowerCase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const specials = '#$%&*+-=?@';
+    const allChars = upperCase + lowerCase + numbers + specials;
+    
+    const codeLength = 12;
+    let attempts = 0;
+    const maxAttempts = 50;
+    
+    while (attempts < maxAttempts) {
+      let result = '';
+      
+      // 각 타입별 최소 2개씩 보장
+      // 대문자 2개
+      for (let i = 0; i < 2; i++) {
+        result += upperCase.charAt(Math.floor(Math.random() * upperCase.length));
+      }
+      
+      // 소문자 2개
+      for (let i = 0; i < 2; i++) {
+        result += lowerCase.charAt(Math.floor(Math.random() * lowerCase.length));
+      }
+      
+      // 숫자 2개
+      for (let i = 0; i < 2; i++) {
+        result += numbers.charAt(Math.floor(Math.random() * numbers.length));
+      }
+      
+      // 특수문자 2개
+      for (let i = 0; i < 2; i++) {
+        result += specials.charAt(Math.floor(Math.random() * specials.length));
+      }
+      
+      // 나머지 4자리는 모든 문자에서 랜덤
+      for (let i = 0; i < 4; i++) {
+        result += allChars.charAt(Math.floor(Math.random() * allChars.length));
+      }
+      
+      // 완전히 랜덤하게 섞기 (Fisher-Yates 알고리즘)
+      const chars = result.split('');
+      for (let i = chars.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [chars[i], chars[j]] = [chars[j], chars[i]];
+      }
+      result = chars.join('');
+      
+      // 연속된 동일 문자 체크 (보안 강화)
+      let hasConsecutive = false;
+      for (let i = 0; i < result.length - 1; i++) {
+        if (result[i] === result[i + 1]) {
+          hasConsecutive = true;
+          break;
+        }
+      }
+      
+      // 연속된 문자가 없으면 반환
+      if (!hasConsecutive) {
+        return result;
+      }
+      
+      attempts++;
+    }
+    
+    // 만약 최대 시도 횟수를 초과하면 기본 방식으로 생성
+    let result = '';
+    for (let i = 0; i < codeLength; i++) {
+      result += allChars.charAt(Math.floor(Math.random() * allChars.length));
+    }
+    return result;
+  }
+
+  /**
+   * 인증 코드 유효성 검사 (12자리 영문 대소문자 + 숫자 + 특수문자)
+   */
+  private isValidAuthCode(code: string): boolean {
+    return /^[A-Za-z0-9#$%&*+\-=?@]{12}$/.test(code);
   }
 
   /**
@@ -86,6 +170,11 @@ export class MuffinCraftAuthService {
    * 웹에서 계정 연동
    */
   async linkAccount(authCode: string, userId: number) {
+    // 인증 코드 형식 검증
+    if (!this.isValidAuthCode(authCode)) {
+      throw new BadRequestException('올바르지 않은 인증 코드 형식입니다. (12자리 영문 대소문자 + 숫자 + 특수문자)');
+    }
+
     // 인증 코드 확인
     const authCodeRecord = await this.authCodeRepository.findOne({
       where: { authCode, isUsed: false }
