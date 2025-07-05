@@ -13,10 +13,10 @@ export class InventoryService {
   ) {}
 
   /**
-   * 플레이어 정보 기반으로 인벤토리 동기화 (연동 여부 무관)
+   * 외부 창고에 아이템 저장 (플레이어가 수동으로 입금)
    */
-  async syncPlayerInventory(user: any, itemData: any) {
-    this.logger.log(`플레이어 인벤토리 동기화: ${JSON.stringify(user)}, 아이템: ${JSON.stringify(itemData)}`);
+  async depositItem(user: any, itemData: any) {
+    this.logger.log(`외부 창고 입금: ${JSON.stringify(user)}, 아이템: ${JSON.stringify(itemData)}`);
     
     let targetUserId: number;
     
@@ -42,9 +42,10 @@ export class InventoryService {
     });
 
     if (inventoryItem) {
+      // 기존 아이템이 있으면 수량 추가
       return await this.inventoryRepository.save({
         ...inventoryItem,
-        quantity: itemData.quantity,
+        quantity: inventoryItem.quantity + itemData.quantity,
         metadata: { ...inventoryItem.metadata, ...itemData.metadata }
       });
     }
@@ -59,10 +60,10 @@ export class InventoryService {
   }
 
   /**
-   * 플레이어 정보 기반으로 인벤토리 조회 (연동 여부 무관)
+   * 플레이어 정보 기반으로 외부 창고 조회 (연동 여부 무관)
    */
-  async getPlayerInventory(user: any) {
-    this.logger.log(`플레이어 인벤토리 조회: ${JSON.stringify(user)}`);
+  async getPlayerWarehouse(user: any) {
+    this.logger.log(`외부 창고 조회: ${JSON.stringify(user)}`);
     
     let targetUserId: number;
     
@@ -82,7 +83,8 @@ export class InventoryService {
 
     return await this.inventoryRepository.find({
       where: { user: { id: targetUserId } },
-      relations: ['user']
+      relations: ['user'],
+      order: { itemName: 'ASC' }
     });
   }
 
@@ -122,5 +124,54 @@ export class InventoryService {
       where: { user: { id: parseInt(userId) } },
       relations: ['user']
     });
+  }
+
+  /**
+   * 외부 창고에서 아이템 출금 (플레이어가 수동으로 출금)
+   */
+  async withdrawItem(user: any, itemData: { itemId: string; quantity: number }) {
+    this.logger.log(`외부 창고 출금: ${JSON.stringify(user)}, 아이템: ${JSON.stringify(itemData)}`);
+    
+    let targetUserId: number;
+    
+    if (user.type === 'minecraft_player') {
+      if (user.isLinked && user.userId) {
+        targetUserId = user.userId;
+      } else {
+        targetUserId = user.playerId + 100000;
+      }
+    } else {
+      targetUserId = user.id;
+    }
+
+    const inventoryItem = await this.inventoryRepository.findOne({
+      where: { 
+        user: { id: targetUserId }, 
+        itemId: itemData.itemId 
+      }
+    });
+
+    if (!inventoryItem) {
+      throw new Error('창고에 해당 아이템이 없습니다.');
+    }
+
+    if (inventoryItem.quantity < itemData.quantity) {
+      throw new Error(`창고에 충분한 아이템이 없습니다. (보유: ${inventoryItem.quantity}, 요청: ${itemData.quantity})`);
+    }
+
+    const newQuantity = inventoryItem.quantity - itemData.quantity;
+    
+    if (newQuantity === 0) {
+      // 수량이 0이 되면 아이템 삭제
+      await this.inventoryRepository.remove(inventoryItem);
+      return { message: '아이템이 모두 출금되어 창고에서 제거되었습니다.', remainingQuantity: 0 };
+    } else {
+      // 수량 감소
+      await this.inventoryRepository.save({
+        ...inventoryItem,
+        quantity: newQuantity
+      });
+      return { message: '아이템이 성공적으로 출금되었습니다.', remainingQuantity: newQuantity };
+    }
   }
 }
