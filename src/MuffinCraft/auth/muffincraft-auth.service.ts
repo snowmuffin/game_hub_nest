@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { MuffinCraftPlayer } from '../entities/muffincraft-player.entity';
@@ -6,6 +6,8 @@ import { MuffinCraftAuthCode } from '../entities/muffincraft-auth-code.entity';
 
 @Injectable()
 export class MuffinCraftAuthService {
+  private readonly logger = new Logger(MuffinCraftAuthService.name);
+
   constructor(
     @InjectRepository(MuffinCraftPlayer)
     private readonly playerRepository: Repository<MuffinCraftPlayer>,
@@ -108,6 +110,11 @@ export class MuffinCraftAuthService {
    * 마인크래프트 서버에서 인증 코드 요청
    */
   async generateAuthCode(minecraftUsername: string, minecraftUuid?: string) {
+    this.logger.log(`인증 코드 요청: ${minecraftUsername}, UUID: ${minecraftUuid || 'N/A'}`);
+    
+    // 레이트 리밋 체크 - 같은 사용자명으로 과도한 요청 방지
+    await this.checkRateLimit(minecraftUsername);
+
     // 기존 활성 인증 코드가 있는지 확인
     const existingCode = await this.authCodeRepository.findOne({
       where: { 
@@ -118,6 +125,7 @@ export class MuffinCraftAuthService {
     });
 
     if (existingCode) {
+      this.logger.log(`기존 활성 인증 코드 반환: ${minecraftUsername} - ${existingCode.authCode}`);
       return {
         success: true,
         authCode: existingCode.authCode,
@@ -142,6 +150,7 @@ export class MuffinCraftAuthService {
     }
 
     if (!isUnique) {
+      this.logger.error(`인증 코드 생성 실패: ${minecraftUsername} - 최대 시도 횟수 초과`);
       throw new BadRequestException('인증 코드 생성에 실패했습니다. 다시 시도해주세요.');
     }
 
@@ -157,6 +166,8 @@ export class MuffinCraftAuthService {
     });
 
     await this.authCodeRepository.save(newAuthCode);
+
+    this.logger.log(`새 인증 코드 생성 완료: ${minecraftUsername} - ${authCode}`);
 
     return {
       success: true,
@@ -319,5 +330,40 @@ export class MuffinCraftAuthService {
       success: true,
       message: '마인크래프트 계정 연동이 해제되었습니다.'
     };
+  }
+
+  /**
+   * 레이트 리밋 체크 - 같은 사용자명으로 과도한 요청 방지
+   */
+  private async checkRateLimit(minecraftUsername: string): Promise<void> {
+    const fifteenMinutesAgo = new Date();
+    fifteenMinutesAgo.setMinutes(fifteenMinutesAgo.getMinutes() - 15);
+
+    const recentCodes = await this.authCodeRepository.count({
+      where: {
+        minecraftUsername,
+        createdAt: MoreThan(fifteenMinutesAgo)
+      }
+    });
+
+    if (recentCodes >= 5) {
+      throw new BadRequestException('너무 많은 인증 코드 요청입니다. 15분 후에 다시 시도해주세요.');
+    }
+  }
+
+  /**
+   * 만료된 인증 코드 정리 (정기적으로 실행하는 클린업 작업)
+   */
+  async cleanupExpiredCodes(): Promise<void> {
+    const expiredCodes = await this.authCodeRepository.find({
+      where: {
+        expiresAt: MoreThan(new Date())
+      }
+    });
+
+    if (expiredCodes.length > 0) {
+      await this.authCodeRepository.remove(expiredCodes);
+      this.logger.log(`만료된 인증 코드 ${expiredCodes.length}개 정리 완료`);
+    }
   }
 }

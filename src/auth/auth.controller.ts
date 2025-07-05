@@ -168,4 +168,65 @@ export class AuthController {
       return res.status(401).json({ message: 'Invalid or expired refresh token' });
     }
   }
+
+  @Post('minecraft/token')
+  async generateMinecraftToken(
+    @Body() body: { steamId: string; username: string; minecraftUuid?: string }
+  ) {
+    try {
+      const { steamId, username, minecraftUuid } = body;
+      
+      if (!steamId || !username) {
+        throw new Error('Steam ID and username are required');
+      }
+
+      // 기존 사용자 조회 또는 생성
+      let user = await this.userService.findBySteamId(steamId);
+      
+      if (!user) {
+        // 새 사용자 생성
+        user = await this.userService.createUser({
+          steam_id: steamId,
+          username: username,
+          minecraft_uuid: minecraftUuid
+        });
+      } else if (minecraftUuid && user.minecraft_uuid !== minecraftUuid) {
+        // 마인크래프트 UUID 업데이트
+        await this.userService.updateMinecraftUuid(user.id, minecraftUuid);
+        user.minecraft_uuid = minecraftUuid;
+      }
+
+      if (!user) {
+        throw new Error('Failed to create or retrieve user');
+      }
+      
+      const tokenPayload = { 
+        id: user.id, 
+        steam_id: user.steam_id, 
+        username: user.username,
+        minecraft_uuid: user.minecraft_uuid 
+      };
+      
+      // 마인크래프트용 장기간 토큰 생성 (24시간)
+      const minecraftToken = this.authService.generateMinecraftToken(tokenPayload);
+      
+      return {
+        success: true,
+        token: minecraftToken,
+        user: {
+          id: user.id,
+          steam_id: user.steam_id,
+          username: user.username,
+          minecraft_uuid: user.minecraft_uuid
+        },
+        expires_in: '24h'
+      };
+    } catch (error) {
+      console.error('Error generating minecraft token:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to generate minecraft token'
+      };
+    }
+  }
 }
