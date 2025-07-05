@@ -8,7 +8,7 @@ import { MuffinCraftInventory } from './entities/muffincraft-inventory.entity';
 import { MuffinCraftCurrency } from './entities/muffincraft-currency.entity';
 import { MuffinCraftPlayer } from './entities/muffincraft-player.entity';
 import { MuffinCraftAuthCode } from './entities/muffincraft-auth-code.entity';
-import { InventoryController } from './inventory/inventory.controller';
+import { InventoryController, LegacyInventoryController } from './inventory/inventory.controller';
 import { InventoryService } from './inventory/inventory.service';
 import { MuffinCraftAuthController } from './auth/muffincraft-auth.controller';
 import { MuffinCraftAuthService } from './auth/muffincraft-auth.service';
@@ -31,7 +31,7 @@ import { MuffinCraftPlayerService } from './player/muffincraft-player.service';
       }),
     }),
   ],
-  controllers: [MuffinCraftController, InventoryController, MuffinCraftAuthController, MuffinCraftPlayerController],
+  controllers: [MuffinCraftController, InventoryController, LegacyInventoryController, MuffinCraftAuthController, MuffinCraftPlayerController],
   providers: [MuffinCraftService, InventoryService, MuffinCraftAuthService, MuffinCraftPlayerService],
   exports: [MuffinCraftService, InventoryService, MuffinCraftAuthService, MuffinCraftPlayerService],
 })
