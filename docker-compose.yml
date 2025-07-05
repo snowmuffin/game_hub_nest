@@ -14,5 +14,26 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  # Option 1: Adminer (매우 간단, 1개 파일)
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # Option 2: PostgREST (API로 DB 접근)
+  # postgrest:
+  #   image: postgrest/postgrest:latest
+  #   environment:
+  #     PGRST_DB_URI: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+  #     PGRST_DB_SCHEMAS: public
+  #     PGRST_DB_ANON_ROLE: ${DB_USER}
+  #   ports:
+  #     - "3001:3000"
+  #   depends_on:
+  #     - db
+
 volumes:
   postgres_data:

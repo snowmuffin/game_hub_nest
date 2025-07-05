@@ -32,18 +32,18 @@ export class InventoryController {
    * 기존 API 호환성 유지 (구 버전 클라이언트용) - 더 이상 사용하지 않음
    * @deprecated 외부 창고 시스템으로 변경됨
    */
-  @Post('user/:userId/sync')
-  async syncInventoryById(
-    @Param('userId') userId: string,
-    @Body() itemData: any
-  ) {
-    return await this.inventoryService.syncInventory(userId, itemData);
-  }
+  // @Post('user/:userId/sync')
+  // async syncInventoryById(
+  //   @Param('userId') userId: string,
+  //   @Body() itemData: any
+  // ) {
+  //   return await this.inventoryService.syncInventory(userId, itemData);
+  // }
 
-  @Get('user/:userId')
-  async getUserInventoryById(@Param('userId') userId: string) {
-    return await this.inventoryService.getUserInventory(userId);
-  }
+  // @Get('user/:userId')
+  // async getUserInventoryById(@Param('userId') userId: string) {
+  //   return await this.inventoryService.getUserInventory(userId);
+  // }
 }
 
 /**
@@ -70,18 +70,19 @@ export class LegacyInventoryController {
   }
 
   /**
+   * @deprecated 더 이상 사용하지 않음 - minecraftUuid 기반으로 변경됨
    * 기존 API 호환성 유지 (구 버전 클라이언트용)
    */
-  @Post('user/:userId/sync')
-  async syncInventoryById(
-    @Param('userId') userId: string,
-    @Body() itemData: any
-  ) {
-    return await this.inventoryService.syncInventory(userId, itemData);
-  }
+  // @Post('user/:userId/sync')
+  // async syncInventoryById(
+  //   @Param('userId') userId: string,
+  //   @Body() itemData: any
+  // ) {
+  //   return await this.inventoryService.syncInventory(userId, itemData);
+  // }
 
-  @Get('user/:userId')
-  async getUserInventoryById(@Param('userId') userId: string) {
-    return await this.inventoryService.getUserInventory(userId);
-  }
+  // @Get('user/:userId')
+  // async getUserInventoryById(@Param('userId') userId: string) {
+  //   return await this.inventoryService.getUserInventory(userId);
+  // }
 }
