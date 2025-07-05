@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
-import { MinecraftAuthGuard } from '../../auth/minecraft-auth.guard';
+import { MuffinCraftPlayerGuard } from '../auth/muffincraft-player.guard';
 
 @Controller('muffincraft/inventory')
-@UseGuards(MinecraftAuthGuard)
+@UseGuards(MuffinCraftPlayerGuard)
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
@@ -12,13 +12,27 @@ export class InventoryController {
     @Request() req,
     @Body() itemData: any
   ) {
-    const userId = req.user.id; // 마인크래프트 가드에서 id 필드 추가했으므로 통일
-    return await this.inventoryService.syncInventory(userId, itemData);
+    return await this.inventoryService.syncPlayerInventory(req.user, itemData);
   }
 
   @Get('my-inventory')
   async getUserInventory(@Request() req) {
-    const userId = req.user.id; // 마인크래프트 가드에서 id 필드 추가했으므로 통일
+    return await this.inventoryService.getPlayerInventory(req.user);
+  }
+
+  /**
+   * 기존 API 호환성 유지 (구 버전 클라이언트용)
+   */
+  @Post('user/:userId/sync')
+  async syncInventoryById(
+    @Param('userId') userId: string,
+    @Body() itemData: any
+  ) {
+    return await this.inventoryService.syncInventory(userId, itemData);
+  }
+
+  @Get('user/:userId')
+  async getUserInventoryById(@Param('userId') userId: string) {
     return await this.inventoryService.getUserInventory(userId);
   }
 }
