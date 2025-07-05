@@ -127,4 +127,36 @@ export class MuffinCraftPlayerController {
       };
     }
   }
+
+  /**
+   * 마인크래프트 플레이어 토큰 발급 API (연동 여부 무관)
+   * POST /muffincraft/player/token
+   */
+  @Post('token')
+  async generatePlayerToken(@Body() dto: { 
+    minecraftUsername: string; 
+    minecraftUuid?: string;
+    serverInfo?: any;
+  }) {
+    try {
+      this.logger.log(`플레이어 토큰 발급 요청: ${dto.minecraftUsername}`);
+      
+      if (!dto.minecraftUsername) {
+        throw new BadRequestException('마인크래프트 사용자명이 필요합니다.');
+      }
+
+      return await this.playerService.generatePlayerToken(dto.minecraftUsername, dto.minecraftUuid);
+    } catch (error) {
+      this.logger.error(`플레이어 토큰 발급 실패: ${dto.minecraftUsername}, 오류: ${error.message}`);
+      
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      return {
+        success: false,
+        error: error.message || '플레이어 토큰 발급에 실패했습니다.'
+      };
+    }
+  }
 }

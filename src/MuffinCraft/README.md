@@ -11,6 +11,41 @@ MuffinCraft 서버와 웹사이트 유저 계정을 연동하기 위한 인증 �
 
 ## 🚀 API 엔드포인트
 
+### 0. 플레이어 토큰 발급 (연동 여부 무관)
+
+```http
+POST /muffincraft/player/token
+Content-Type: application/json
+
+{
+  "minecraftUsername": "player123",
+  "minecraftUuid": "550e8400-e29b-41d4-a716-446655440000" // 선택사항
+}
+```
+
+**응답:**
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": "6h",
+  "player": {
+    "id": 1,
+    "minecraftUsername": "player123",
+    "minecraftUuid": "550e8400-e29b-41d4-a716-446655440000",
+    "isLinked": false,
+    "userId": null
+  },
+  "message": "임시 플레이어 토큰이 발급되었습니다. 계정을 연동하면 더 많은 기능을 사용할 수 있습니다."
+}
+```
+
+**설명:**
+- 연동되지 않은 플레이어도 토큰을 발급받아 API를 사용할 수 있습니다
+- 연동된 플레이어는 24시간, 비연동 플레이어는 6시간 유효
+- 발급받은 토큰으로 인벤토리, 통화 등의 API를 사용 가능
+
 ### 1. 인증 코드 생성 (마인크래프트 서버용)
 
 ```http
@@ -170,14 +205,37 @@ public void requestAuth(Player player) {
 
 1. **인증 코드 만료**: 10분 후 자동 만료
 2. **일회성 사용**: 한 번 사용된 코드는 재사용 불가
-3. **JWT 토큰**: 웹 API는 JWT 인증 필요
+3. **JWT 토큰**: 
+   - 연동된 플레이어: 24시간 유효
+   - 비연동 플레이어: 6시간 유효
+   - 모든 API는 JWT 인증 필요
 4. **중복 연동 방지**: 한 계정당 하나의 마인크래프트 계정만 연동
+5. **플레이어 격리**: 비연동 플레이어는 가상 사용자 ID를 사용하여 데이터 격리
+6. **토큰 타입 검증**: 마인크래프트 플레이어 전용 가드로 토큰 타입 검증
 
 ## 📝 사용 흐름
 
-1. **플레이어가 마인크래프트에서 `/link` 명령어 실행**
+### 연동되지 않은 플레이어 (즉시 API 사용 가능)
+
+1. **플레이어가 마인크래프트에서 `/muffincraft token` 명령어 실행**
+2. **서버가 플레이어 토큰 발급 API 호출**
+3. **플레이어에게 토큰 발급 (6시간 유효)**
+4. **토큰으로 인벤토리, 통화 등 API 즉시 사용 가능!**
+
+### 계정 연동 플레이어 (모든 기능 + 장기간 토큰)
+
+1. **플레이어가 마인크래프트에서 `/muffincraft auth` 명령어 실행**
 2. **서버가 인증 코드 생성 API 호출**
 3. **플레이어에게 6자리 코드 표시**
 4. **플레이어가 웹사이트 로그인 후 코드 입력**
 5. **시스템이 계정 연동 처리**
-6. **연동 완료!**
+6. **연동 완료! 24시간 유효 토큰 발급 가능**
+
+### API 사용 방법
+
+```bash
+# 토큰 발급 후 Authorization 헤더에 포함하여 API 호출
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     http://your-server.com/muffincraft/currency
+```

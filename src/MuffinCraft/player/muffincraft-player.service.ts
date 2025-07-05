@@ -1,6 +1,7 @@
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
 import { MuffinCraftPlayer } from '../entities/muffincraft-player.entity';
 
 export interface RegisterPlayerDto {
@@ -20,6 +21,7 @@ export class MuffinCraftPlayerService {
   constructor(
     @InjectRepository(MuffinCraftPlayer)
     private readonly playerRepository: Repository<MuffinCraftPlayer>,
+    private readonly jwtService: JwtService,
   ) {}
 
   /**
@@ -178,6 +180,96 @@ export class MuffinCraftPlayerService {
         unlinked: unlinkedPlayers,
         linkRate: totalPlayers > 0 ? ((linkedPlayers / totalPlayers) * 100).toFixed(2) : '0.00'
       }
+    };
+  }
+
+  /**
+   * 연동되지 않은 플레이어용 임시 토큰 발급
+   */
+  async generatePlayerToken(minecraftUsername: string, minecraftUuid?: string) {
+    this.logger.log(`플레이어 토큰 발급 요청: ${minecraftUsername}, UUID: ${minecraftUuid || 'N/A'}`);
+
+    // 입력 검증
+    if (!minecraftUsername || minecraftUsername.trim().length === 0) {
+      throw new Error('마인크래프트 사용자명이 필요합니다.');
+    }
+
+    // 사용자명 길이 제한 (마인크래프트 기준)
+    if (minecraftUsername.length < 3 || minecraftUsername.length > 16) {
+      throw new Error('마인크래프트 사용자명은 3-16자여야 합니다.');
+    }
+
+    // 사용자명 형식 검증 (영문, 숫자, 언더스코어만 허용)
+    if (!/^[a-zA-Z0-9_]+$/.test(minecraftUsername)) {
+      throw new Error('마인크래프트 사용자명은 영문, 숫자, 언더스코어만 사용 가능합니다.');
+    }
+
+    // 플레이어 확인 또는 자동 등록
+    let player = await this.playerRepository.findOne({
+      where: { minecraftUsername }
+    });
+
+    if (!player) {
+      // 플레이어가 없으면 자동 등록
+      this.logger.log(`플레이어 자동 등록: ${minecraftUsername}`);
+      const registrationResult = await this.registerPlayer({
+        minecraftUsername,
+        minecraftUuid
+      });
+      
+      if (!registrationResult.success) {
+        throw new Error('플레이어 등록에 실패했습니다.');
+      }
+      
+      player = await this.playerRepository.findOne({
+        where: { minecraftUsername }
+      });
+      
+      if (!player) {
+        throw new Error('플레이어 등록 후 조회에 실패했습니다.');
+      }
+    } else {
+      // UUID 업데이트 (제공된 경우)
+      if (minecraftUuid && player.minecraftUuid !== minecraftUuid) {
+        this.logger.log(`플레이어 UUID 업데이트: ${minecraftUsername}, ${player.minecraftUuid} -> ${minecraftUuid}`);
+        player.minecraftUuid = minecraftUuid;
+        await this.playerRepository.save(player);
+      }
+    }
+
+    // JWT 토큰 생성
+    const payload = {
+      type: 'minecraft_player',
+      playerId: player.id,
+      minecraftUsername: player.minecraftUsername,
+      minecraftUuid: player.minecraftUuid,
+      isLinked: player.isLinked,
+      userId: player.userId,
+      sub: player.isLinked ? player.userId : `minecraft_${player.id}`,
+      iat: Math.floor(Date.now() / 1000),
+    };
+
+    const token = this.jwtService.sign(payload, {
+      expiresIn: player.isLinked ? '24h' : '6h' // 연동된 플레이어는 24시간, 비연동은 6시간
+    });
+
+    this.logger.log(`플레이어 토큰 발급 완료: ${minecraftUsername}, 연동 상태: ${player.isLinked}`);
+
+    return {
+      success: true,
+      token,
+      tokenType: 'Bearer',
+      expiresIn: player.isLinked ? '24h' : '6h',
+      player: {
+        id: player.id,
+        minecraftUsername: player.minecraftUsername,
+        minecraftUuid: player.minecraftUuid,
+        isLinked: player.isLinked,
+        userId: player.userId
+      },
+      message: player.isLinked 
+        ? '연동된 플레이어 토큰이 발급되었습니다.' 
+        : '임시 플레이어 토큰이 발급되었습니다. 계정을 연동하면 더 많은 기능을 사용할 수 있습니다.'
     };
   }
 }

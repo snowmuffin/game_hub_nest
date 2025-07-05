@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 import { MuffinCraftController } from './muffincraft.controller';
 import { MuffinCraftService } from './muffincraft.service';
 import { MuffinCraftInventory } from './entities/muffincraft-inventory.entity';
@@ -16,6 +17,7 @@ import { MuffinCraftPlayerService } from './player/muffincraft-player.service';
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([
       MuffinCraftInventory, 
       MuffinCraftCurrency,

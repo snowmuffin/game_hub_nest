@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { MuffinCraftService } from './muffincraft.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { MuffinCraftPlayerGuard } from './auth/muffincraft-player.guard';
 
 @Controller('muffincraft')
-@UseGuards(JwtAuthGuard)
+@UseGuards(MuffinCraftPlayerGuard)
 export class MuffinCraftController {
   constructor(private readonly muffinCraftService: MuffinCraftService) {}
 
@@ -12,13 +12,29 @@ export class MuffinCraftController {
     return this.muffinCraftService.getStatus();
   }
 
+  @Get('currency')
+  getUserCurrency(@Request() req) {
+    return this.muffinCraftService.getPlayerCurrency(req.user);
+  }
+
+  @Post('currency')
+  updateUserCurrency(
+    @Request() req,
+    @Body() currencyData: any
+  ) {
+    return this.muffinCraftService.updatePlayerCurrency(req.user, currencyData);
+  }
+
+  /**
+   * 기존 API 호환성 유지 (구 버전 클라이언트용)
+   */
   @Get('user/:userId/currency')
-  getUserCurrency(@Param('userId') userId: string) {
+  getUserCurrencyById(@Param('userId') userId: string) {
     return this.muffinCraftService.getUserCurrency(userId);
   }
 
   @Post('user/:userId/currency')
-  updateUserCurrency(
+  updateUserCurrencyById(
     @Param('userId') userId: string,
     @Body() currencyData: any
   ) {
