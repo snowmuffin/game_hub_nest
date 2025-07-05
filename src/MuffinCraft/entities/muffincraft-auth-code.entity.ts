@@ -8,7 +8,7 @@ export class MuffinCraftAuthCode {
   id: number;
 
   @Column({ type: 'varchar', length: 12, unique: true })
-  authCode: string; // 8자리 인증 코드 (영문 대문자 + 숫자)
+  authCode: string; // 12자리 인증 코드 (영문 대소문자 + 숫자 + 특수문자)
 
   @Column({ type: 'varchar', length: 16 })
   minecraftUsername: string; // 요청한 마인크래프트 유저명

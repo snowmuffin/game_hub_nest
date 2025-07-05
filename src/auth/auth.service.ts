@@ -25,6 +25,18 @@ export class AuthService {
     return this.jwtService.sign(payload, { expiresIn: '7d' }); // 리프레시 토큰 유효 기간: 7일
   }
 
+  // 마인크래프트용 토큰 생성 (24시간 유효)
+  generateMinecraftToken(user: any): string {
+    const payload = { 
+      sub: user.id, 
+      username: user.username, 
+      steam_id: user.steam_id,
+      minecraft_uuid: user.minecraft_uuid,
+      type: 'minecraft'
+    };
+    return this.jwtService.sign(payload, { expiresIn: '24h' });
+  }
+
   // 사용자 데이터 포맷팅
   formatUserData(user: any): any {
     return {

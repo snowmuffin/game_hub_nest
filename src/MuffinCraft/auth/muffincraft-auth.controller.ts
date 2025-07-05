@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Put, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, UseGuards, Req, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { MuffinCraftAuthService } from './muffincraft-auth.service';
 
@@ -13,6 +13,8 @@ export interface LinkAccountDto {
 
 @Controller('muffincraft/auth')
 export class MuffinCraftAuthController {
+  private readonly logger = new Logger(MuffinCraftAuthController.name);
+  
   constructor(private readonly authService: MuffinCraftAuthService) {}
 
   /**
@@ -21,6 +23,25 @@ export class MuffinCraftAuthController {
    */
   @Post('generate-code')
   async generateAuthCode(@Body() dto: GenerateAuthCodeDto) {
+    // 입력 검증
+    if (!dto.minecraftUsername || dto.minecraftUsername.trim().length === 0) {
+      this.logger.warn('인증 코드 생성 시도 - 잘못된 사용자명');
+      throw new Error('마인크래프트 사용자명이 필요합니다.');
+    }
+
+    // 사용자명 길이 제한 (마인크래프트 기준)
+    if (dto.minecraftUsername.length < 3 || dto.minecraftUsername.length > 16) {
+      this.logger.warn(`인증 코드 생성 시도 - 잘못된 사용자명 길이: ${dto.minecraftUsername}`);
+      throw new Error('마인크래프트 사용자명은 3-16자여야 합니다.');
+    }
+
+    // 사용자명 형식 검증 (영문, 숫자, 언더스코어만 허용)
+    if (!/^[a-zA-Z0-9_]+$/.test(dto.minecraftUsername)) {
+      this.logger.warn(`인증 코드 생성 시도 - 잘못된 사용자명 형식: ${dto.minecraftUsername}`);
+      throw new Error('마인크래프트 사용자명은 영문, 숫자, 언더스코어만 사용 가능합니다.');
+    }
+
+    this.logger.log(`인증 코드 생성 요청: ${dto.minecraftUsername}`);
     return await this.authService.generateAuthCode(dto.minecraftUsername, dto.minecraftUuid);
   }
 
