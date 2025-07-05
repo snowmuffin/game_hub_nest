@@ -18,45 +18,43 @@ export class InventoryService {
   async depositItem(user: any, itemData: any) {
     this.logger.log(`외부 창고 입금: ${JSON.stringify(user)}, 아이템: ${JSON.stringify(itemData)}`);
     
-    let targetUserId: number;
-    
-    if (user.type === 'minecraft_player') {
-      // 마인크래프트 플레이어인 경우
-      if (user.isLinked && user.userId) {
-        // 연동된 플레이어는 웹 사이트 유저 ID 사용
-        targetUserId = user.userId;
-      } else {
-        // 연동되지 않은 플레이어는 마인크래프트 플레이어 ID를 가상 유저 ID로 사용
-        targetUserId = user.playerId + 100000; // 충돌 방지를 위해 큰 수 더함
-      }
-    } else {
-      // 웹 사이트 유저인 경우
-      targetUserId = user.id;
+    // 마인크래프트 UUID 사용
+    const minecraftUuid = user.minecraftUuid;
+    if (!minecraftUuid) {
+      throw new Error('MinecraftUuid가 없습니다.');
     }
+
+    this.logger.log(`사용할 minecraftUuid: ${minecraftUuid}`);
 
     const inventoryItem = await this.inventoryRepository.findOne({
       where: { 
-        user: { id: targetUserId }, 
+        minecraftUuid: minecraftUuid, 
         itemId: itemData.itemId 
       }
     });
 
+    this.logger.log(`기존 아이템 조회 결과: ${inventoryItem ? 'FOUND' : 'NOT_FOUND'}`);
+
     if (inventoryItem) {
       // 기존 아이템이 있으면 수량 추가
-      return await this.inventoryRepository.save({
+      const updatedItem = await this.inventoryRepository.save({
         ...inventoryItem,
         quantity: inventoryItem.quantity + itemData.quantity,
         metadata: { ...inventoryItem.metadata, ...itemData.metadata }
       });
+      this.logger.log(`기존 아이템 수량 업데이트 완료: ${JSON.stringify(updatedItem)}`);
+      return updatedItem;
     }
 
-    return await this.inventoryRepository.save({
-      user: { id: targetUserId } as any,
+    const newItem = await this.inventoryRepository.save({
+      minecraftUuid: minecraftUuid,
       itemId: itemData.itemId,
       itemName: itemData.itemName || 'Unknown Item',
       quantity: itemData.quantity,
       metadata: itemData.metadata
     });
+    this.logger.log(`새로운 아이템 생성 완료: ${JSON.stringify(newItem)}`);
+    return newItem;
   }
 
   /**
@@ -82,49 +80,28 @@ export class InventoryService {
     }
 
     return await this.inventoryRepository.find({
-      where: { user: { id: targetUserId } },
-      relations: ['user'],
+      where: { minecraftUuid: user.minecraftUuid },
       order: { itemName: 'ASC' }
     });
   }
 
   /**
+   * @deprecated 더 이상 사용하지 않음 - minecraftUuid 기반으로 변경됨
    * 기존 syncInventory 메서드 (호환성 유지)
    */
-  async syncInventory(userId: string, itemData: any) {
-    const inventoryItem = await this.inventoryRepository.findOne({
-      where: { 
-        user: { id: parseInt(userId) }, 
-        itemId: itemData.itemId 
-      }
-    });
-
-    if (inventoryItem) {
-      return await this.inventoryRepository.save({
-        ...inventoryItem,
-        quantity: itemData.quantity,
-        metadata: { ...inventoryItem.metadata, ...itemData.metadata }
-      });
-    }
-
-    return await this.inventoryRepository.save({
-      user: { id: parseInt(userId) } as any,
-      itemId: itemData.itemId,
-      itemName: itemData.itemName || 'Unknown Item',
-      quantity: itemData.quantity,
-      metadata: itemData.metadata
-    });
-  }
+  // async syncInventory(userId: string, itemData: any) {
+  //   // 레거시 메서드 - 사용 중단
+  //   throw new Error('This method is deprecated. Use minecraftUuid-based methods instead.');
+  // }
 
   /**
+   * @deprecated 더 이상 사용하지 않음 - minecraftUuid 기반으로 변경됨
    * 기존 getUserInventory 메서드 (호환성 유지)
    */
-  async getUserInventory(userId: string) {
-    return await this.inventoryRepository.find({
-      where: { user: { id: parseInt(userId) } },
-      relations: ['user']
-    });
-  }
+  // async getUserInventory(userId: string) {
+  //   // 레거시 메서드 - 사용 중단
+  //   throw new Error('This method is deprecated. Use minecraftUuid-based methods instead.');
+  // }
 
   /**
    * 외부 창고에서 아이템 출금 (플레이어가 수동으로 출금)
@@ -132,21 +109,15 @@ export class InventoryService {
   async withdrawItem(user: any, itemData: { itemId: string; quantity: number }) {
     this.logger.log(`외부 창고 출금: ${JSON.stringify(user)}, 아이템: ${JSON.stringify(itemData)}`);
     
-    let targetUserId: number;
-    
-    if (user.type === 'minecraft_player') {
-      if (user.isLinked && user.userId) {
-        targetUserId = user.userId;
-      } else {
-        targetUserId = user.playerId + 100000;
-      }
-    } else {
-      targetUserId = user.id;
+    // 마인크래프트 UUID 사용
+    const minecraftUuid = user.minecraftUuid;
+    if (!minecraftUuid) {
+      throw new Error('MinecraftUuid가 없습니다.');
     }
 
     const inventoryItem = await this.inventoryRepository.findOne({
       where: { 
-        user: { id: targetUserId }, 
+        minecraftUuid: minecraftUuid, 
         itemId: itemData.itemId 
       }
     });
