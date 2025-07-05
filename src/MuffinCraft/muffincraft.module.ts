@@ -11,6 +11,8 @@ import { InventoryController } from './inventory/inventory.controller';
 import { InventoryService } from './inventory/inventory.service';
 import { MuffinCraftAuthController } from './auth/muffincraft-auth.controller';
 import { MuffinCraftAuthService } from './auth/muffincraft-auth.service';
+import { MuffinCraftPlayerController } from './player/muffincraft-player.controller';
+import { MuffinCraftPlayerService } from './player/muffincraft-player.service';
 
 @Module({
   imports: [
@@ -27,8 +29,8 @@ import { MuffinCraftAuthService } from './auth/muffincraft-auth.service';
       }),
     }),
   ],
-  controllers: [MuffinCraftController, InventoryController, MuffinCraftAuthController],
-  providers: [MuffinCraftService, InventoryService, MuffinCraftAuthService],
-  exports: [MuffinCraftService, InventoryService, MuffinCraftAuthService],
+  controllers: [MuffinCraftController, InventoryController, MuffinCraftAuthController, MuffinCraftPlayerController],
+  providers: [MuffinCraftService, InventoryService, MuffinCraftAuthService, MuffinCraftPlayerService],
+  exports: [MuffinCraftService, InventoryService, MuffinCraftAuthService, MuffinCraftPlayerService],
 })
 export class MuffinCraftModule {}
