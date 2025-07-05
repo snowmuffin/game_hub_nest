@@ -1,21 +1,6 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
-    ports:
-      - "4000:4000"
-    environment:
-      - NODE_ENV=production
-      - HOST=0.0.0.0
-      - PORT=4000
-      - DOMAIN=${DOMAIN}
-      - BASE_URL=${BASE_URL}
-    env_file:
-      - .env
-    depends_on:
-      - db
-    restart: unless-stopped
 
   nginx:
     image: nginx:alpine
