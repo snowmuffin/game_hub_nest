@@ -14,6 +14,7 @@ import { MuffinCraftAuthController } from './auth/muffincraft-auth.controller';
 import { MuffinCraftAuthService } from './auth/muffincraft-auth.service';
 import { MuffinCraftPlayerController } from './player/muffincraft-player.controller';
 import { MuffinCraftPlayerService } from './player/muffincraft-player.service';
+import { ResourcePackController } from './resourcepack.controller';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { MuffinCraftPlayerService } from './player/muffincraft-player.service';
       }),
     }),
   ],
-  controllers: [MuffinCraftController, InventoryController, LegacyInventoryController, MuffinCraftAuthController, MuffinCraftPlayerController],
+  controllers: [MuffinCraftController, InventoryController, LegacyInventoryController, MuffinCraftAuthController, MuffinCraftPlayerController, ResourcePackController],
   providers: [MuffinCraftService, InventoryService, MuffinCraftAuthService, MuffinCraftPlayerService],
   exports: [MuffinCraftService, InventoryService, MuffinCraftAuthService, MuffinCraftPlayerService],
 })

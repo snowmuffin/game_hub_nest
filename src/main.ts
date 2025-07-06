@@ -2,12 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import * as dotenv from 'dotenv';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 // Load environment variables
 dotenv.config();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   console.log('REALM env:', process.env.REALM);
 
@@ -71,6 +73,9 @@ async function bootstrap() {
   // Set global prefix for API routes (optional)
   app.setGlobalPrefix('api');
 
+  // Serve static files from the "public" directory
+  app.useStaticAssets(join(__dirname, '..', 'public'));
+
   await app.listen(port, host, () => {
     const serverUrl = baseUrl || `http://${host}:${port}`;
     console.log(`Server is running on ${serverUrl}`);
@@ -78,6 +83,10 @@ async function bootstrap() {
       console.log(`Domain: ${domain}`);
     }
     console.log(`API available at: ${serverUrl}/api`);
+    console.log(`\n🧁 MuffinCraft 리소스팩 엔드포인트:`);
+    console.log(`   📦 다운로드: ${serverUrl}/api/muffincraft/resourcepack/download`);
+    console.log(`   ℹ️  정보: ${serverUrl}/api/muffincraft/resourcepack/info`);
+    console.log(`   ✅ 상태: ${serverUrl}/api/muffincraft/resourcepack/status`);
   });
 }
 bootstrap();
