@@ -9,7 +9,6 @@ interface UserTokenData {
   id: number;
   username: string;
   steam_id?: string;
-  minecraft_uuid?: string;
 }
 
 interface SteamProfile {
@@ -54,7 +53,6 @@ export class AuthService {
       sub: user.id,
       username: user.username,
       steam_id: user.steam_id,
-      minecraft_uuid: user.minecraft_uuid,
       type: 'minecraft',
     };
     return this.jwtService.sign(payload, { expiresIn: '24h' });
