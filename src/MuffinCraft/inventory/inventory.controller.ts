@@ -1,6 +1,17 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { MuffinCraftPlayerGuard } from '../auth/muffincraft-player.guard';
+
+interface AuthenticatedRequest {
+  user: any;
+}
 
 @Controller('muffincraft/warehouse')
 @UseGuards(MuffinCraftPlayerGuard)
@@ -9,28 +20,28 @@ export class InventoryController {
 
   @Post('deposit')
   async depositItem(
-    @Request() req,
-    @Body() itemData: any
+    @Request() req: AuthenticatedRequest,
+    @Body() itemData: any,
   ) {
     return await this.inventoryService.depositItem(req.user, itemData);
   }
 
   @Post('withdraw')
   async withdrawItem(
-    @Request() req,
-    @Body() itemData: { itemId: string; quantity: number }
+    @Request() req: AuthenticatedRequest,
+    @Body() itemData: { itemId: string; quantity: number },
   ) {
     return await this.inventoryService.withdrawItem(req.user, itemData);
   }
 
   @Get('my-warehouse')
-  async getUserWarehouse(@Request() req) {
+  async getUserWarehouse(@Request() req: AuthenticatedRequest) {
     return await this.inventoryService.getPlayerWarehouse(req.user);
   }
 
   /**
-   * 기존 API 호환성 유지 (구 버전 클라이언트용) - 더 이상 사용하지 않음
-   * @deprecated 외부 창고 시스템으로 변경됨
+   * Maintain API compatibility for legacy clients - no longer used
+   * @deprecated Changed to external warehouse system
    */
   // @Post('user/:userId/sync')
   // async syncInventoryById(
@@ -47,7 +58,7 @@ export class InventoryController {
 }
 
 /**
- * 기존 인벤토리 API 호환성을 위한 별도 컨트롤러
+ * Separate controller for legacy inventory API compatibility
  */
 @Controller('muffincraft/inventory')
 @UseGuards(MuffinCraftPlayerGuard)
@@ -56,22 +67,22 @@ export class LegacyInventoryController {
 
   @Post('sync')
   async syncInventory(
-    @Request() req,
-    @Body() itemData: any
+    @Request() req: AuthenticatedRequest,
+    @Body() itemData: any,
   ) {
-    // 기존 인벤토리 동기화를 창고 입금으로 처리
+    // Process legacy inventory sync as warehouse deposit
     return await this.inventoryService.depositItem(req.user, itemData);
   }
 
   @Get('my-inventory')
-  async getUserInventory(@Request() req) {
-    // 기존 인벤토리 조회를 창고 조회로 처리
+  async getUserInventory(@Request() req: AuthenticatedRequest) {
+    // Process legacy inventory query as warehouse query
     return await this.inventoryService.getPlayerWarehouse(req.user);
   }
 
   /**
-   * @deprecated 더 이상 사용하지 않음 - minecraftUuid 기반으로 변경됨
-   * 기존 API 호환성 유지 (구 버전 클라이언트용)
+   * @deprecated No longer used - changed to minecraftUuid based
+   * Maintain API compatibility for legacy clients
    */
   // @Post('user/:userId/sync')
   // async syncInventoryById(

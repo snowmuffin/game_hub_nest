@@ -25,40 +25,49 @@ export class MuffinCraftPlayerService {
   ) {}
 
   /**
-   * 계정 연결 없이 플레이어 등록 (마인크래프트 서버에서 호출)
+   * Register player without account linking (called from Minecraft server)
    */
   async registerPlayer(dto: RegisterPlayerDto) {
-    this.logger.log(`플레이어 등록 요청: ${dto.minecraftUsername}, UUID: ${dto.minecraftUuid || 'N/A'}`);
+    this.logger.log(
+      `Player registration request: ${dto.minecraftUsername}, UUID: ${dto.minecraftUuid || 'N/A'}`,
+    );
 
-    // 입력 검증
+    // Input validation
     if (!dto.minecraftUsername || dto.minecraftUsername.trim().length === 0) {
-      throw new Error('마인크래프트 사용자명이 필요합니다.');
+      throw new Error('Minecraft username is required.');
     }
 
-    // 사용자명 길이 제한 (마인크래프트 기준)
+    // Username length limit (Minecraft standard)
     if (dto.minecraftUsername.length < 3 || dto.minecraftUsername.length > 16) {
-      throw new Error('마인크래프트 사용자명은 3-16자여야 합니다.');
+      throw new Error('Minecraft username must be 3-16 characters long.');
     }
 
-    // 사용자명 형식 검증 (영문, 숫자, 언더스코어만 허용)
+    // Username format validation (alphanumeric and underscore only)
     if (!/^[a-zA-Z0-9_]+$/.test(dto.minecraftUsername)) {
-      throw new Error('마인크래프트 사용자명은 영문, 숫자, 언더스코어만 사용 가능합니다.');
+      throw new Error(
+        'Minecraft username can only contain alphanumeric characters and underscores.',
+      );
     }
 
-    // 기존 플레이어 확인
-    let existingPlayer = await this.playerRepository.findOne({
-      where: { minecraftUsername: dto.minecraftUsername }
+    // Check existing player
+    const existingPlayer = await this.playerRepository.findOne({
+      where: { minecraftUsername: dto.minecraftUsername },
     });
 
     if (existingPlayer) {
-      // 기존 플레이어가 있는 경우 UUID 업데이트
-      if (dto.minecraftUuid && existingPlayer.minecraftUuid !== dto.minecraftUuid) {
-        this.logger.log(`플레이어 UUID 업데이트: ${dto.minecraftUsername}, ${existingPlayer.minecraftUuid} -> ${dto.minecraftUuid}`);
+      // Update UUID if existing player found
+      if (
+        dto.minecraftUuid &&
+        existingPlayer.minecraftUuid !== dto.minecraftUuid
+      ) {
+        this.logger.log(
+          `Player UUID update: ${dto.minecraftUsername}, ${existingPlayer.minecraftUuid} -> ${dto.minecraftUuid}`,
+        );
         existingPlayer.minecraftUuid = dto.minecraftUuid;
         await this.playerRepository.save(existingPlayer);
       }
 
-      this.logger.log(`기존 플레이어 반환: ${dto.minecraftUsername}`);
+      this.logger.log(`Returning existing player: ${dto.minecraftUsername}`);
       return {
         success: true,
         isNew: false,
@@ -69,33 +78,37 @@ export class MuffinCraftPlayerService {
           isLinked: existingPlayer.isLinked,
           userId: existingPlayer.userId,
           createdAt: existingPlayer.createdAt,
-          updatedAt: existingPlayer.updatedAt
+          updatedAt: existingPlayer.updatedAt,
         },
-        message: '기존 플레이어 정보를 반환합니다.'
+        message: 'Returning existing player information.',
       };
     }
 
-    // UUID 중복 확인 (UUID가 제공된 경우)
+    // Check UUID duplication (if UUID is provided)
     if (dto.minecraftUuid) {
       const existingUuid = await this.playerRepository.findOne({
-        where: { minecraftUuid: dto.minecraftUuid }
+        where: { minecraftUuid: dto.minecraftUuid },
       });
 
       if (existingUuid) {
-        throw new ConflictException('해당 UUID는 이미 다른 플레이어가 사용 중입니다.');
+        throw new ConflictException(
+          'This UUID is already being used by another player.',
+        );
       }
     }
 
-    // 새 플레이어 생성
+    // Create new player
     const newPlayer = this.playerRepository.create({
       minecraftUsername: dto.minecraftUsername,
       minecraftUuid: dto.minecraftUuid,
-      userId: null, // 아직 계정 연동 안됨
-      isLinked: false
+      userId: null, // Account not linked yet
+      isLinked: false,
     });
 
     const savedPlayer = await this.playerRepository.save(newPlayer);
-    this.logger.log(`새 플레이어 등록 완료: ${dto.minecraftUsername}, ID: ${savedPlayer.id}`);
+    this.logger.log(
+      `New player registration completed: ${dto.minecraftUsername}, ID: ${savedPlayer.id}`,
+    );
 
     return {
       success: true,
@@ -107,24 +120,25 @@ export class MuffinCraftPlayerService {
         isLinked: savedPlayer.isLinked,
         userId: savedPlayer.userId,
         createdAt: savedPlayer.createdAt,
-        updatedAt: savedPlayer.updatedAt
+        updatedAt: savedPlayer.updatedAt,
       },
-      message: '새 플레이어가 등록되었습니다. 웹사이트에서 계정을 연동할 수 있습니다.'
+      message:
+        'New player has been registered. You can link your account on the website.',
     };
   }
 
   /**
-   * 플레이어 정보 조회
+   * Retrieve player information
    */
   async getPlayerInfo(minecraftUsername: string) {
     const player = await this.playerRepository.findOne({
-      where: { minecraftUsername }
+      where: { minecraftUsername },
     });
 
     if (!player) {
       return {
         success: false,
-        message: '플레이어를 찾을 수 없습니다.'
+        message: 'Player not found.',
       };
     }
 
@@ -137,38 +151,38 @@ export class MuffinCraftPlayerService {
         isLinked: player.isLinked,
         userId: player.userId,
         createdAt: player.createdAt,
-        updatedAt: player.updatedAt
-      }
+        updatedAt: player.updatedAt,
+      },
     };
   }
 
   /**
-   * 연동되지 않은 플레이어 목록 조회
+   * Retrieve unlinked players list
    */
   async getUnlinkedPlayers() {
     const unlinkedPlayers = await this.playerRepository.find({
-      where: { isLinked: false }
+      where: { isLinked: false },
     });
 
     return {
       success: true,
       count: unlinkedPlayers.length,
-      players: unlinkedPlayers.map(player => ({
+      players: unlinkedPlayers.map((player) => ({
         id: player.id,
         minecraftUsername: player.minecraftUsername,
         minecraftUuid: player.minecraftUuid,
-        createdAt: player.createdAt
-      }))
+        createdAt: player.createdAt,
+      })),
     };
   }
 
   /**
-   * 플레이어 통계 조회
+   * Retrieve player statistics
    */
   async getPlayerStats() {
     const totalPlayers = await this.playerRepository.count();
     const linkedPlayers = await this.playerRepository.count({
-      where: { isLinked: true }
+      where: { isLinked: true },
     });
     const unlinkedPlayers = totalPlayers - linkedPlayers;
 
@@ -178,66 +192,75 @@ export class MuffinCraftPlayerService {
         total: totalPlayers,
         linked: linkedPlayers,
         unlinked: unlinkedPlayers,
-        linkRate: totalPlayers > 0 ? ((linkedPlayers / totalPlayers) * 100).toFixed(2) : '0.00'
-      }
+        linkRate:
+          totalPlayers > 0
+            ? ((linkedPlayers / totalPlayers) * 100).toFixed(2)
+            : '0.00',
+      },
     };
   }
 
   /**
-   * 연동되지 않은 플레이어용 임시 토큰 발급
+   * Generate temporary token for unlinked players
    */
   async generatePlayerToken(minecraftUsername: string, minecraftUuid?: string) {
-    this.logger.log(`플레이어 토큰 발급 요청: ${minecraftUsername}, UUID: ${minecraftUuid || 'N/A'}`);
+    this.logger.log(
+      `Player token generation request: ${minecraftUsername}, UUID: ${minecraftUuid || 'N/A'}`,
+    );
 
-    // 입력 검증
+    // Input validation
     if (!minecraftUsername || minecraftUsername.trim().length === 0) {
-      throw new Error('마인크래프트 사용자명이 필요합니다.');
+      throw new Error('Minecraft username is required.');
     }
 
-    // 사용자명 길이 제한 (마인크래프트 기준)
+    // Username length limit (Minecraft standard)
     if (minecraftUsername.length < 3 || minecraftUsername.length > 16) {
-      throw new Error('마인크래프트 사용자명은 3-16자여야 합니다.');
+      throw new Error('Minecraft username must be 3-16 characters long.');
     }
 
-    // 사용자명 형식 검증 (영문, 숫자, 언더스코어만 허용)
+    // Username format validation (alphanumeric and underscore only)
     if (!/^[a-zA-Z0-9_]+$/.test(minecraftUsername)) {
-      throw new Error('마인크래프트 사용자명은 영문, 숫자, 언더스코어만 사용 가능합니다.');
+      throw new Error(
+        'Minecraft username can only contain alphanumeric characters and underscores.',
+      );
     }
 
-    // 플레이어 확인 또는 자동 등록
+    // Check player or auto-register
     let player = await this.playerRepository.findOne({
-      where: { minecraftUsername }
+      where: { minecraftUsername },
     });
 
     if (!player) {
-      // 플레이어가 없으면 자동 등록
-      this.logger.log(`플레이어 자동 등록: ${minecraftUsername}`);
+      // Auto-register player if not found
+      this.logger.log(`Auto-registering player: ${minecraftUsername}`);
       const registrationResult = await this.registerPlayer({
         minecraftUsername,
-        minecraftUuid
+        minecraftUuid,
       });
-      
+
       if (!registrationResult.success) {
-        throw new Error('플레이어 등록에 실패했습니다.');
+        throw new Error('Failed to register player.');
       }
-      
+
       player = await this.playerRepository.findOne({
-        where: { minecraftUsername }
+        where: { minecraftUsername },
       });
-      
+
       if (!player) {
-        throw new Error('플레이어 등록 후 조회에 실패했습니다.');
+        throw new Error('Failed to retrieve player after registration.');
       }
     } else {
-      // UUID 업데이트 (제공된 경우)
+      // Update UUID (if provided)
       if (minecraftUuid && player.minecraftUuid !== minecraftUuid) {
-        this.logger.log(`플레이어 UUID 업데이트: ${minecraftUsername}, ${player.minecraftUuid} -> ${minecraftUuid}`);
+        this.logger.log(
+          `Player UUID update: ${minecraftUsername}, ${player.minecraftUuid} -> ${minecraftUuid}`,
+        );
         player.minecraftUuid = minecraftUuid;
         await this.playerRepository.save(player);
       }
     }
 
-    // JWT 토큰 생성
+    // Generate JWT token
     const payload = {
       type: 'minecraft_player',
       playerId: player.id,
@@ -250,10 +273,12 @@ export class MuffinCraftPlayerService {
     };
 
     const token = this.jwtService.sign(payload, {
-      expiresIn: player.isLinked ? '24h' : '6h' // 연동된 플레이어는 24시간, 비연동은 6시간
+      expiresIn: player.isLinked ? '24h' : '6h', // 24 hours for linked players, 6 hours for unlinked
     });
 
-    this.logger.log(`플레이어 토큰 발급 완료: ${minecraftUsername}, 연동 상태: ${player.isLinked}`);
+    this.logger.log(
+      `Player token generation completed: ${minecraftUsername}, linking status: ${player.isLinked}`,
+    );
 
     return {
       success: true,
@@ -265,11 +290,11 @@ export class MuffinCraftPlayerService {
         minecraftUsername: player.minecraftUsername,
         minecraftUuid: player.minecraftUuid,
         isLinked: player.isLinked,
-        userId: player.userId
+        userId: player.userId,
       },
-      message: player.isLinked 
-        ? '연동된 플레이어 토큰이 발급되었습니다.' 
-        : '임시 플레이어 토큰이 발급되었습니다. 계정을 연동하면 더 많은 기능을 사용할 수 있습니다.'
+      message: player.isLinked
+        ? 'Linked player token has been issued.'
+        : 'Temporary player token has been issued. You can access more features by linking your account.',
     };
   }
 }

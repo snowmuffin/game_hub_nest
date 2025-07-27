@@ -5,6 +5,29 @@ import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
 import { createuser } from 'src/utils/createuser';
 
+interface UserTokenData {
+  id: number;
+  username: string;
+  steam_id?: string;
+  minecraft_uuid?: string;
+}
+
+interface SteamProfile {
+  steam_id: string;
+  username: string;
+  email?: string;
+  [key: string]: any;
+}
+
+interface FormattedUserData {
+  id: number;
+  username: string;
+  email: string;
+  steamId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -13,32 +36,32 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // 액세스 토큰 생성
-  generateJwtToken(user: any): string {
+  // Generate access token
+  generateJwtToken(user: UserTokenData): string {
     const payload = { sub: user.id, username: user.username };
-    return this.jwtService.sign(payload, { expiresIn: '15m' }); // 액세스 토큰 유효 기간: 15분
+    return this.jwtService.sign(payload, { expiresIn: '15m' }); // Access token validity: 15 minutes
   }
 
-  // 리프레시 토큰 생성
-  generateRefreshToken(user: any): string {
+  // Generate refresh token
+  generateRefreshToken(user: UserTokenData): string {
     const payload = { sub: user.id, username: user.username };
-    return this.jwtService.sign(payload, { expiresIn: '7d' }); // 리프레시 토큰 유효 기간: 7일
+    return this.jwtService.sign(payload, { expiresIn: '7d' }); // Refresh token validity: 7 days
   }
 
-  // 마인크래프트용 토큰 생성 (24시간 유효)
-  generateMinecraftToken(user: any): string {
-    const payload = { 
-      sub: user.id, 
-      username: user.username, 
+  // Generate Minecraft token (24 hours validity)
+  generateMinecraftToken(user: UserTokenData): string {
+    const payload = {
+      sub: user.id,
+      username: user.username,
       steam_id: user.steam_id,
       minecraft_uuid: user.minecraft_uuid,
-      type: 'minecraft'
+      type: 'minecraft',
     };
     return this.jwtService.sign(payload, { expiresIn: '24h' });
   }
 
-  // 사용자 데이터 포맷팅
-  formatUserData(user: any): any {
+  // Format user data
+  formatUserData(user: User): FormattedUserData {
     return {
       id: user.id,
       username: user.username,
@@ -49,17 +72,22 @@ export class AuthService {
     };
   }
 
-  async findOrCreateUser(profile: any): Promise<User> {
+  async findOrCreateUser(profile: SteamProfile): Promise<User> {
     console.log('Profile received:', profile);
 
     if (!profile.steam_id || !profile.username) {
       throw new Error('Invalid profile data received from Steam');
     }
 
-    let user = await this.userRepository.findOne({ where: { steam_id: profile.steam_id } });
+    let user = await this.userRepository.findOne({
+      where: { steam_id: profile.steam_id },
+    });
 
     if (!user) {
       await createuser(profile, this.userRepository);
+      user = await this.userRepository.findOne({
+        where: { steam_id: profile.steam_id },
+      });
     }
 
     if (!user) {

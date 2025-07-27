@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ValheimInventory } from './valheim-inventory.entity';
@@ -45,21 +50,24 @@ export class ValheimInventoryService {
     return await this.inventoryRepository.find({
       where: { user_id: userId },
       relations: ['item'],
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC' },
     });
   }
 
   /**
    * 특정 보관 타입의 아이템들 조회
    */
-  async getUserInventoryByStorageType(userId: number, storageType: string): Promise<ValheimInventory[]> {
+  async getUserInventoryByStorageType(
+    userId: number,
+    storageType: string,
+  ): Promise<ValheimInventory[]> {
     return await this.inventoryRepository.find({
-      where: { 
+      where: {
         user_id: userId,
-        storage_type: storageType 
+        storage_type: storageType,
       },
       relations: ['item'],
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC' },
     });
   }
 
@@ -82,19 +90,25 @@ export class ValheimInventoryService {
    */
   async addItem(addDto: AddItemToInventoryDto): Promise<ValheimInventory> {
     // 사용자 및 아이템 존재 확인
-    const user = await this.userRepository.findOne({ where: { id: addDto.user_id } });
+    const user = await this.userRepository.findOne({
+      where: { id: addDto.user_id },
+    });
     if (!user) {
       throw new NotFoundException(`User with ID ${addDto.user_id} not found`);
     }
 
-    const item = await this.itemRepository.findOne({ where: { id: addDto.item_id } });
+    const item = await this.itemRepository.findOne({
+      where: { id: addDto.item_id },
+    });
     if (!item) {
       throw new NotFoundException(`Item with ID ${addDto.item_id} not found`);
     }
 
     // 스택 제한 확인
     if (addDto.quantity > item.max_stack) {
-      throw new BadRequestException(`Quantity ${addDto.quantity} exceeds max stack size ${item.max_stack}`);
+      throw new BadRequestException(
+        `Quantity ${addDto.quantity} exceeds max stack size ${item.max_stack}`,
+      );
     }
 
     // 기존 동일한 아이템이 있는지 확인 (품질, 내구도 등이 같으면 스택 가능)
@@ -104,16 +118,21 @@ export class ValheimInventoryService {
         item_id: addDto.item_id,
         quality: addDto.quality || ValheimItemQuality.LEVEL_1,
         durability: addDto.durability || 100,
-        storage_type: addDto.storage_type || 'inventory'
-      }
+        storage_type: addDto.storage_type || 'inventory',
+      },
     });
 
-    if (existingItem && (existingItem.quantity + addDto.quantity) <= item.max_stack) {
+    if (
+      existingItem &&
+      existingItem.quantity + addDto.quantity <= item.max_stack
+    ) {
       // 기존 아이템에 수량 추가
       existingItem.quantity += addDto.quantity;
       const updatedItem = await this.inventoryRepository.save(existingItem);
-      
-      this.logger.log(`Added ${addDto.quantity} ${item.name} to user ${addDto.user_id}'s inventory (total: ${updatedItem.quantity})`);
+
+      this.logger.log(
+        `Added ${addDto.quantity} ${item.name} to user ${addDto.user_id}'s inventory (total: ${updatedItem.quantity})`,
+      );
       return updatedItem;
     } else {
       // 새로운 인벤토리 항목 생성
@@ -121,11 +140,13 @@ export class ValheimInventoryService {
         ...addDto,
         quality: addDto.quality || ValheimItemQuality.LEVEL_1,
         durability: addDto.durability || 100,
-        storage_type: addDto.storage_type || 'inventory'
+        storage_type: addDto.storage_type || 'inventory',
       });
 
       const savedItem = await this.inventoryRepository.save(inventoryItem);
-      this.logger.log(`Added ${addDto.quantity} ${item.name} to user ${addDto.user_id}'s inventory (new stack)`);
+      this.logger.log(
+        `Added ${addDto.quantity} ${item.name} to user ${addDto.user_id}'s inventory (new stack)`,
+      );
       return savedItem;
     }
   }
@@ -133,19 +154,30 @@ export class ValheimInventoryService {
   /**
    * 인벤토리 아이템 수량 감소
    */
-  async removeItem(userId: number, itemId: number, quantity: number): Promise<void> {
+  async removeItem(
+    userId: number,
+    itemId: number,
+    quantity: number,
+  ): Promise<void> {
     const inventoryItems = await this.inventoryRepository.find({
       where: { user_id: userId, item_id: itemId },
-      order: { created_at: 'ASC' } // 오래된 것부터 제거
+      order: { created_at: 'ASC' }, // 오래된 것부터 제거
     });
 
     if (inventoryItems.length === 0) {
-      throw new NotFoundException(`Item ${itemId} not found in user ${userId}'s inventory`);
+      throw new NotFoundException(
+        `Item ${itemId} not found in user ${userId}'s inventory`,
+      );
     }
 
-    const totalQuantity = inventoryItems.reduce((sum, item) => sum + item.quantity, 0);
+    const totalQuantity = inventoryItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0,
+    );
     if (totalQuantity < quantity) {
-      throw new BadRequestException(`Not enough items. Have: ${totalQuantity}, Need: ${quantity}`);
+      throw new BadRequestException(
+        `Not enough items. Have: ${totalQuantity}, Need: ${quantity}`,
+      );
     }
 
     let remainingToRemove = quantity;
@@ -164,25 +196,37 @@ export class ValheimInventoryService {
       }
     }
 
-    this.logger.log(`Removed ${quantity} items (ID: ${itemId}) from user ${userId}'s inventory`);
+    this.logger.log(
+      `Removed ${quantity} items (ID: ${itemId}) from user ${userId}'s inventory`,
+    );
   }
 
   /**
    * 인벤토리 아이템 업데이트
    */
-  async updateInventoryItem(inventoryId: number, updateDto: UpdateInventoryItemDto): Promise<ValheimInventory> {
+  async updateInventoryItem(
+    inventoryId: number,
+    updateDto: UpdateInventoryItemDto,
+  ): Promise<ValheimInventory> {
     const inventoryItem = await this.inventoryRepository.findOne({
       where: { id: inventoryId },
-      relations: ['item']
+      relations: ['item'],
     });
 
     if (!inventoryItem) {
-      throw new NotFoundException(`Inventory item with ID ${inventoryId} not found`);
+      throw new NotFoundException(
+        `Inventory item with ID ${inventoryId} not found`,
+      );
     }
 
     // 수량 제한 확인
-    if (updateDto.quantity && updateDto.quantity > inventoryItem.item.max_stack) {
-      throw new BadRequestException(`Quantity ${updateDto.quantity} exceeds max stack size ${inventoryItem.item.max_stack}`);
+    if (
+      updateDto.quantity &&
+      updateDto.quantity > inventoryItem.item.max_stack
+    ) {
+      throw new BadRequestException(
+        `Quantity ${updateDto.quantity} exceeds max stack size ${inventoryItem.item.max_stack}`,
+      );
     }
 
     Object.assign(inventoryItem, updateDto);
@@ -195,10 +239,14 @@ export class ValheimInventoryService {
   /**
    * 아이템 이동 (보관소 변경)
    */
-  async moveItem(inventoryId: number, newStorageType: string, newStorageLocation?: string): Promise<ValheimInventory> {
+  async moveItem(
+    inventoryId: number,
+    newStorageType: string,
+    newStorageLocation?: string,
+  ): Promise<ValheimInventory> {
     return await this.updateInventoryItem(inventoryId, {
       storage_type: newStorageType,
-      storage_location: newStorageLocation
+      storage_location: newStorageLocation,
     });
   }
 
@@ -230,7 +278,7 @@ export class ValheimInventoryService {
     return {
       total_items: parseInt(totalItems.total) || 0,
       items_by_type: itemTypes,
-      storage_distribution: storageDistribution
+      storage_distribution: storageDistribution,
     };
   }
 

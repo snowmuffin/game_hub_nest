@@ -1,5 +1,16 @@
-import { Controller, Post, Get, Body, Param, Logger, BadRequestException } from '@nestjs/common';
-import { MuffinCraftPlayerService, RegisterPlayerDto } from './muffincraft-player.service';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  MuffinCraftPlayerService,
+  RegisterPlayerDto,
+} from './muffincraft-player.service';
 
 @Controller('muffincraft/player')
 export class MuffinCraftPlayerController {
@@ -8,154 +19,191 @@ export class MuffinCraftPlayerController {
   constructor(private readonly playerService: MuffinCraftPlayerService) {}
 
   /**
-   * 마인크래프트 서버에서 호출하는 플레이어 등록 API (인증 불필요)
+   * Player registration API called from Minecraft server (no authentication required)
    * POST /muffincraft/player/register
    */
   @Post('register')
   async registerPlayer(@Body() dto: RegisterPlayerDto) {
     try {
-      this.logger.log(`플레이어 등록 요청: ${dto.minecraftUsername}`);
-      
+      this.logger.log(`Player registration request: ${dto.minecraftUsername}`);
+
       if (!dto.minecraftUsername) {
-        throw new BadRequestException('마인크래프트 사용자명이 필요합니다.');
+        throw new BadRequestException('Minecraft username is required.');
       }
 
       return await this.playerService.registerPlayer(dto);
     } catch (error) {
-      this.logger.error(`플레이어 등록 실패: ${dto.minecraftUsername}, 오류: ${error.message}`);
-      
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Player registration failed: ${dto.minecraftUsername}, error: ${errorMessage}`,
+      );
+
       if (error instanceof BadRequestException) {
         throw error;
       }
 
       return {
         success: false,
-        error: error.message || '플레이어 등록에 실패했습니다.'
+        error: errorMessage || 'Failed to register player.',
       };
     }
   }
 
   /**
-   * 플레이어 정보 조회 API (인증 불필요)
+   * Player information retrieval API (no authentication required)
    * GET /muffincraft/player/info/:username
    */
   @Get('info/:username')
   async getPlayerInfo(@Param('username') username: string) {
     try {
-      this.logger.log(`플레이어 정보 조회: ${username}`);
+      this.logger.log(`Player info request: ${username}`);
       return await this.playerService.getPlayerInfo(username);
     } catch (error) {
-      this.logger.error(`플레이어 정보 조회 실패: ${username}, 오류: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Player info retrieval failed: ${username}, error: ${errorMessage}`,
+      );
       return {
         success: false,
-        error: error.message || '플레이어 정보 조회에 실패했습니다.'
+        error: errorMessage || 'Failed to retrieve player information.',
       };
     }
   }
 
   /**
-   * 연동되지 않은 플레이어 목록 조회 API (관리용)
+   * Unlinked players list retrieval API (for administration)
    * GET /muffincraft/player/unlinked
    */
   @Get('unlinked')
   async getUnlinkedPlayers() {
     try {
-      this.logger.log('연동되지 않은 플레이어 목록 조회');
+      this.logger.log('Retrieving unlinked players list');
       return await this.playerService.getUnlinkedPlayers();
     } catch (error) {
-      this.logger.error(`연동되지 않은 플레이어 목록 조회 실패: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Unlinked players list retrieval failed: ${errorMessage}`,
+      );
       return {
         success: false,
-        error: error.message || '플레이어 목록 조회에 실패했습니다.'
+        error: errorMessage || 'Failed to retrieve players list.',
       };
     }
   }
 
   /**
-   * 플레이어 통계 조회 API (관리용)
+   * Player statistics retrieval API (for administration)
    * GET /muffincraft/player/stats
    */
   @Get('stats')
   async getPlayerStats() {
     try {
-      this.logger.log('플레이어 통계 조회');
+      this.logger.log('Retrieving player statistics');
       return await this.playerService.getPlayerStats();
     } catch (error) {
-      this.logger.error(`플레이어 통계 조회 실패: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Player statistics retrieval failed: ${errorMessage}`);
       return {
         success: false,
-        error: error.message || '플레이어 통계 조회에 실패했습니다.'
+        error: errorMessage || 'Failed to retrieve player statistics.',
       };
     }
   }
 
   /**
-   * 플레이어 온라인 상태 업데이트 API (마인크래프트 서버용)
+   * Player online status update API (for Minecraft server)
    * POST /muffincraft/player/update-status
    */
   @Post('update-status')
-  async updatePlayerStatus(@Body() body: { 
-    minecraftUsername: string; 
-    status: 'online' | 'offline';
-    lastSeen?: Date;
-    serverInfo?: any;
-  }) {
+  async updatePlayerStatus(
+    @Body()
+    body: {
+      minecraftUsername: string;
+      status: 'online' | 'offline';
+      lastSeen?: Date;
+      serverInfo?: any;
+    },
+  ) {
     try {
-      this.logger.log(`플레이어 상태 업데이트: ${body.minecraftUsername} - ${body.status}`);
-      
-      // 플레이어 정보 조회
-      const playerInfo = await this.playerService.getPlayerInfo(body.minecraftUsername);
-      
+      this.logger.log(
+        `Player status update: ${body.minecraftUsername} - ${body.status}`,
+      );
+
+      // Retrieve player information
+      const playerInfo = await this.playerService.getPlayerInfo(
+        body.minecraftUsername,
+      );
+
       if (!playerInfo.success) {
-        // 플레이어가 없으면 자동 등록
-        this.logger.log(`플레이어 자동 등록: ${body.minecraftUsername}`);
+        // Auto-register player if not found
+        this.logger.log(`Auto-registering player: ${body.minecraftUsername}`);
         await this.playerService.registerPlayer({
-          minecraftUsername: body.minecraftUsername
+          minecraftUsername: body.minecraftUsername,
         });
       }
 
       return {
         success: true,
-        message: `플레이어 상태가 ${body.status}로 업데이트되었습니다.`,
-        timestamp: new Date().toISOString()
+        message: `Player status updated to ${body.status}.`,
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`플레이어 상태 업데이트 실패: ${body.minecraftUsername}, 오류: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Player status update failed: ${body.minecraftUsername}, error: ${errorMessage}`,
+      );
       return {
         success: false,
-        error: error.message || '플레이어 상태 업데이트에 실패했습니다.'
+        error: errorMessage || 'Failed to update player status.',
       };
     }
   }
 
   /**
-   * 마인크래프트 플레이어 토큰 발급 API (연동 여부 무관)
+   * Minecraft player token generation API (regardless of account linking status)
    * POST /muffincraft/player/token
    */
   @Post('token')
-  async generatePlayerToken(@Body() dto: { 
-    minecraftUsername: string; 
-    minecraftUuid?: string;
-    serverInfo?: any;
-  }) {
+  async generatePlayerToken(
+    @Body()
+    dto: {
+      minecraftUsername: string;
+      minecraftUuid?: string;
+      serverInfo?: any;
+    },
+  ) {
     try {
-      this.logger.log(`플레이어 토큰 발급 요청: ${dto.minecraftUsername}`);
-      
+      this.logger.log(
+        `Player token generation request: ${dto.minecraftUsername}`,
+      );
+
       if (!dto.minecraftUsername) {
-        throw new BadRequestException('마인크래프트 사용자명이 필요합니다.');
+        throw new BadRequestException('Minecraft username is required.');
       }
 
-      return await this.playerService.generatePlayerToken(dto.minecraftUsername, dto.minecraftUuid);
+      return await this.playerService.generatePlayerToken(
+        dto.minecraftUsername,
+        dto.minecraftUuid,
+      );
     } catch (error) {
-      this.logger.error(`플레이어 토큰 발급 실패: ${dto.minecraftUsername}, 오류: ${error.message}`);
-      
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Player token generation failed: ${dto.minecraftUsername}, error: ${errorMessage}`,
+      );
+
       if (error instanceof BadRequestException) {
         throw error;
       }
 
       return {
         success: false,
-        error: error.message || '플레이어 토큰 발급에 실패했습니다.'
+        error: errorMessage || 'Failed to generate player token.',
       };
     }
   }

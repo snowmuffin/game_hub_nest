@@ -1,4 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException, ConflictException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { MuffinCraftPlayer } from '../entities/muffincraft-player.entity';
@@ -18,7 +24,7 @@ export class MuffinCraftAuthService {
   /**
    * 고도로 복잡한 인증 코드 생성 (12자리: 영문 대문자 + 소문자 + 숫자 + 특수문자)
    * 예: aB7$mK9pQ3xZ, X2#nR8yU5$kV 등
-   * 
+   *
    * 보안 강화 요소:
    * - 12자리 길이 (8자리보다 36억배 더 복잡)
    * - 대문자, 소문자, 숫자, 특수문자 조합
@@ -32,40 +38,44 @@ export class MuffinCraftAuthService {
     const numbers = '0123456789';
     const specials = '#$%&*+-=?@';
     const allChars = upperCase + lowerCase + numbers + specials;
-    
+
     const codeLength = 12;
     let attempts = 0;
     const maxAttempts = 50;
-    
+
     while (attempts < maxAttempts) {
       let result = '';
-      
+
       // 각 타입별 최소 2개씩 보장
       // 대문자 2개
       for (let i = 0; i < 2; i++) {
-        result += upperCase.charAt(Math.floor(Math.random() * upperCase.length));
+        result += upperCase.charAt(
+          Math.floor(Math.random() * upperCase.length),
+        );
       }
-      
+
       // 소문자 2개
       for (let i = 0; i < 2; i++) {
-        result += lowerCase.charAt(Math.floor(Math.random() * lowerCase.length));
+        result += lowerCase.charAt(
+          Math.floor(Math.random() * lowerCase.length),
+        );
       }
-      
+
       // 숫자 2개
       for (let i = 0; i < 2; i++) {
         result += numbers.charAt(Math.floor(Math.random() * numbers.length));
       }
-      
+
       // 특수문자 2개
       for (let i = 0; i < 2; i++) {
         result += specials.charAt(Math.floor(Math.random() * specials.length));
       }
-      
+
       // 나머지 4자리는 모든 문자에서 랜덤
       for (let i = 0; i < 4; i++) {
         result += allChars.charAt(Math.floor(Math.random() * allChars.length));
       }
-      
+
       // 완전히 랜덤하게 섞기 (Fisher-Yates 알고리즘)
       const chars = result.split('');
       for (let i = chars.length - 1; i > 0; i--) {
@@ -73,7 +83,7 @@ export class MuffinCraftAuthService {
         [chars[i], chars[j]] = [chars[j], chars[i]];
       }
       result = chars.join('');
-      
+
       // 연속된 동일 문자 체크 (보안 강화)
       let hasConsecutive = false;
       for (let i = 0; i < result.length - 1; i++) {
@@ -82,15 +92,15 @@ export class MuffinCraftAuthService {
           break;
         }
       }
-      
+
       // 연속된 문자가 없으면 반환
       if (!hasConsecutive) {
         return result;
       }
-      
+
       attempts++;
     }
-    
+
     // 만약 최대 시도 횟수를 초과하면 기본 방식으로 생성
     let result = '';
     for (let i = 0; i < codeLength; i++) {
@@ -110,27 +120,31 @@ export class MuffinCraftAuthService {
    * 마인크래프트 서버에서 인증 코드 요청
    */
   async generateAuthCode(minecraftUsername: string, minecraftUuid?: string) {
-    this.logger.log(`인증 코드 요청: ${minecraftUsername}, UUID: ${minecraftUuid || 'N/A'}`);
-    
+    this.logger.log(
+      `인증 코드 요청: ${minecraftUsername}, UUID: ${minecraftUuid || 'N/A'}`,
+    );
+
     // 레이트 리밋 체크 - 같은 사용자명으로 과도한 요청 방지
     await this.checkRateLimit(minecraftUsername);
 
     // 기존 활성 인증 코드가 있는지 확인
     const existingCode = await this.authCodeRepository.findOne({
-      where: { 
-        minecraftUsername, 
+      where: {
+        minecraftUsername,
         isUsed: false,
-        expiresAt: MoreThan(new Date())
-      }
+        expiresAt: MoreThan(new Date()),
+      },
     });
 
     if (existingCode) {
-      this.logger.log(`기존 활성 인증 코드 반환: ${minecraftUsername} - ${existingCode.authCode}`);
+      this.logger.log(
+        `기존 활성 인증 코드 반환: ${minecraftUsername} - ${existingCode.authCode}`,
+      );
       return {
         success: true,
         authCode: existingCode.authCode,
         expiresAt: existingCode.expiresAt,
-        message: '기존 활성 인증 코드를 반환합니다.'
+        message: '기존 활성 인증 코드를 반환합니다.',
       };
     }
 
@@ -142,7 +156,9 @@ export class MuffinCraftAuthService {
     // 중복되지 않는 코드가 나올 때까지 시도
     while (!isUnique && attempts < 10) {
       authCode = this.generateRandomCode();
-      const existing = await this.authCodeRepository.findOne({ where: { authCode } });
+      const existing = await this.authCodeRepository.findOne({
+        where: { authCode },
+      });
       if (!existing) {
         isUnique = true;
       }
@@ -150,8 +166,12 @@ export class MuffinCraftAuthService {
     }
 
     if (!isUnique) {
-      this.logger.error(`인증 코드 생성 실패: ${minecraftUsername} - 최대 시도 횟수 초과`);
-      throw new BadRequestException('인증 코드 생성에 실패했습니다. 다시 시도해주세요.');
+      this.logger.error(
+        `인증 코드 생성 실패: ${minecraftUsername} - 최대 시도 횟수 초과`,
+      );
+      throw new BadRequestException(
+        '인증 코드 생성에 실패했습니다. 다시 시도해주세요.',
+      );
     }
 
     // 만료 시간: 현재 시간 + 10분
@@ -162,18 +182,21 @@ export class MuffinCraftAuthService {
       authCode,
       minecraftUsername,
       minecraftUuid,
-      expiresAt
+      expiresAt,
     });
 
     await this.authCodeRepository.save(newAuthCode);
 
-    this.logger.log(`새 인증 코드 생성 완료: ${minecraftUsername} - ${authCode}`);
+    this.logger.log(
+      `새 인증 코드 생성 완료: ${minecraftUsername} - ${authCode}`,
+    );
 
     return {
       success: true,
       authCode,
       expiresAt,
-      message: '인증 코드가 생성되었습니다. 10분 내에 웹사이트에서 인증을 완료해주세요.'
+      message:
+        '인증 코드가 생성되었습니다. 10분 내에 웹사이트에서 인증을 완료해주세요.',
     };
   }
 
@@ -183,12 +206,14 @@ export class MuffinCraftAuthService {
   async linkAccount(authCode: string, userId: number) {
     // 인증 코드 형식 검증
     if (!this.isValidAuthCode(authCode)) {
-      throw new BadRequestException('올바르지 않은 인증 코드 형식입니다. (12자리 영문 대소문자 + 숫자 + 특수문자)');
+      throw new BadRequestException(
+        '올바르지 않은 인증 코드 형식입니다. (12자리 영문 대소문자 + 숫자 + 특수문자)',
+      );
     }
 
     // 인증 코드 확인
     const authCodeRecord = await this.authCodeRepository.findOne({
-      where: { authCode, isUsed: false }
+      where: { authCode, isUsed: false },
     });
 
     if (!authCodeRecord) {
@@ -202,25 +227,32 @@ export class MuffinCraftAuthService {
 
     // 이미 연동된 유저인지 확인
     const existingPlayer = await this.playerRepository.findOne({
-      where: { userId }
+      where: { userId },
     });
 
     if (existingPlayer) {
-      throw new ConflictException('이미 다른 마인크래프트 계정과 연동되어 있습니다.');
+      throw new ConflictException(
+        '이미 다른 마인크래프트 계정과 연동되어 있습니다.',
+      );
     }
 
     // 해당 마인크래프트 유저명이 이미 다른 계정과 연동되어 있는지 확인
     const existingUsername = await this.playerRepository.findOne({
-      where: { minecraftUsername: authCodeRecord.minecraftUsername, isLinked: true }
+      where: {
+        minecraftUsername: authCodeRecord.minecraftUsername,
+        isLinked: true,
+      },
     });
 
     if (existingUsername) {
-      throw new ConflictException('해당 마인크래프트 계정은 이미 다른 유저와 연동되어 있습니다.');
+      throw new ConflictException(
+        '해당 마인크래프트 계정은 이미 다른 유저와 연동되어 있습니다.',
+      );
     }
 
     // 기존 플레이어 레코드가 있는지 확인
     let player = await this.playerRepository.findOne({
-      where: { minecraftUsername: authCodeRecord.minecraftUsername }
+      where: { minecraftUsername: authCodeRecord.minecraftUsername },
     });
 
     if (player) {
@@ -236,7 +268,7 @@ export class MuffinCraftAuthService {
         userId,
         minecraftUsername: authCodeRecord.minecraftUsername,
         minecraftUuid: authCodeRecord.minecraftUuid,
-        isLinked: true
+        isLinked: true,
       });
     }
 
@@ -253,8 +285,8 @@ export class MuffinCraftAuthService {
       player: {
         minecraftUsername: player.minecraftUsername,
         minecraftUuid: player.minecraftUuid,
-        linkedAt: player.updatedAt
-      }
+        linkedAt: player.updatedAt,
+      },
     };
   }
 
@@ -263,7 +295,7 @@ export class MuffinCraftAuthService {
    */
   async getAuthCodeStatus(authCode: string) {
     const authCodeRecord = await this.authCodeRepository.findOne({
-      where: { authCode }
+      where: { authCode },
     });
 
     if (!authCodeRecord) {
@@ -278,8 +310,8 @@ export class MuffinCraftAuthService {
         isUsed: authCodeRecord.isUsed,
         isExpired,
         expiresAt: authCodeRecord.expiresAt,
-        minecraftUsername: authCodeRecord.minecraftUsername
-      }
+        minecraftUsername: authCodeRecord.minecraftUsername,
+      },
     };
   }
 
@@ -288,14 +320,14 @@ export class MuffinCraftAuthService {
    */
   async getPlayerInfo(minecraftUsername: string) {
     const player = await this.playerRepository.findOne({
-      where: { minecraftUsername }
+      where: { minecraftUsername },
     });
 
     if (!player) {
       return {
         success: true,
         isLinked: false,
-        message: '연동되지 않은 플레이어입니다.'
+        message: '연동되지 않은 플레이어입니다.',
       };
     }
 
@@ -305,8 +337,8 @@ export class MuffinCraftAuthService {
       player: {
         minecraftUsername: player.minecraftUsername,
         minecraftUuid: player.minecraftUuid,
-        linkedAt: player.isLinked ? player.updatedAt : null
-      }
+        linkedAt: player.isLinked ? player.updatedAt : null,
+      },
     };
   }
 
@@ -315,11 +347,13 @@ export class MuffinCraftAuthService {
    */
   async unlinkAccount(userId: number) {
     const player = await this.playerRepository.findOne({
-      where: { userId, isLinked: true }
+      where: { userId, isLinked: true },
     });
 
     if (!player) {
-      throw new NotFoundException('연동된 마인크래프트 계정을 찾을 수 없습니다.');
+      throw new NotFoundException(
+        '연동된 마인크래프트 계정을 찾을 수 없습니다.',
+      );
     }
 
     player.userId = null;
@@ -328,7 +362,7 @@ export class MuffinCraftAuthService {
 
     return {
       success: true,
-      message: '마인크래프트 계정 연동이 해제되었습니다.'
+      message: '마인크래프트 계정 연동이 해제되었습니다.',
     };
   }
 
@@ -342,12 +376,14 @@ export class MuffinCraftAuthService {
     const recentCodes = await this.authCodeRepository.count({
       where: {
         minecraftUsername,
-        createdAt: MoreThan(fifteenMinutesAgo)
-      }
+        createdAt: MoreThan(fifteenMinutesAgo),
+      },
     });
 
     if (recentCodes >= 5) {
-      throw new BadRequestException('너무 많은 인증 코드 요청입니다. 15분 후에 다시 시도해주세요.');
+      throw new BadRequestException(
+        '너무 많은 인증 코드 요청입니다. 15분 후에 다시 시도해주세요.',
+      );
     }
   }
 
@@ -357,8 +393,8 @@ export class MuffinCraftAuthService {
   async cleanupExpiredCodes(): Promise<void> {
     const expiredCodes = await this.authCodeRepository.find({
       where: {
-        expiresAt: MoreThan(new Date())
-      }
+        expiresAt: MoreThan(new Date()),
+      },
     });
 
     if (expiredCodes.length > 0) {

@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 
 @Entity({ name: 'currencies' })
 export class Currency {
@@ -17,7 +26,11 @@ export class Currency {
   @Column({ type: 'varchar', length: 5, nullable: true })
   symbol: string; // 화폐 기호 (예: '$', '₹', '💎')
 
-  @Column({ type: 'enum', enum: ['GLOBAL', 'GAME_SPECIFIC'], default: 'GAME_SPECIFIC' })
+  @Column({
+    type: 'enum',
+    enum: ['GLOBAL', 'GAME_SPECIFIC'],
+    default: 'GAME_SPECIFIC',
+  })
   type: 'GLOBAL' | 'GAME_SPECIFIC'; // 화폐 유형
 
   @Column({ type: 'int', default: 2 })

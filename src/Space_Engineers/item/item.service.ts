@@ -3,6 +3,54 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/user/user.entity';
 
+// Type definitions for better type safety
+interface StorageItem {
+  id: number;
+  display_name: string;
+  rarity: string;
+  description: string;
+  category: string;
+  icons: any;
+  index_name: string;
+  quantity: number;
+  item_id: number;
+}
+
+interface FormattedItem {
+  id: number;
+  displayName: string;
+  rarity: string;
+  description: string;
+  category: string;
+  icons: string;
+  indexName: string;
+  quantity: number;
+}
+
+interface QueryResult {
+  id?: number;
+  storage_id?: number;
+  quantity?: number;
+  exists?: boolean;
+  count?: number;
+  ingredient1?: unknown;
+  ingredient2?: unknown;
+  ingredient3?: unknown;
+  quantity1?: unknown;
+  quantity2?: unknown;
+  quantity3?: unknown;
+  index_name?: unknown;
+  [key: string]: any;
+}
+
+interface ItemInput {
+  DisplayName?: unknown;
+  Id?: unknown;
+  Description?: unknown;
+  Category?: unknown;
+  Icons?: unknown;
+}
+
 @Injectable()
 export class ItemService {
   private readonly logger = new Logger(ItemService.name);
@@ -12,7 +60,7 @@ export class ItemService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async getItems(userId: string): Promise<any> {
+  async getItems(userId: string): Promise<FormattedItem[]> {
     if (!userId) {
       throw new Error('User ID is required.');
     }
@@ -22,17 +70,15 @@ export class ItemService {
     const storageQuery = `
       SELECT id FROM space_engineers.online_storage WHERE id = $1
     `;
-    const storageResults = await this.userRepository.query(storageQuery, [
+    const storageResults = (await this.userRepository.query(storageQuery, [
       userId,
-    ]);
+    ])) as QueryResult[];
 
     if (storageResults.length === 0) {
       const insertStorageQuery = `
         INSERT INTO space_engineers.online_storage (id) VALUES ($1) RETURNING id
       `;
-      const newStorage = await this.userRepository.query(insertStorageQuery, [
-        userId,
-      ]);
+      await this.userRepository.query(insertStorageQuery, [userId]);
       this.logger.log(`Created new storage for User ID=${userId}`);
       return [];
     }
@@ -46,11 +92,11 @@ export class ItemService {
       INNER JOIN space_engineers.items i ON osi.item_id = i.id
       WHERE osi.storage_id = $1
     `;
-    const items = await this.userRepository.query(storageItemsQuery, [
+    const items = (await this.userRepository.query(storageItemsQuery, [
       storageId,
-    ]);
+    ])) as StorageItem[];
 
-    const formattedItems = items.map((item) => ({
+    const formattedItems: FormattedItem[] = items.map((item) => ({
       id: item.id,
       displayName: item.display_name,
       rarity: item.rarity,
@@ -71,7 +117,7 @@ export class ItemService {
     userId: string,
     identifier: string,
     quantity: number,
-  ): Promise<any> {
+  ): Promise<{ message: string }> {
     this.logger.log(
       `Uploading item: User ID=${userId}, Identifier=${identifier}, Quantity=${quantity}`,
     );
@@ -87,9 +133,10 @@ export class ItemService {
       const storageCheckQuery = `
         SELECT id FROM space_engineers.online_storage WHERE steam_id = $1
       `;
-      const storageExists = await this.userRepository.query(storageCheckQuery, [
-        userId,
-      ]);
+      const storageExists = (await this.userRepository.query(
+        storageCheckQuery,
+        [userId],
+      )) as QueryResult[];
 
       if (storageExists.length === 0) {
         const insertStorageQuery = `
@@ -106,9 +153,9 @@ export class ItemService {
         SELECT * FROM space_engineers.items
         WHERE ${columnName} = $1
       `;
-      const itemExists = await this.userRepository.query(itemCheckQuery, [
+      const itemExists = (await this.userRepository.query(itemCheckQuery, [
         identifier,
-      ]);
+      ])) as QueryResult[];
 
       if (itemExists.length === 0) {
         this.logger.error(
@@ -124,10 +171,10 @@ export class ItemService {
         WHERE storage_id = (SELECT id FROM space_engineers.online_storage WHERE steam_id = $1)
           AND item_id = (SELECT id FROM space_engineers.items WHERE ${columnName} = $2)
       `;
-      const existingRecord = await this.userRepository.query(
+      const existingRecord = (await this.userRepository.query(
         conflictCheckQuery,
         [userId, identifier],
-      );
+      )) as QueryResult[];
 
       if (existingRecord.length > 0) {
         const updateQuery = `
@@ -161,7 +208,7 @@ export class ItemService {
         `Successfully uploaded ${quantity}x '${identifier}' for Steam ID=${userId}`,
       );
       return { message: `${quantity}x '${identifier}' added to storage.` };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Error uploading item: ${error.message}`, error.stack);
       throw error;
     }
@@ -171,9 +218,22 @@ export class ItemService {
     steamid: string,
     index_name: string,
     quantity: number,
-  ): Promise<any> {
+  ): Promise<{
+    success: boolean;
+    data: {
+      storageId: number;
+      itemId: number;
+      indexName: string;
+      requested: number;
+      status: string;
+    };
+    message: string;
+    timestamp: string;
+  }> {
     if (!steamid || !index_name) {
-      this.logger.error(`requestDownloadItem: steamid or index_name is undefined. steamid=${steamid}, index_name=${index_name}`);
+      this.logger.error(
+        `requestDownloadItem: steamid or index_name is undefined. steamid=${steamid}, index_name=${index_name}`,
+      );
       throw new Error('steamid and index_name are required.');
     }
     this.logger.log(
@@ -192,44 +252,49 @@ export class ItemService {
           updated_at TIMESTAMP NOT NULL DEFAULT NOW()
         )
       `);
-    } catch (e) {
-      this.logger.error(`Failed to create 'item_download_log' table: ${e.message}`);
+    } catch (e: any) {
+      this.logger.error(
+        `Failed to create 'item_download_log' table: ${e.message}`,
+      );
       throw e;
     }
 
-    const userResult = await this.userRepository.query(
+    const userResult = (await this.userRepository.query(
       `SELECT id AS storage_id FROM space_engineers.online_storage WHERE steam_id = $1`,
       [steamid],
-    );
+    )) as QueryResult[];
     if (!userResult.length) {
       throw new Error(`User with steam_id "${steamid}" not found.`);
     }
-    const storageId = userResult[0].storage_id;
+    const storageId = userResult[0].storage_id!;
 
-    const itemIdResult = await this.userRepository.query(
+    const itemIdResult = (await this.userRepository.query(
       `SELECT id FROM space_engineers.items WHERE index_name = $1`,
       [index_name],
-    );
+    )) as QueryResult[];
     if (!itemIdResult.length) {
       throw new Error(`Item with index_name "${index_name}" not found.`);
     }
-    const itemId = itemIdResult[0].id;
+    const itemId = itemIdResult[0].id!;
 
-    const currentQtyResult = await this.userRepository.query(
+    const currentQtyResult = (await this.userRepository.query(
       `SELECT quantity FROM space_engineers.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
-      [storageId, itemId]
-    );
-    const currentQty = currentQtyResult.length > 0 ? Number(currentQtyResult[0].quantity) : 0;
+      [storageId, itemId],
+    )) as QueryResult[];
+    const currentQty =
+      currentQtyResult.length > 0 ? Number(currentQtyResult[0].quantity) : 0;
     if (quantity > currentQty) {
       this.logger.warn(
-        `Download request exceeds available quantity: requested=${quantity}, available=${currentQty}, steamid=${steamid}, item=${index_name}`
+        `Download request exceeds available quantity: requested=${quantity}, available=${currentQty}, steamid=${steamid}, item=${index_name}`,
       );
-      throw new Error(`Not enough items in storage. Requested: ${quantity}, Available: ${currentQty}`);
+      throw new Error(
+        `Not enough items in storage. Requested: ${quantity}, Available: ${currentQty}`,
+      );
     }
 
     await this.userRepository.query(
       `INSERT INTO space_engineers.item_download_log (storage_id, item_id, quantity, status) VALUES ($1, $2, $3, 'PENDING')`,
-      [storageId, itemId, quantity]
+      [storageId, itemId, quantity],
     );
 
     return {
@@ -250,44 +315,56 @@ export class ItemService {
     steamid: string,
     index_name: string,
     quantity: number,
-  ): Promise<any> {
+  ): Promise<{
+    success: boolean;
+    data: {
+      storageId: number;
+      itemId: number;
+      indexName: string;
+      deducted: number;
+      remain: number;
+      status: string;
+    };
+    message: string;
+    timestamp: string;
+  }> {
     this.logger.log(
       `Confirming download: Steam ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
     );
 
-    const userResult = await this.userRepository.query(
+    const userResult = (await this.userRepository.query(
       `SELECT id AS storage_id FROM space_engineers.online_storage WHERE steam_id = $1`,
       [steamid],
-    );
+    )) as QueryResult[];
     if (!userResult.length) {
       throw new Error(`User with steam_id "${steamid}" not found.`);
     }
-    const storageId = userResult[0].storage_id;
+    const storageId = userResult[0].storage_id!;
 
-    const itemIdResult = await this.userRepository.query(
+    const itemIdResult = (await this.userRepository.query(
       `SELECT id FROM space_engineers.items WHERE index_name = $1`,
       [index_name],
-    );
+    )) as QueryResult[];
     if (!itemIdResult.length) {
       throw new Error(`Item with index_name "${index_name}" not found.`);
     }
-    const itemId = itemIdResult[0].id;
+    const itemId = itemIdResult[0].id!;
 
     await this.userRepository.query(
       `UPDATE space_engineers.online_storage_items SET quantity = quantity - $1 WHERE storage_id = $2 AND item_id = $3`,
-      [quantity, storageId, itemId]
+      [quantity, storageId, itemId],
     );
 
     await this.userRepository.query(
       `UPDATE space_engineers.item_download_log SET status = 'CONFIRMED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
-      [storageId, itemId]
+      [storageId, itemId],
     );
 
-    const remainResult = await this.userRepository.query(
+    const remainResult = (await this.userRepository.query(
       `SELECT quantity FROM space_engineers.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
-      [storageId, itemId]
-    );
-    const remain = remainResult.length > 0 ? remainResult[0].quantity : 0;
+      [storageId, itemId],
+    )) as QueryResult[];
+    const remain = remainResult.length > 0 ? remainResult[0].quantity! : 0;
 
     return {
       success: true,
@@ -308,32 +385,43 @@ export class ItemService {
     steamid: string,
     index_name: string,
     quantity: number,
-  ): Promise<any> {
+  ): Promise<{
+    success: boolean;
+    data: {
+      storageId: number;
+      itemId: number;
+      indexName: string;
+      canceled: number;
+      status: string;
+    };
+    message: string;
+    timestamp: string;
+  }> {
     this.logger.log(
       `Cancelling download: Steam ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
     );
 
-    const userResult = await this.userRepository.query(
+    const userResult = (await this.userRepository.query(
       `SELECT id AS storage_id FROM space_engineers.online_storage WHERE steam_id = $1`,
       [steamid],
-    );
+    )) as QueryResult[];
     if (!userResult.length) {
       throw new Error(`User with steam_id "${steamid}" not found.`);
     }
-    const storageId = userResult[0].storage_id;
+    const storageId = userResult[0].storage_id!;
 
-    const itemIdResult = await this.userRepository.query(
+    const itemIdResult = (await this.userRepository.query(
       `SELECT id FROM space_engineers.items WHERE index_name = $1`,
       [index_name],
-    );
+    )) as QueryResult[];
     if (!itemIdResult.length) {
       throw new Error(`Item with index_name "${index_name}" not found.`);
     }
-    const itemId = itemIdResult[0].id;
+    const itemId = itemIdResult[0].id!;
 
     await this.userRepository.query(
       `UPDATE space_engineers.item_download_log SET status = 'CANCELED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
-      [storageId, itemId]
+      [storageId, itemId],
     );
 
     return {
@@ -363,7 +451,7 @@ export class ItemService {
           return '';
         }
 
-        const normalizedPath = iconPath[0].replace(/\\/g, '/');
+        const normalizedPath = String(iconPath[0]).replace(/\\/g, '/');
         const fileName = normalizedPath.split('/').pop();
         return fileName || '';
       }
@@ -378,7 +466,7 @@ export class ItemService {
         `Invalid icon path type: ${typeof iconPath}. Expected a string or array.`,
       );
       return '';
-    } catch (error) {
+    } catch (error: any) {
       this.logger.warn(
         `Failed to parse or extract file name from icon path: ${JSON.stringify(iconPath)}. Error: ${error.message}`,
       );
@@ -386,7 +474,10 @@ export class ItemService {
     }
   }
 
-  async upgradeItem(steamId: string, targetItem: string): Promise<any> {
+  async upgradeItem(
+    steamId: string,
+    targetItem: string,
+  ): Promise<{ message: string }> {
     this.logger.log(
       `Upgrading item: Steam ID=${steamId}, Target Item=${targetItem}`,
     );
@@ -395,52 +486,65 @@ export class ItemService {
       FROM space_engineers.blue_prints
       WHERE index_name = $1
     `;
-    const blueprint = await this.userRepository.query(blueprintQuery, [
+    const blueprint = (await this.userRepository.query(blueprintQuery, [
       targetItem,
-    ]);
+    ])) as QueryResult[];
 
     if (blueprint.length === 0) {
       throw new Error(`No blueprint found for ${targetItem}`);
     }
 
-    const requiredItems = {};
+    const requiredItems: Record<string, number> = {};
     for (let i = 1; i <= 3; i++) {
-      const ingredient = blueprint[0][`ingredient${i}`];
-      const quantity = blueprint[0][`quantity${i}`];
+      const ingredient = blueprint[0][`ingredient${i}`] as unknown;
+      const quantity = blueprint[0][`quantity${i}`] as unknown;
       if (ingredient) {
-        requiredItems[ingredient] = quantity;
+        requiredItems[this.safeString(ingredient)] = Number(quantity);
       }
     }
 
     for (const [itemName, quantity] of Object.entries(requiredItems)) {
-      await this.requestDownloadItem(steamId, itemName, quantity as number);
+      await this.requestDownloadItem(steamId, itemName, quantity);
     }
 
     await this.uploadItem(steamId, targetItem, 1);
     return { message: `Upgraded to ${targetItem}` };
   }
 
-  async getBlueprints(): Promise<any> {
+  async getBlueprints(): Promise<
+    Array<{ indexName: string; ingredients: Record<string, number> }>
+  > {
     this.logger.log(`Fetching blueprints`);
     const query = `
       SELECT * FROM space_engineers.blue_prints
     `;
-    const blueprints = await this.userRepository.query(query);
+    const blueprints = (await this.userRepository.query(
+      query,
+    )) as QueryResult[];
 
     return blueprints.map((bp) => {
-      const ingredients = {};
+      const ingredients: Record<string, number> = {};
       for (let i = 1; i <= 5; i++) {
-        const ingredient = bp[`ingredient${i}`];
-        const quantity = bp[`quantity${i}`];
+        const ingredient = bp[`ingredient${i}`] as unknown;
+        const quantity = bp[`quantity${i}`] as unknown;
         if (ingredient) {
-          ingredients[ingredient] = quantity;
+          ingredients[this.safeString(ingredient)] = Number(quantity);
         }
       }
-      return { indexName: bp.index_name, ingredients };
+      return { indexName: this.safeString(bp.index_name), ingredients };
     });
   }
 
-  async updateItems(itemList: any[]): Promise<any> {
+  private safeString(value: unknown): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    return JSON.stringify(value);
+  }
+
+  async updateItems(itemList: ItemInput[]): Promise<{ message: string }> {
     this.logger.log(`Updating items: ${JSON.stringify(itemList)}`);
 
     const tableCheckQuery = `
@@ -449,8 +553,10 @@ export class ItemService {
         WHERE table_schema = 'space_engineers' AND table_name = 'items'
       )
     `;
-    const tableExistsResult = await this.userRepository.query(tableCheckQuery);
-    const tableExists = tableExistsResult[0]?.exists;
+    const tableExistsResult = (await this.userRepository.query(
+      tableCheckQuery,
+    )) as QueryResult[];
+    const tableExists = Boolean(tableExistsResult[0]?.exists);
 
     if (!tableExists) {
       this.logger.warn(`'items' table does not exist. Creating the table...`);
@@ -480,7 +586,9 @@ export class ItemService {
           AND tc.constraint_type = 'UNIQUE'
           AND ccu.column_name = 'index_name'
       `;
-      const uniqueConstraintResult = await this.userRepository.query(uniqueConstraintCheckQuery);
+      const uniqueConstraintResult = (await this.userRepository.query(
+        uniqueConstraintCheckQuery,
+      )) as QueryResult[];
       const hasUnique = Number(uniqueConstraintResult[0]?.count) > 0;
       if (!hasUnique) {
         this.logger.warn(`Adding UNIQUE constraint to items.index_name`);
@@ -490,7 +598,7 @@ export class ItemService {
         `;
         try {
           await this.userRepository.query(addUniqueQuery);
-        } catch (e) {
+        } catch (e: any) {
           this.logger.error(`Failed to add UNIQUE constraint: ${e.message}`);
         }
       }
@@ -510,22 +618,32 @@ export class ItemService {
     `;
 
     for (const item of itemList) {
+      const displayName = this.safeString(item.DisplayName);
+      const id = this.safeString(item.Id);
+
       if (
-        !item.DisplayName ||
-        !item.Id ||
-        (typeof item.Id === 'string' && item.Id.includes('MyObjectBuilder_TreeObject'))
+        !displayName ||
+        !id ||
+        (typeof item.Id === 'string' &&
+          id.includes('MyObjectBuilder_TreeObject'))
       ) {
-        this.logger.warn(`Skipping item (invalid or excluded): ${JSON.stringify(item)}`);
+        this.logger.warn(
+          `Skipping item (invalid or excluded): ${JSON.stringify(item)}`,
+        );
         continue;
       }
 
       const mappedItem = {
-        displayName: item.DisplayName,
+        displayName,
         rarity: '1',
-        description: item.Description || null,
-        category: item.Category || this.determineCategory(item.Id),
+        description: item.Description
+          ? this.safeString(item.Description)
+          : null,
+        category: item.Category
+          ? this.safeString(item.Category)
+          : this.determineCategory(id),
         icons: item.Icons || [],
-        indexName: item.Id,
+        indexName: id,
       };
 
       const values = [

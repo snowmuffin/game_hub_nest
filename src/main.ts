@@ -22,30 +22,29 @@ async function bootstrap() {
   // Enable CORS with specific settings
   const isProduction = process.env.NODE_ENV === 'production';
   let allowedOrigins: string[] = [];
-  
+
   if (process.env.Whitelist) {
-    allowedOrigins = process.env.Whitelist.split(',').map(origin => origin.trim());
+    allowedOrigins = process.env.Whitelist.split(',').map((origin) =>
+      origin.trim(),
+    );
   } else {
     allowedOrigins = isProduction
-      ? [
-          'https://se.snowmuffingame.com',
-          'https://snowmuffingame.com'
-        ]
+      ? ['https://se.snowmuffingame.com', 'https://snowmuffingame.com']
       : [
           'http://localhost:3000',
           'http://localhost:3001',
           'https://se.snowmuffingame.com',
-          'https://snowmuffingame.com'
+          'https://snowmuffingame.com',
         ];
   }
-  
+
   // 항상 se.snowmuffingame.com 포함
   if (!allowedOrigins.includes('https://se.snowmuffingame.com')) {
     allowedOrigins.push('https://se.snowmuffingame.com');
   }
-  
+
   console.log('허용된 CORS origins:', allowedOrigins);
-  
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -55,12 +54,12 @@ async function bootstrap() {
       'Accept-Language',
       'Content-Language',
       'Content-Type',
-      'Authorization', 
-      'Cookie', 
+      'Authorization',
+      'Cookie',
       'X-Requested-With',
       'X-HTTP-Method-Override',
       'Cache-Control',
-      'Pragma'
+      'Pragma',
     ],
     exposedHeaders: ['Content-Length', 'X-Total-Count'],
     optionsSuccessStatus: 200,
@@ -84,7 +83,9 @@ async function bootstrap() {
     }
     console.log(`API available at: ${serverUrl}/api`);
     console.log(`\n🧁 MuffinCraft 리소스팩 엔드포인트:`);
-    console.log(`   📦 다운로드: ${serverUrl}/api/muffincraft/resourcepack/download`);
+    console.log(
+      `   📦 다운로드: ${serverUrl}/api/muffincraft/resourcepack/download`,
+    );
     console.log(`   ℹ️  정보: ${serverUrl}/api/muffincraft/resourcepack/info`);
     console.log(`   ✅ 상태: ${serverUrl}/api/muffincraft/resourcepack/status`);
   });

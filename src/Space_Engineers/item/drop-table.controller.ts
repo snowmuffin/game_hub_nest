@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { DropTableService } from './drop-table.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
@@ -12,19 +24,19 @@ export class DropTableController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
     @Query('rarity') rarity?: number,
-    @Query('is_active') isActive?: boolean
+    @Query('is_active') isActive?: boolean,
   ) {
     try {
       return await this.dropTableService.getDropTableItems({
         page,
         limit,
         rarity,
-        isActive
+        isActive,
       });
     } catch (error) {
       throw new HttpException(
         `Failed to get drop table items: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -34,13 +46,16 @@ export class DropTableController {
     try {
       const item = await this.dropTableService.getDropTableItemById(id);
       if (!item) {
-        throw new HttpException('Drop table item not found', HttpStatus.NOT_FOUND);
+        throw new HttpException(
+          'Drop table item not found',
+          HttpStatus.NOT_FOUND,
+        );
       }
       return item;
     } catch (error) {
       throw new HttpException(
         `Failed to get drop table item: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -48,34 +63,37 @@ export class DropTableController {
   @Get('available-items')
   async getAvailableItems(
     @Query('search') search?: string,
-    @Query('rarity') rarity?: number
+    @Query('rarity') rarity?: number,
   ) {
     try {
       return await this.dropTableService.getAvailableItemsFromItemsTable({
         search,
-        rarity
+        rarity,
       });
     } catch (error) {
       throw new HttpException(
         `Failed to get available items: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   @Post()
-  async addDropTableItem(@Body() createDropTableDto: {
-    item_id: string;
-    drop_rate_multiplier?: number;
-    is_active?: boolean;
-    description?: string;
-  }) {
+  async addDropTableItem(
+    @Body()
+    createDropTableDto: {
+      item_id: string;
+      drop_rate_multiplier?: number;
+      is_active?: boolean;
+      description?: string;
+    },
+  ) {
     try {
       return await this.dropTableService.addDropTableItem(createDropTableDto);
     } catch (error) {
       throw new HttpException(
         `Failed to add drop table item: ${error.message}`,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -83,18 +101,22 @@ export class DropTableController {
   @Put(':id')
   async updateDropTableItem(
     @Param('id') id: number,
-    @Body() updateDropTableDto: {
+    @Body()
+    updateDropTableDto: {
       drop_rate_multiplier?: number;
       is_active?: boolean;
       description?: string;
-    }
+    },
   ) {
     try {
-      return await this.dropTableService.updateDropTableItem(id, updateDropTableDto);
+      return await this.dropTableService.updateDropTableItem(
+        id,
+        updateDropTableDto,
+      );
     } catch (error) {
       throw new HttpException(
         `Failed to update drop table item: ${error.message}`,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -107,7 +129,7 @@ export class DropTableController {
     } catch (error) {
       throw new HttpException(
         `Failed to remove drop table item: ${error.message}`,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -115,15 +137,16 @@ export class DropTableController {
   @Post('migrate-hardcoded')
   async migrateFromHardcodedDropTable() {
     try {
-      const result = await this.dropTableService.migrateFromHardcodedDropTable();
+      const result =
+        await this.dropTableService.migrateFromHardcodedDropTable();
       return {
         message: 'Migration completed successfully',
-        result
+        result,
       };
     } catch (error) {
       throw new HttpException(
         `Migration failed: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -135,7 +158,7 @@ export class DropTableController {
     } catch (error) {
       throw new HttpException(
         `Failed to get drop table stats: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

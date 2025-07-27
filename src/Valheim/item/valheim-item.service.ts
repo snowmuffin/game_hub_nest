@@ -1,7 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions } from 'typeorm';
-import { ValheimItem, ValheimItemType, ValheimItemQuality } from './valheim-item.entity';
+import { Repository } from 'typeorm';
+import {
+  ValheimItem,
+  ValheimItemType,
+  ValheimItemQuality,
+} from './valheim-item.entity';
 
 export interface CreateValheimItemDto {
   name: string;
@@ -64,19 +68,27 @@ export class ValheimItemService {
     }
 
     if (searchDto?.biome) {
-      queryBuilder.andWhere('item.biome ILIKE :biome', { biome: `%${searchDto.biome}%` });
+      queryBuilder.andWhere('item.biome ILIKE :biome', {
+        biome: `%${searchDto.biome}%`,
+      });
     }
 
     if (searchDto?.is_tradeable !== undefined) {
-      queryBuilder.andWhere('item.is_tradeable = :is_tradeable', { is_tradeable: searchDto.is_tradeable });
+      queryBuilder.andWhere('item.is_tradeable = :is_tradeable', {
+        is_tradeable: searchDto.is_tradeable,
+      });
     }
 
     if (searchDto?.is_teleportable !== undefined) {
-      queryBuilder.andWhere('item.is_teleportable = :is_teleportable', { is_teleportable: searchDto.is_teleportable });
+      queryBuilder.andWhere('item.is_teleportable = :is_teleportable', {
+        is_teleportable: searchDto.is_teleportable,
+      });
     }
 
     if (searchDto?.name) {
-      queryBuilder.andWhere('item.name ILIKE :name', { name: `%${searchDto.name}%` });
+      queryBuilder.andWhere('item.name ILIKE :name', {
+        name: `%${searchDto.name}%`,
+      });
     }
 
     queryBuilder.orderBy('item.name', 'ASC');
@@ -89,7 +101,7 @@ export class ValheimItemService {
    */
   async findById(id: number): Promise<ValheimItem> {
     const item = await this.valheimItemRepository.findOne({ where: { id } });
-    
+
     if (!item) {
       throw new NotFoundException(`Valheim item with ID ${id} not found`);
     }
@@ -101,12 +113,14 @@ export class ValheimItemService {
    * 아이템 코드로 조회
    */
   async findByItemCode(itemCode: string): Promise<ValheimItem> {
-    const item = await this.valheimItemRepository.findOne({ 
-      where: { item_code: itemCode } 
+    const item = await this.valheimItemRepository.findOne({
+      where: { item_code: itemCode },
     });
-    
+
     if (!item) {
-      throw new NotFoundException(`Valheim item with code ${itemCode} not found`);
+      throw new NotFoundException(
+        `Valheim item with code ${itemCode} not found`,
+      );
     }
 
     return item;
@@ -118,7 +132,7 @@ export class ValheimItemService {
   async findByType(type: ValheimItemType): Promise<ValheimItem[]> {
     return await this.valheimItemRepository.find({
       where: { type },
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
@@ -139,7 +153,7 @@ export class ValheimItemService {
   async findTradeableItems(): Promise<ValheimItem[]> {
     return await this.valheimItemRepository.find({
       where: { is_tradeable: true },
-      order: { value: 'DESC' }
+      order: { value: 'DESC' },
     });
   }
 
@@ -149,7 +163,7 @@ export class ValheimItemService {
   async findTeleportableItems(): Promise<ValheimItem[]> {
     return await this.valheimItemRepository.find({
       where: { is_teleportable: true },
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
@@ -158,7 +172,7 @@ export class ValheimItemService {
    */
   async create(createDto: CreateValheimItemDto): Promise<ValheimItem> {
     const existingItem = await this.valheimItemRepository.findOne({
-      where: { item_code: createDto.item_code }
+      where: { item_code: createDto.item_code },
     });
 
     if (existingItem) {
@@ -168,16 +182,21 @@ export class ValheimItemService {
     const item = this.valheimItemRepository.create(createDto);
     const savedItem = await this.valheimItemRepository.save(item);
 
-    this.logger.log(`Created new Valheim item: ${savedItem.name} (${savedItem.item_code})`);
+    this.logger.log(
+      `Created new Valheim item: ${savedItem.name} (${savedItem.item_code})`,
+    );
     return savedItem;
   }
 
   /**
    * 아이템 정보 업데이트
    */
-  async update(id: number, updateDto: UpdateValheimItemDto): Promise<ValheimItem> {
+  async update(
+    id: number,
+    updateDto: UpdateValheimItemDto,
+  ): Promise<ValheimItem> {
     const item = await this.findById(id);
-    
+
     Object.assign(item, updateDto);
     const updatedItem = await this.valheimItemRepository.save(item);
 
@@ -191,7 +210,7 @@ export class ValheimItemService {
   async delete(id: number): Promise<void> {
     const item = await this.findById(id);
     await this.valheimItemRepository.remove(item);
-    
+
     this.logger.log(`Deleted Valheim item: ${item.name} (ID: ${id})`);
   }
 
@@ -200,7 +219,7 @@ export class ValheimItemService {
    */
   async getItemStats(): Promise<any> {
     const totalItems = await this.valheimItemRepository.count();
-    
+
     const itemsByType = await this.valheimItemRepository
       .createQueryBuilder('item')
       .select('item.type, COUNT(*) as count')
@@ -208,11 +227,11 @@ export class ValheimItemService {
       .getRawMany();
 
     const tradeableCount = await this.valheimItemRepository.count({
-      where: { is_tradeable: true }
+      where: { is_tradeable: true },
     });
 
     const teleportableCount = await this.valheimItemRepository.count({
-      where: { is_teleportable: true }
+      where: { is_teleportable: true },
     });
 
     return {

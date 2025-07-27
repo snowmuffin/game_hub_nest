@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Req, Logger, UseGuards, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Req,
+  Logger,
+  UseGuards,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ItemService } from './item.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard'; // Guard 경로
 
@@ -14,7 +23,9 @@ export class ItemController {
     const userId = req.user?.id; // steamId 대신 id 사용
     if (!userId) {
       this.logger.error(`Authorization header is missing or invalid.`);
-      throw new UnauthorizedException('Authorization header is missing or invalid.');
+      throw new UnauthorizedException(
+        'Authorization header is missing or invalid.',
+      );
     }
     this.logger.log(`User ID from request: ${userId}`);
     return this.itemService.getItems(userId);
@@ -23,21 +34,31 @@ export class ItemController {
   @Post('upload')
   async uploadItem(@Body() body: any) {
     const { userId, itemName, quantity } = body;
-    this.logger.log(`POST /space_engineers/item/upload: User ID=${userId}, Item=${itemName}, Quantity=${quantity}`);
+    this.logger.log(
+      `POST /space_engineers/item/upload: User ID=${userId}, Item=${itemName}, Quantity=${quantity}`,
+    );
     return this.itemService.uploadItem(userId, itemName, quantity);
   }
 
   @Post('download')
-  async downloadItem(@Body() body: { steamid: string; index_name: string; quantity: number }) {
+  async downloadItem(
+    @Body() body: { steamid: string; index_name: string; quantity: number },
+  ) {
     const { steamid, index_name, quantity } = body;
-    this.logger.log(`POST /space_engineers/item/download: User ID=${steamid}, Item=${index_name}, Quantity=${quantity}`);
+    this.logger.log(
+      `POST /space_engineers/item/download: User ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
+    );
     return this.itemService.requestDownloadItem(steamid, index_name, quantity);
   }
 
   @Post('download/confirm')
-  async confirmDownloadItem(@Body() body: { steamid: string; index_name: string; quantity: number }) {
+  async confirmDownloadItem(
+    @Body() body: { steamid: string; index_name: string; quantity: number },
+  ) {
     const { steamid, index_name, quantity } = body;
-    this.logger.log(`POST /space_engineers/item/download/confirm: User ID=${steamid}, Item=${index_name}, Quantity=${quantity}`);
+    this.logger.log(
+      `POST /space_engineers/item/download/confirm: User ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
+    );
     return this.itemService.confirmDownloadItem(steamid, index_name, quantity);
   }
 
@@ -52,7 +73,9 @@ export class ItemController {
   async upgradeItem(@Body() body: any, @Req() req) {
     const userId = req.user.id;
     const { targetItem } = body;
-    this.logger.log(`POST /space_engineers/item/upgrade: User ID=${userId}, Target Item=${targetItem}`);
+    this.logger.log(
+      `POST /space_engineers/item/upgrade: User ID=${userId}, Target Item=${targetItem}`,
+    );
     return this.itemService.upgradeItem(userId, targetItem);
   }
 

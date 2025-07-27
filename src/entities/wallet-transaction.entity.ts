@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { User } from '../user/user.entity';
 import { Wallet } from './wallet.entity';
 
@@ -16,8 +25,28 @@ export class WalletTransaction {
   @Column({ type: 'int' })
   user_id: number;
 
-  @Column({ type: 'enum', enum: ['DEPOSIT', 'WITHDRAW', 'TRANSFER_IN', 'TRANSFER_OUT', 'PURCHASE', 'SALE', 'REWARD', 'PENALTY'] })
-  transaction_type: 'DEPOSIT' | 'WITHDRAW' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'PURCHASE' | 'SALE' | 'REWARD' | 'PENALTY';
+  @Column({
+    type: 'enum',
+    enum: [
+      'DEPOSIT',
+      'WITHDRAW',
+      'TRANSFER_IN',
+      'TRANSFER_OUT',
+      'PURCHASE',
+      'SALE',
+      'REWARD',
+      'PENALTY',
+    ],
+  })
+  transaction_type:
+    | 'DEPOSIT'
+    | 'WITHDRAW'
+    | 'TRANSFER_IN'
+    | 'TRANSFER_OUT'
+    | 'PURCHASE'
+    | 'SALE'
+    | 'REWARD'
+    | 'PENALTY';
 
   @Column({ type: 'decimal', precision: 20, scale: 8 })
   amount: number;
@@ -34,7 +63,11 @@ export class WalletTransaction {
   @Column({ type: 'varchar', length: 100, nullable: true })
   reference_id: string; // 외부 참조 ID (주문 ID, 아이템 ID 등)
 
-  @Column({ type: 'enum', enum: ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'], default: 'COMPLETED' })
+  @Column({
+    type: 'enum',
+    enum: ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'],
+    default: 'COMPLETED',
+  })
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
   @Column({ type: 'json', nullable: true })

@@ -1,13 +1,26 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { 
-  ValheimWorldService, 
-  CreateWorldDto, 
-  UpdateWorldDto, 
+import {
+  ValheimWorldService,
+  CreateWorldDto,
+  UpdateWorldDto,
   CreateBiomeDto,
-  CreateBossEncounterDto 
+  CreateBossEncounterDto,
 } from './valheim-world.service';
-import { ValheimWorld, ValheimBiome, ValheimBossEncounter } from './valheim-world.entity';
+import {
+  ValheimWorld,
+  ValheimBiome,
+  ValheimBossEncounter,
+} from './valheim-world.entity';
 
 @Controller('valheim/worlds')
 @UseGuards(JwtAuthGuard)
@@ -16,12 +29,16 @@ export class ValheimWorldController {
 
   // World endpoints
   @Post()
-  async createWorld(@Body() createWorldDto: CreateWorldDto): Promise<ValheimWorld> {
+  async createWorld(
+    @Body() createWorldDto: CreateWorldDto,
+  ): Promise<ValheimWorld> {
     return await this.worldService.createWorld(createWorldDto);
   }
 
   @Get('server/:serverId')
-  async getWorldsByServer(@Param('serverId') serverId: string): Promise<ValheimWorld[]> {
+  async getWorldsByServer(
+    @Param('serverId') serverId: string,
+  ): Promise<ValheimWorld[]> {
     return await this.worldService.findWorldsByServer(serverId);
   }
 
@@ -62,7 +79,11 @@ export class ValheimWorldController {
     @Param('id') id: string,
     @Body() body: { bossName: string; participantUserIds: string[] },
   ): Promise<ValheimWorld | null> {
-    return await this.worldService.defeatBoss(id, body.bossName, body.participantUserIds);
+    return await this.worldService.defeatBoss(
+      id,
+      body.bossName,
+      body.participantUserIds,
+    );
   }
 
   @Get(':id/progress')
@@ -80,7 +101,9 @@ export class ValheimWorldController {
   }
 
   @Get(':worldId/biomes')
-  async getBiomesByWorld(@Param('worldId') worldId: string): Promise<ValheimBiome[]> {
+  async getBiomesByWorld(
+    @Param('worldId') worldId: string,
+  ): Promise<ValheimBiome[]> {
     return await this.worldService.findBiomesByWorld(worldId);
   }
 
@@ -89,7 +112,10 @@ export class ValheimWorldController {
     @Param('biomeId') biomeId: string,
     @Body('explorationPercentage') explorationPercentage: number,
   ): Promise<ValheimBiome | null> {
-    return await this.worldService.updateBiomeExploration(biomeId, explorationPercentage);
+    return await this.worldService.updateBiomeExploration(
+      biomeId,
+      explorationPercentage,
+    );
   }
 
   // Boss encounter endpoints
@@ -98,16 +124,23 @@ export class ValheimWorldController {
     @Param('worldId') worldId: string,
     @Body() createBossEncounterDto: Omit<CreateBossEncounterDto, 'worldId'>,
   ): Promise<ValheimBossEncounter> {
-    return await this.worldService.createBossEncounter({ ...createBossEncounterDto, worldId });
+    return await this.worldService.createBossEncounter({
+      ...createBossEncounterDto,
+      worldId,
+    });
   }
 
   @Get(':worldId/boss-encounters')
-  async getBossEncountersByWorld(@Param('worldId') worldId: string): Promise<ValheimBossEncounter[]> {
+  async getBossEncountersByWorld(
+    @Param('worldId') worldId: string,
+  ): Promise<ValheimBossEncounter[]> {
     return await this.worldService.findBossEncountersByWorld(worldId);
   }
 
   @Put('boss-encounters/:bossEncounterId/attempt')
-  async attemptBoss(@Param('bossEncounterId') bossEncounterId: string): Promise<ValheimBossEncounter | null> {
+  async attemptBoss(
+    @Param('bossEncounterId') bossEncounterId: string,
+  ): Promise<ValheimBossEncounter | null> {
     return await this.worldService.attemptBoss(bossEncounterId);
   }
 }

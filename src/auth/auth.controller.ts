@@ -1,9 +1,34 @@
-import { Controller, Get, Post, Req, Res, UseGuards, Query, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+  Query,
+  Body,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
+
+interface SteamAuthRequest extends Request {
+  user?: {
+    steam_id: string;
+    username: string;
+    email?: string;
+    [key: string]: any;
+  };
+}
+
+interface JwtPayload {
+  sub: number;
+  username: string;
+  iat?: number;
+  exp?: number;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -15,19 +40,18 @@ export class AuthController {
 
   @Get('steam')
   @UseGuards(AuthGuard('steam'))
-  async steamLogin(@Req() req, @Res() res: Response) {
-    // Steam 인증으로 리다이렉트 (passport-steam이 자동 처리)
+  async steamLogin() {
+    // Redirect to Steam authentication (automatically handled by passport-steam)
   }
-
 
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
-  async steamLoginReturn(@Req() req, @Res() res: Response) {
-    console.log('Steam return endpoint hit'); // 디버깅용
-    console.log('User:', req.user); // 디버깅용
+  async steamLoginReturn(@Req() req: SteamAuthRequest, @Res() res: Response) {
+    console.log('Steam return endpoint hit'); // For debugging
+    console.log('User:', req.user); // For debugging
 
     if (!req.user) {
-      console.log('No user found in request'); // 디버깅용
+      console.log('No user found in request'); // For debugging
       res.status(401).send(`
         <script>
           console.log('Authentication failed - no user');
@@ -47,20 +71,20 @@ export class AuthController {
 
     try {
       const user = await this.authService.findOrCreateUser(req.user);
-      console.log('User found/created:', user); // 디버깅용
+      console.log('User found/created:', user); // For debugging
 
       const accessToken = this.authService.generateJwtToken(user);
       const refreshToken = this.authService.generateRefreshToken(user);
       const userData = this.authService.formatUserData(user);
 
-      console.log('Tokens generated successfully'); // 디버깅용
+      console.log('Tokens generated successfully'); // For debugging
 
-      // HTTP 환경에서는 secure: false로 설정
+      // Set secure: false for HTTP environment
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: false, // HTTP 환경에서는 false
-        sameSite: 'lax', // 'strict'에서 'lax'로 변경
-        domain: '.snowmuffingame.com', // 도메인 설정
+        secure: false, // false for HTTP environment
+        sameSite: 'lax', // changed from 'strict' to 'lax'
+        domain: '.snowmuffingame.com', // domain setting
       });
 
       res.setHeader('Authorization', `Bearer ${accessToken}`);
@@ -82,19 +106,19 @@ export class AuthController {
               'https://se.snowmuffingame.com'
             );
             
-            // 짧은 지연 후 창 닫기
+            // Close window after short delay
             setTimeout(() => {
               window.close();
             }, 1000);
           } else {
             console.log('No opener found');
             alert('Authentication successful but cannot close window. Please close manually.');
-            document.body.innerHTML = '<h2>로그인 성공!</h2><p>이 창을 닫아주세요.</p><p>Token: ${accessToken}</p>';
+            document.body.innerHTML = '<h2>Login successful!</h2><p>Please close this window.</p><p>Token: ${accessToken}</p>';
           }
         </script>
       `);
     } catch (error) {
-      console.error('Error in steamLoginReturn:', error); // 디버깅용
+      console.error('Error in steamLoginReturn:', error); // For debugging
       res.status(500).send(`
         <script>
           console.error('Server error during authentication');
@@ -113,33 +137,39 @@ export class AuthController {
   }
 
   @Get('generate-test-token')
-  async generateTestToken(@Query('steam_id') steamId: string, @Query('username') username: string) {
+  async generateTestToken(
+    @Query('steam_id') steamId: string,
+    @Query('username') username: string,
+  ) {
     try {
-      // 테스트 사용자를 생성하거나 기존 사용자 조회
+      // Create or find test user
       const testSteamId = steamId || 'test_user_999999';
       const testUsername = username || 'TestUser';
-      
-      // 데이터베이스에서 테스트 사용자 조회 또는 생성
+
+      // Find or create test user in database
       let testUser = await this.userService.findBySteamId(testSteamId);
-      
+
       if (!testUser) {
-        // 테스트 사용자가 없으면 생성
-        testUser = await this.userService.createTestUser(testSteamId, testUsername);
+        // Create test user if not exists
+        testUser = await this.userService.createTestUser(
+          testSteamId,
+          testUsername,
+        );
       }
-      
-      const user = { 
-        id: testUser.id, 
-        steam_id: testUser.steam_id, 
-        username: testUser.username 
+
+      const user = {
+        id: testUser.id,
+        steam_id: testUser.steam_id,
+        username: testUser.username,
       };
-      
+
       return {
         accessToken: this.authService.generateJwtToken(user),
         user: {
           id: testUser.id,
           steam_id: testUser.steam_id,
-          username: testUser.username
-        }
+          username: testUser.username,
+        },
       };
     } catch (error) {
       console.error('Error generating test token:', error);
@@ -148,50 +178,55 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refreshAccessToken(@Req() req: Request, @Res() res: Response) {
-    const refreshToken = req.cookies['refreshToken'];
+  refreshAccessToken(@Req() req: Request, @Res() res: Response) {
+    const refreshToken = req.cookies?.['refreshToken'] as string;
 
     if (!refreshToken) {
       return res.status(401).json({ message: 'Refresh token is missing' });
     }
 
     try {
-      const decoded = this.jwtService.verify(refreshToken, {
+      const decoded: unknown = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_SECRET || 'defaultSecret',
       });
 
-      const user = { id: decoded.sub, username: decoded.username };
+      const user = {
+        id: (decoded as JwtPayload).sub,
+        username: (decoded as JwtPayload).username,
+      };
       const newAccessToken = this.authService.generateJwtToken(user);
 
       return res.json({ token: newAccessToken });
-    } catch (error) {
-      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    } catch {
+      return res
+        .status(401)
+        .json({ message: 'Invalid or expired refresh token' });
     }
   }
 
   @Post('minecraft/token')
   async generateMinecraftToken(
-    @Body() body: { steamId: string; username: string; minecraftUuid?: string }
+    @Body() body: { steamId: string; username: string; minecraftUuid?: string },
   ) {
     try {
       const { steamId, username, minecraftUuid } = body;
-      
+
       if (!steamId || !username) {
         throw new Error('Steam ID and username are required');
       }
 
-      // 기존 사용자 조회 또는 생성
+      // Find existing user or create new one
       let user = await this.userService.findBySteamId(steamId);
-      
+
       if (!user) {
-        // 새 사용자 생성
+        // Create new user
         user = await this.userService.createUser({
           steam_id: steamId,
           username: username,
-          minecraft_uuid: minecraftUuid
+          minecraft_uuid: minecraftUuid,
         });
       } else if (minecraftUuid && user.minecraft_uuid !== minecraftUuid) {
-        // 마인크래프트 UUID 업데이트
+        // Update Minecraft UUID
         await this.userService.updateMinecraftUuid(user.id, minecraftUuid);
         user.minecraft_uuid = minecraftUuid;
       }
@@ -199,17 +234,18 @@ export class AuthController {
       if (!user) {
         throw new Error('Failed to create or retrieve user');
       }
-      
-      const tokenPayload = { 
-        id: user.id, 
-        steam_id: user.steam_id, 
+
+      const tokenPayload = {
+        id: user.id,
+        steam_id: user.steam_id,
         username: user.username,
-        minecraft_uuid: user.minecraft_uuid 
+        minecraft_uuid: user.minecraft_uuid,
       };
-      
-      // 마인크래프트용 장기간 토큰 생성 (24시간)
-      const minecraftToken = this.authService.generateMinecraftToken(tokenPayload);
-      
+
+      // Generate long-term token for Minecraft (24 hours)
+      const minecraftToken =
+        this.authService.generateMinecraftToken(tokenPayload);
+
       return {
         success: true,
         token: minecraftToken,
@@ -217,15 +253,17 @@ export class AuthController {
           id: user.id,
           steam_id: user.steam_id,
           username: user.username,
-          minecraft_uuid: user.minecraft_uuid
+          minecraft_uuid: user.minecraft_uuid,
         },
-        expires_in: '24h'
+        expires_in: '24h',
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error('Error generating minecraft token:', error);
       return {
         success: false,
-        error: error.message || 'Failed to generate minecraft token'
+        error: errorMessage || 'Failed to generate minecraft token',
       };
     }
   }

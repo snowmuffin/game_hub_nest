@@ -10,7 +10,7 @@ import { ItemService } from './item.service';
   imports: [
     TypeOrmModule.forFeature([User]),
     JwtModule.register({}),
-    ConfigModule
+    ConfigModule,
   ],
   controllers: [ItemController],
   providers: [ItemService],
