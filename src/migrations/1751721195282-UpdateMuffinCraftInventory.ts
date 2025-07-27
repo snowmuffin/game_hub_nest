@@ -4,19 +4,29 @@ export class UpdateMuffinCraftInventory1751721195282 implements MigrationInterfa
     name = 'UpdateMuffinCraftInventory1751721195282'
 
     private async dropConstraintIfExists(queryRunner: QueryRunner, tableName: string, constraintName: string): Promise<void> {
-        try {
+        const [schema, table] = tableName.includes('.') ? tableName.split('.') : ['public', tableName];
+        const result = await queryRunner.query(`
+            SELECT 1 FROM information_schema.table_constraints 
+            WHERE constraint_name = $1 AND table_name = $2 AND table_schema = $3
+        `, [constraintName, table, schema]) as any[];
+        
+        if (result.length > 0) {
             await queryRunner.query(`ALTER TABLE "${tableName}" DROP CONSTRAINT "${constraintName}"`);
-        } catch {
-            // Ignore error if constraint doesn't exist
+        } else {
             console.log(`Constraint ${constraintName} on table ${tableName} does not exist, skipping...`);
         }
     }
 
     private async dropIndexIfExists(queryRunner: QueryRunner, indexName: string): Promise<void> {
-        try {
+        const [schema, index] = indexName.includes('.') ? indexName.split('.') : ['public', indexName];
+        const result = await queryRunner.query(`
+            SELECT 1 FROM pg_indexes 
+            WHERE schemaname = $1 AND indexname = $2
+        `, [schema, index]) as any[];
+        
+        if (result.length > 0) {
             await queryRunner.query(`DROP INDEX "${indexName}"`);
-        } catch {
-            // Ignore error if index doesn't exist
+        } else {
             console.log(`Index ${indexName} does not exist, skipping...`);
         }
     }
