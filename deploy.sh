@@ -53,6 +53,13 @@ npm run build
 echo "📁 Creating logs directory..."
 mkdir -p logs
 
+# 테스트 모드에서는 PM2 관련 작업과 Health check 건너뛰기
+if [ "$SKIP_PM2" = "true" ]; then
+    echo "🧪 Test mode: Skipping PM2 operations"
+    echo "✅ Build validation completed successfully!"
+    exit 0
+fi
+
 # PM2 전역 설치 확인
 if ! command -v pm2 &> /dev/null; then
     echo "📦 Installing PM2 globally..."

@@ -16,7 +16,7 @@ interface StorageItem {
   item_id: number;
 }
 
-interface FormattedItem {
+export interface FormattedItem {
   id: number;
   displayName: string;
   rarity: string;

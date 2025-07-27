@@ -9,7 +9,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { PlayerStatsService } from './player-stats.service';
+import {
+  PlayerStatsService,
+  PlayerStats,
+  LeaderboardEntry,
+  Achievement,
+} from './player-stats.service';
 
 @Controller('api/minecraft/player-stats')
 @UseGuards(JwtAuthGuard)
@@ -19,7 +24,7 @@ export class PlayerStatsController {
   constructor(private readonly playerStatsService: PlayerStatsService) {}
 
   @Get()
-  async getPlayerStats(@Request() req) {
+  async getPlayerStats(@Request() req): Promise<PlayerStats> {
     const userId = req.user.id;
     this.logger.log(`Getting player stats for User ID: ${userId}`);
     return this.playerStatsService.getPlayerStats(userId);
@@ -29,7 +34,7 @@ export class PlayerStatsController {
   async updatePlayerStats(
     @Request() req,
     @Body() body: { minecraftUuid: string; stats: any },
-  ) {
+  ): Promise<PlayerStats> {
     const userId = req.user.id;
     return this.playerStatsService.updatePlayerStats(
       userId,
@@ -39,12 +44,14 @@ export class PlayerStatsController {
   }
 
   @Get('leaderboard/:stat')
-  async getLeaderboard(@Param('stat') stat: string) {
+  async getLeaderboard(
+    @Param('stat') stat: string,
+  ): Promise<LeaderboardEntry[]> {
     return this.playerStatsService.getLeaderboard(stat);
   }
 
   @Get('achievements')
-  async getAchievements(@Request() req) {
+  async getAchievements(@Request() req): Promise<Achievement[]> {
     const userId = req.user.id;
     return this.playerStatsService.getAchievements(userId);
   }
