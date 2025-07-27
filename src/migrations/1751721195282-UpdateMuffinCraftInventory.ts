@@ -3,30 +3,49 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 export class UpdateMuffinCraftInventory1751721195282 implements MigrationInterface {
     name = 'UpdateMuffinCraftInventory1751721195282'
 
+    private async dropConstraintIfExists(queryRunner: QueryRunner, tableName: string, constraintName: string): Promise<void> {
+        try {
+            await queryRunner.query(`ALTER TABLE "${tableName}" DROP CONSTRAINT "${constraintName}"`);
+        } catch {
+            // Ignore error if constraint doesn't exist
+            console.log(`Constraint ${constraintName} on table ${tableName} does not exist, skipping...`);
+        }
+    }
+
+    private async dropIndexIfExists(queryRunner: QueryRunner, indexName: string): Promise<void> {
+        try {
+            await queryRunner.query(`DROP INDEX "${indexName}"`);
+        } catch {
+            // Ignore error if index doesn't exist
+            console.log(`Index ${indexName} does not exist, skipping...`);
+        }
+    }
+
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "game_servers" DROP CONSTRAINT "FK_580fc7e0080d61ad92882081282"`);
-        await queryRunner.query(`ALTER TABLE "currencies" DROP CONSTRAINT "FK_bb2a1e2eb0a51d4dded3cf35391"`);
-        await queryRunner.query(`ALTER TABLE "wallets" DROP CONSTRAINT "FK_177421f143d995e48c2a978e069"`);
-        await queryRunner.query(`ALTER TABLE "wallets" DROP CONSTRAINT "FK_66e93d6289a730a2bade3b979a3"`);
-        await queryRunner.query(`ALTER TABLE "wallets" DROP CONSTRAINT "FK_b3167c57663ae949d67436465b3"`);
-        await queryRunner.query(`ALTER TABLE "wallet_transactions" DROP CONSTRAINT "FK_4796762c619893704abbc3dce65"`);
-        await queryRunner.query(`ALTER TABLE "valheim"."characters" DROP CONSTRAINT "FK_c6e648aeaab79e4213def02aba8"`);
-        await queryRunner.query(`ALTER TABLE "valheim"."inventories" DROP CONSTRAINT "FK_0af24dcac4257167eebaf5695ed"`);
-        await queryRunner.query(`ALTER TABLE "valheim"."inventories" DROP CONSTRAINT "FK_0d4c1be204420da2aa3ef859487"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_game_servers_game_id"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_game_servers_code"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_currencies_game_id"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_currencies_type"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_wallets_unique_combination"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_wallet_transactions_wallet_id_created_at"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_wallet_transactions_user_id_created_at"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_wallet_transactions_type_created_at"`);
-        await queryRunner.query(`DROP INDEX "space_engineers"."IDX_DROP_TABLE_ITEM_ID"`);
-        await queryRunner.query(`DROP INDEX "space_engineers"."IDX_DROP_TABLE_RARITY"`);
-        await queryRunner.query(`DROP INDEX "space_engineers"."IDX_DROP_TABLE_IS_ACTIVE"`);
-        await queryRunner.query(`DROP INDEX "valheim"."idx_valheim_inventory_user_item"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_minecraft_username_auth"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_muffincraft_auth_codes_authCode"`);
+        // Drop constraints with conditional checks to avoid errors if they don't exist
+        await this.dropConstraintIfExists(queryRunner, 'game_servers', 'FK_580fc7e0080d61ad92882081282');
+        await this.dropConstraintIfExists(queryRunner, 'currencies', 'FK_bb2a1e2eb0a51d4dded3cf35391');
+        await this.dropConstraintIfExists(queryRunner, 'wallets', 'FK_177421f143d995e48c2a978e069');
+        await this.dropConstraintIfExists(queryRunner, 'wallets', 'FK_66e93d6289a730a2bade3b979a3');
+        await this.dropConstraintIfExists(queryRunner, 'wallets', 'FK_b3167c57663ae949d67436465b3');
+        await this.dropConstraintIfExists(queryRunner, 'wallet_transactions', 'FK_4796762c619893704abbc3dce65');
+        await this.dropConstraintIfExists(queryRunner, 'valheim.characters', 'FK_c6e648aeaab79e4213def02aba8');
+        await this.dropConstraintIfExists(queryRunner, 'valheim.inventories', 'FK_0af24dcac4257167eebaf5695ed');
+        await this.dropConstraintIfExists(queryRunner, 'valheim.inventories', 'FK_0d4c1be204420da2aa3ef859487');
+        await this.dropIndexIfExists(queryRunner, "public.IDX_game_servers_game_id");
+        await this.dropIndexIfExists(queryRunner, "public.IDX_game_servers_code");
+        await this.dropIndexIfExists(queryRunner, "public.IDX_currencies_game_id");
+        await this.dropIndexIfExists(queryRunner, "public.IDX_currencies_type");
+        await this.dropIndexIfExists(queryRunner, "public.IDX_wallets_unique_combination");
+        await this.dropIndexIfExists(queryRunner, "public.IDX_wallet_transactions_wallet_id_created_at");
+        await this.dropIndexIfExists(queryRunner, "public.IDX_wallet_transactions_user_id_created_at");
+        await this.dropIndexIfExists(queryRunner, "public.IDX_wallet_transactions_type_created_at");
+        await this.dropIndexIfExists(queryRunner, "space_engineers.IDX_DROP_TABLE_ITEM_ID");
+        await this.dropIndexIfExists(queryRunner, "space_engineers.IDX_DROP_TABLE_RARITY");
+        await this.dropIndexIfExists(queryRunner, "space_engineers.IDX_DROP_TABLE_IS_ACTIVE");
+        await this.dropIndexIfExists(queryRunner, "valheim.idx_valheim_inventory_user_item");
+        await this.dropIndexIfExists(queryRunner, "public.idx_minecraft_username_auth");
+        await this.dropIndexIfExists(queryRunner, "public.IDX_muffincraft_auth_codes_authCode");
         await queryRunner.query(`CREATE TABLE "valheim"."worlds" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "server_id" integer NOT NULL, "world_name" character varying(100) NOT NULL, "world_seed" character varying(50) NOT NULL, "world_size" integer NOT NULL DEFAULT '10000', "day_count" integer NOT NULL DEFAULT '1', "time_of_day" double precision NOT NULL DEFAULT '0.5', "defeated_bosses" json NOT NULL DEFAULT '[]', "discovered_locations" json NOT NULL DEFAULT '[]', "global_keys" json NOT NULL DEFAULT '[]', "weather_state" character varying(50) NOT NULL DEFAULT 'Clear', "is_hardcore" boolean NOT NULL DEFAULT false, "player_count" integer NOT NULL DEFAULT '0', "max_players" integer NOT NULL DEFAULT '10', "world_data" json, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_8b447f7a2b28d3567db893ae7a6" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "valheim"."biomes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "world_id" uuid NOT NULL, "biome_name" character varying(50) NOT NULL, "position_x" double precision NOT NULL, "position_y" double precision NOT NULL, "size_radius" double precision NOT NULL, "is_explored" boolean NOT NULL DEFAULT false, "exploration_percentage" double precision NOT NULL DEFAULT '0', "biome_data" json, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_8d336dcc9ea04699345ebc9bd76" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "valheim"."boss_encounters" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "world_id" uuid NOT NULL, "boss_name" character varying(50) NOT NULL, "position_x" double precision NOT NULL, "position_y" double precision NOT NULL, "position_z" double precision NOT NULL, "is_defeated" boolean NOT NULL DEFAULT false, "defeated_at" TIMESTAMP, "defeated_by_users" json NOT NULL DEFAULT '[]', "attempts" integer NOT NULL DEFAULT '0', "boss_data" json, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_fef2f11c417829ad20a34c52f18" PRIMARY KEY ("id"))`);
