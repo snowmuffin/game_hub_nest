@@ -175,10 +175,53 @@ export class UpdateMuffinCraftInventory1751721195282 implements MigrationInterfa
         END $$;`);
         
         // Drop constraints with conditional checks
+        // Drop all foreign key constraints that reference users.id before dropping the column
         await queryRunner.query(`DO $$ 
         BEGIN
             IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_92558c08091598f7a4439586cda' AND table_name = 'wallets' AND table_schema = 'public') THEN
                 ALTER TABLE "wallets" DROP CONSTRAINT "FK_92558c08091598f7a4439586cda";
+            END IF;
+        END $$;`);
+        
+        await queryRunner.query(`DO $$ 
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_8225684e3ec7d4bcd1c73e5c480' AND table_name = 'buildings' AND table_schema = 'valheim') THEN
+                ALTER TABLE "valheim"."buildings" DROP CONSTRAINT "FK_8225684e3ec7d4bcd1c73e5c480";
+            END IF;
+        END $$;`);
+        
+        await queryRunner.query(`DO $$ 
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_c6e648aeaab79e4213def02aba8' AND table_name = 'characters' AND table_schema = 'valheim') THEN
+                ALTER TABLE "valheim"."characters" DROP CONSTRAINT "FK_c6e648aeaab79e4213def02aba8";
+            END IF;
+        END $$;`);
+        
+        await queryRunner.query(`DO $$ 
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_0af24dcac4257167eebaf5695ed' AND table_name = 'inventories' AND table_schema = 'valheim') THEN
+                ALTER TABLE "valheim"."inventories" DROP CONSTRAINT "FK_0af24dcac4257167eebaf5695ed";
+            END IF;
+        END $$;`);
+        
+        await queryRunner.query(`DO $$ 
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_4796762c619893704abbc3dce65' AND table_name = 'wallet_transactions' AND table_schema = 'public') THEN
+                ALTER TABLE "wallet_transactions" DROP CONSTRAINT "FK_4796762c619893704abbc3dce65";
+            END IF;
+        END $$;`);
+        
+        await queryRunner.query(`DO $$ 
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_b5bd1b11ac846b8c6577a7e0e1d' AND table_name = 'muffin_craft_inventory' AND table_schema = 'public') THEN
+                ALTER TABLE "muffin_craft_inventory" DROP CONSTRAINT "FK_b5bd1b11ac846b8c6577a7e0e1d";
+            END IF;
+        END $$;`);
+        
+        await queryRunner.query(`DO $$ 
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_57b3bc1a41b7a838da73735e4b7' AND table_name = 'muffin_craft_currency' AND table_schema = 'public') THEN
+                ALTER TABLE "muffin_craft_currency" DROP CONSTRAINT "FK_57b3bc1a41b7a838da73735e4b7";
             END IF;
         END $$;`);
         
