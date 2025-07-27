@@ -8,7 +8,7 @@ import {
   UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ItemService } from './item.service';
+import { ItemService, FormattedItem } from './item.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard'; // Guard 경로
 
 @Controller('space-engineers/item') // 엔드포인트에 space_engineers 추가
@@ -19,7 +19,7 @@ export class ItemController {
 
   @Get()
   @UseGuards(JwtAuthGuard) // 인증 Guard 적용
-  async getItems(@Req() req) {
+  async getItems(@Req() req): Promise<FormattedItem[]> {
     const userId = req.user?.id; // steamId 대신 id 사용
     if (!userId) {
       this.logger.error(`Authorization header is missing or invalid.`);

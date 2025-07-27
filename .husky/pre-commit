@@ -1,1 +1,29 @@
+#!/bin/bash
+
+# Pre-commit hooks
+echo "🔍 Running pre-commit checks..."
+
+# 먼저 lint-staged 실행
+echo "🎨 Running lint-staged..."
 npx lint-staged
+
+# lint-staged가 성공하면 deploy.sh 검증 실행
+if [ $? -eq 0 ]; then
+    echo "📋 Running deployment validation..."
+    
+    # deploy.sh 스크립트 실행 (테스트 모드)
+    export NODE_ENV="test"
+    export SKIP_PM2="true"
+    export SKIP_HEALTH_CHECK="true"
+    
+    if ! ./deploy.sh; then
+        echo "❌ Deploy script validation failed! Please fix the issues before committing."
+        echo "💡 You can run './deploy.sh' manually to see the detailed error."
+        exit 1
+    fi
+    
+    echo "✅ All pre-commit checks passed!"
+else
+    echo "❌ Lint-staged checks failed!"
+    exit 1
+fi

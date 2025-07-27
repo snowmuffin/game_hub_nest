@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/user/user.entity';
 
-interface PlayerStats {
+export interface PlayerStats {
   id?: number;
   user_id: string;
   minecraft_uuid: string | null;
@@ -44,14 +44,14 @@ interface PlayerStatsInput {
   lastLogout?: Date | null;
 }
 
-interface LeaderboardEntry {
+export interface LeaderboardEntry {
   minecraft_uuid: string;
   value: number;
   username: string;
   updated_at: Date;
 }
 
-interface Achievement {
+export interface Achievement {
   id: number;
   user_id: number;
   achievement_id: string;
