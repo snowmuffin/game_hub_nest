@@ -8,7 +8,9 @@ let dropTableServiceInstance: DropTableService | null = null;
  * Initialize the drop table service for DB-based drops
  * This should be called during application startup
  */
-export function initializeDropTableService(dropTableService: DropTableService): void {
+export function initializeDropTableService(
+  dropTableService: DropTableService,
+): void {
   dropTableServiceInstance = dropTableService;
 }
 
@@ -16,14 +18,24 @@ export function initializeDropTableService(dropTableService: DropTableService): 
  * Get drop using database-based drop table
  * This is the recommended method for calculating drops
  */
-export async function getDropFromDB(damage: number, mult: number, maxRarity: number): Promise<string | null> {
+export async function getDropFromDB(
+  damage: number,
+  mult: number,
+  maxRarity: number,
+): Promise<string | null> {
   if (!dropTableServiceInstance) {
-    logger.error('DropTableService not initialized. Call initializeDropTableService() first.');
+    logger.error(
+      'DropTableService not initialized. Call initializeDropTableService() first.',
+    );
     return null;
   }
 
   try {
-    return await dropTableServiceInstance.calculateGameDrop(damage, mult, maxRarity);
+    return await dropTableServiceInstance.calculateGameDrop(
+      damage,
+      mult,
+      maxRarity,
+    );
   } catch (error) {
     logger.error(`Failed to calculate drop from DB: ${error.message}`);
     return null;
@@ -34,7 +46,11 @@ export async function getDropFromDB(damage: number, mult: number, maxRarity: num
  * Legacy drop calculation function - kept for backward compatibility
  * @deprecated Use getDropFromDB() for new implementations
  */
-export async function getDrop(damage: number, mult: number, maxRarity: number): Promise<string | null> {
+export async function getDrop(
+  damage: number,
+  mult: number,
+  maxRarity: number,
+): Promise<string | null> {
   logger.warn('getDrop() is deprecated. Use getDropFromDB() instead.');
   return await getDropFromDB(damage, mult, maxRarity);
 }

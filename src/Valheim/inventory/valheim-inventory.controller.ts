@@ -6,16 +6,15 @@ import {
   Delete,
   Body,
   Param,
-  Query,
   UseGuards,
   ParseIntPipe,
   Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { 
+import {
   ValheimInventoryService,
   AddItemToInventoryDto,
-  UpdateInventoryItemDto
+  UpdateInventoryItemDto,
 } from './valheim-inventory.service';
 
 @Controller('valheim/inventory')
@@ -46,10 +45,13 @@ export class ValheimInventoryController {
   @Get('storage/:storageType')
   async getInventoryByStorageType(
     @Req() req: any,
-    @Param('storageType') storageType: string
+    @Param('storageType') storageType: string,
   ) {
     const userId = req.user.id;
-    return await this.inventoryService.getUserInventoryByStorageType(userId, storageType);
+    return await this.inventoryService.getUserInventoryByStorageType(
+      userId,
+      storageType,
+    );
   }
 
   /**
@@ -58,10 +60,13 @@ export class ValheimInventoryController {
   @Get('item/:itemId/quantity')
   async getItemQuantity(
     @Req() req: any,
-    @Param('itemId', ParseIntPipe) itemId: number
+    @Param('itemId', ParseIntPipe) itemId: number,
   ) {
     const userId = req.user.id;
-    const quantity = await this.inventoryService.getItemQuantity(userId, itemId);
+    const quantity = await this.inventoryService.getItemQuantity(
+      userId,
+      itemId,
+    );
     return { item_id: itemId, quantity };
   }
 
@@ -90,7 +95,7 @@ export class ValheimInventoryController {
   @Delete('remove')
   async removeItem(
     @Req() req: any,
-    @Body() body: { item_id: number; quantity: number }
+    @Body() body: { item_id: number; quantity: number },
   ) {
     const userId = req.user.id;
     await this.inventoryService.removeItem(userId, body.item_id, body.quantity);
@@ -103,9 +108,12 @@ export class ValheimInventoryController {
   @Put(':inventoryId')
   async updateInventoryItem(
     @Param('inventoryId', ParseIntPipe) inventoryId: number,
-    @Body() updateDto: UpdateInventoryItemDto
+    @Body() updateDto: UpdateInventoryItemDto,
   ) {
-    return await this.inventoryService.updateInventoryItem(inventoryId, updateDto);
+    return await this.inventoryService.updateInventoryItem(
+      inventoryId,
+      updateDto,
+    );
   }
 
   /**
@@ -114,12 +122,12 @@ export class ValheimInventoryController {
   @Put(':inventoryId/move')
   async moveItem(
     @Param('inventoryId', ParseIntPipe) inventoryId: number,
-    @Body() body: { storage_type: string; storage_location?: string }
+    @Body() body: { storage_type: string; storage_location?: string },
   ) {
     return await this.inventoryService.moveItem(
-      inventoryId, 
-      body.storage_type, 
-      body.storage_location
+      inventoryId,
+      body.storage_type,
+      body.storage_location,
     );
   }
 

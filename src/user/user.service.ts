@@ -13,10 +13,14 @@ export class UserService {
   ) {}
 
   async updateOrCreateUser(steamid: string, nickname: string): Promise<void> {
-    let user = await this.userRepository.findOne({ where: { steam_id: steamid } });
+    let user = await this.userRepository.findOne({
+      where: { steam_id: steamid },
+    });
 
     if (!user) {
-      this.logger.log(`User not found for steamid=${steamid}, creating new user...`);
+      this.logger.log(
+        `User not found for steamid=${steamid}, creating new user...`,
+      );
       user = this.userRepository.create({
         steam_id: steamid,
         username: nickname,
@@ -26,7 +30,9 @@ export class UserService {
       await this.userRepository.save(user);
       this.logger.log(`New user created: ${JSON.stringify(user)}`);
     } else {
-      this.logger.log(`User found for steamid=${steamid}, updating nickname...`);
+      this.logger.log(
+        `User found for steamid=${steamid}, updating nickname...`,
+      );
       user.username = nickname;
       user.updated_at = new Date(); // Update the updated_at timestamp
       await this.userRepository.save(user);
@@ -52,8 +58,10 @@ export class UserService {
    * 테스트 사용자 생성
    */
   async createTestUser(steamId: string, username: string): Promise<User> {
-    this.logger.log(`Creating test user: steamId=${steamId}, username=${username}`);
-    
+    this.logger.log(
+      `Creating test user: steamId=${steamId}, username=${username}`,
+    );
+
     const testUser = this.userRepository.create({
       steam_id: steamId,
       username: username,
@@ -62,10 +70,10 @@ export class UserService {
       created_at: new Date(),
       updated_at: new Date(),
     });
-    
+
     const savedUser = await this.userRepository.save(testUser);
     this.logger.log(`Test user created: ${JSON.stringify(savedUser)}`);
-    
+
     return savedUser;
   }
 
@@ -74,7 +82,7 @@ export class UserService {
    */
   async cleanupTestUsers(): Promise<void> {
     this.logger.log('Cleaning up test users...');
-    
+
     const testUsers = await this.userRepository
       .createQueryBuilder('user')
       .where('user.steam_id LIKE :pattern', { pattern: 'test_%' })
@@ -98,7 +106,7 @@ export class UserService {
     email?: string;
   }): Promise<User> {
     this.logger.log(`Creating user: ${JSON.stringify(userData)}`);
-    
+
     const user = this.userRepository.create({
       steam_id: userData.steam_id,
       username: userData.username,
@@ -108,24 +116,29 @@ export class UserService {
       created_at: new Date(),
       updated_at: new Date(),
     });
-    
+
     const savedUser = await this.userRepository.save(user);
     this.logger.log(`User created: ${JSON.stringify(savedUser)}`);
-    
+
     return savedUser;
   }
 
   /**
    * 마인크래프트 UUID 업데이트
    */
-  async updateMinecraftUuid(userId: number, minecraftUuid: string): Promise<void> {
-    this.logger.log(`Updating minecraft UUID for user ${userId}: ${minecraftUuid}`);
-    
+  async updateMinecraftUuid(
+    userId: number,
+    minecraftUuid: string,
+  ): Promise<void> {
+    this.logger.log(
+      `Updating minecraft UUID for user ${userId}: ${minecraftUuid}`,
+    );
+
     await this.userRepository.update(userId, {
       minecraft_uuid: minecraftUuid,
       updated_at: new Date(),
     });
-    
+
     this.logger.log(`Minecraft UUID updated for user ${userId}`);
   }
 }

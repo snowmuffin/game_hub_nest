@@ -7,11 +7,7 @@ import { ValheimItemService } from './valheim-item.service';
 import { ValheimItem } from './valheim-item.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ValheimItem]),
-    JwtModule,
-    ConfigModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ValheimItem]), JwtModule, ConfigModule],
   controllers: [ValheimItemController],
   providers: [ValheimItemService],
   exports: [ValheimItemService],

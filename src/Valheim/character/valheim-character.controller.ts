@@ -12,11 +12,11 @@ import {
   Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { 
+import {
   ValheimCharacterService,
   CreateCharacterDto,
   UpdateCharacterDto,
-  UpdateSkillsDto
+  UpdateSkillsDto,
 } from './valheim-character.service';
 
 @Controller('valheim/character')
@@ -63,9 +63,12 @@ export class ValheimCharacterController {
   @Get('rankings/skill/:skillName')
   async getSkillRankings(
     @Param('skillName') skillName: string,
-    @Query('limit') limit: string = '10'
+    @Query('limit') limit: string = '10',
   ) {
-    return await this.characterService.getSkillRankings(skillName, parseInt(limit));
+    return await this.characterService.getSkillRankings(
+      skillName,
+      parseInt(limit),
+    );
   }
 
   /**
@@ -89,7 +92,10 @@ export class ValheimCharacterController {
    */
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createCharacter(@Req() req: any, @Body() createDto: CreateCharacterDto) {
+  async createCharacter(
+    @Req() req: any,
+    @Body() createDto: CreateCharacterDto,
+  ) {
     createDto.user_id = req.user.id;
     return await this.characterService.create(createDto);
   }
@@ -99,7 +105,10 @@ export class ValheimCharacterController {
    */
   @Put()
   @UseGuards(JwtAuthGuard)
-  async updateCharacter(@Req() req: any, @Body() updateDto: UpdateCharacterDto) {
+  async updateCharacter(
+    @Req() req: any,
+    @Body() updateDto: UpdateCharacterDto,
+  ) {
     const userId = req.user.id;
     return await this.characterService.update(userId, updateDto);
   }
@@ -129,9 +138,15 @@ export class ValheimCharacterController {
    */
   @Post('location/discover')
   @UseGuards(JwtAuthGuard)
-  async discoverLocation(@Req() req: any, @Body() body: { location_name: string }) {
+  async discoverLocation(
+    @Req() req: any,
+    @Body() body: { location_name: string },
+  ) {
     const userId = req.user.id;
-    return await this.characterService.discoverLocation(userId, body.location_name);
+    return await this.characterService.discoverLocation(
+      userId,
+      body.location_name,
+    );
   }
 
   /**

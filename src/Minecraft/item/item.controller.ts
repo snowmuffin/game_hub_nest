@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Logger,
+} from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ItemService } from './item.service';
 
@@ -19,7 +27,7 @@ export class ItemController {
   @Post('upload')
   async uploadItem(
     @Request() req,
-    @Body() body: { identifier: string; quantity: number }
+    @Body() body: { identifier: string; quantity: number },
   ) {
     const userId = req.user.id;
     return this.itemService.uploadItem(userId, body.identifier, body.quantity);
@@ -28,28 +36,40 @@ export class ItemController {
   @Post('request-download')
   async requestDownloadItem(
     @Request() req,
-    @Body() body: { index_name: string; quantity: number }
+    @Body() body: { index_name: string; quantity: number },
   ) {
     const steamid = req.user.id;
-    return this.itemService.requestDownloadItem(steamid, body.index_name, body.quantity);
+    return this.itemService.requestDownloadItem(
+      steamid,
+      body.index_name,
+      body.quantity,
+    );
   }
 
   @Post('confirm-download')
   async confirmDownloadItem(
     @Request() req,
-    @Body() body: { index_name: string; quantity: number }
+    @Body() body: { index_name: string; quantity: number },
   ) {
     const steamid = req.user.id;
-    return this.itemService.confirmDownloadItem(steamid, body.index_name, body.quantity);
+    return this.itemService.confirmDownloadItem(
+      steamid,
+      body.index_name,
+      body.quantity,
+    );
   }
 
   @Post('cancel-download')
   async cancelDownloadItem(
     @Request() req,
-    @Body() body: { index_name: string; quantity: number }
+    @Body() body: { index_name: string; quantity: number },
   ) {
     const steamid = req.user.id;
-    return this.itemService.cancelDownloadItem(steamid, body.index_name, body.quantity);
+    return this.itemService.cancelDownloadItem(
+      steamid,
+      body.index_name,
+      body.quantity,
+    );
   }
 
   @Get('blueprints')

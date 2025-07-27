@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { MuffinCraftService } from './muffincraft.service';
 import { MuffinCraftPlayerGuard } from './auth/muffincraft-player.guard';
 
@@ -18,10 +26,7 @@ export class MuffinCraftController {
   }
 
   @Post('currency')
-  updateUserCurrency(
-    @Request() req,
-    @Body() currencyData: any
-  ) {
+  updateUserCurrency(@Request() req, @Body() currencyData: any) {
     return this.muffinCraftService.updatePlayerCurrency(req.user, currencyData);
   }
 
@@ -36,7 +41,7 @@ export class MuffinCraftController {
   @Post('user/:userId/currency')
   updateUserCurrencyById(
     @Param('userId') userId: string,
-    @Body() currencyData: any
+    @Body() currencyData: any,
   ) {
     return this.muffinCraftService.updateUserCurrency(userId, currencyData);
   }

@@ -10,7 +10,7 @@ import { PlayerStatsService } from './player-stats.service';
   imports: [
     TypeOrmModule.forFeature([User]),
     JwtModule.register({}),
-    ConfigModule
+    ConfigModule,
   ],
   controllers: [PlayerStatsController],
   providers: [PlayerStatsService],

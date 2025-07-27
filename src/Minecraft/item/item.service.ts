@@ -30,6 +30,7 @@ export class ItemService {
       const insertStorageQuery = `
         INSERT INTO minecraft.online_storage (id) VALUES ($1) RETURNING id
       `;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const newStorage = await this.userRepository.query(insertStorageQuery, [
         userId,
       ]);
@@ -173,7 +174,9 @@ export class ItemService {
     quantity: number,
   ): Promise<any> {
     if (!minecraftUuid || !item_id) {
-      this.logger.error(`requestDownloadItem: minecraftUuid or item_id is undefined. minecraftUuid=${minecraftUuid}, item_id=${item_id}`);
+      this.logger.error(
+        `requestDownloadItem: minecraftUuid or item_id is undefined. minecraftUuid=${minecraftUuid}, item_id=${item_id}`,
+      );
       throw new Error('minecraftUuid and item_id are required.');
     }
     this.logger.log(
@@ -193,7 +196,9 @@ export class ItemService {
         )
       `);
     } catch (e) {
-      this.logger.error(`Failed to create 'item_download_log' table: ${e.message}`);
+      this.logger.error(
+        `Failed to create 'item_download_log' table: ${e.message}`,
+      );
       throw e;
     }
 
@@ -217,19 +222,22 @@ export class ItemService {
 
     const currentQtyResult = await this.userRepository.query(
       `SELECT quantity FROM minecraft.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
-      [storageId, itemDbId]
+      [storageId, itemDbId],
     );
-    const currentQty = currentQtyResult.length > 0 ? Number(currentQtyResult[0].quantity) : 0;
+    const currentQty =
+      currentQtyResult.length > 0 ? Number(currentQtyResult[0].quantity) : 0;
     if (quantity > currentQty) {
       this.logger.warn(
-        `Download request exceeds available quantity: requested=${quantity}, available=${currentQty}, minecraftUuid=${minecraftUuid}, item=${item_id}`
+        `Download request exceeds available quantity: requested=${quantity}, available=${currentQty}, minecraftUuid=${minecraftUuid}, item=${item_id}`,
       );
-      throw new Error(`Not enough items in storage. Requested: ${quantity}, Available: ${currentQty}`);
+      throw new Error(
+        `Not enough items in storage. Requested: ${quantity}, Available: ${currentQty}`,
+      );
     }
 
     await this.userRepository.query(
       `INSERT INTO minecraft.item_download_log (storage_id, item_id, quantity, status) VALUES ($1, $2, $3, 'PENDING')`,
-      [storageId, itemDbId, quantity]
+      [storageId, itemDbId, quantity],
     );
 
     return {
@@ -275,17 +283,17 @@ export class ItemService {
 
     await this.userRepository.query(
       `UPDATE minecraft.online_storage_items SET quantity = quantity - $1 WHERE storage_id = $2 AND item_id = $3`,
-      [quantity, storageId, itemDbId]
+      [quantity, storageId, itemDbId],
     );
 
     await this.userRepository.query(
       `UPDATE minecraft.item_download_log SET status = 'CONFIRMED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
-      [storageId, itemDbId]
+      [storageId, itemDbId],
     );
 
     const remainResult = await this.userRepository.query(
       `SELECT quantity FROM minecraft.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
-      [storageId, itemDbId]
+      [storageId, itemDbId],
     );
     const remain = remainResult.length > 0 ? remainResult[0].quantity : 0;
 
@@ -333,7 +341,7 @@ export class ItemService {
 
     await this.userRepository.query(
       `UPDATE minecraft.item_download_log SET status = 'CANCELED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
-      [storageId, itemDbId]
+      [storageId, itemDbId],
     );
 
     return {
@@ -402,7 +410,11 @@ export class ItemService {
           ingredients[ingredient] = quantity;
         }
       }
-      return { itemId: recipe.result_item_id, result_quantity: recipe.result_quantity, ingredients };
+      return {
+        itemId: recipe.result_item_id,
+        result_quantity: recipe.result_quantity,
+        ingredients,
+      };
     });
   }
 

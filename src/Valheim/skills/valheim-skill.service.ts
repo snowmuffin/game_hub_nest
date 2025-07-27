@@ -35,12 +35,14 @@ export class ValheimSkillService {
     return Math.floor(Math.sqrt(experience * 2));
   }
 
-  async createOrUpdateSkill(addSkillDto: AddSkillExperienceDto): Promise<ValheimCharacterSkill> {
+  async createOrUpdateSkill(
+    addSkillDto: AddSkillExperienceDto,
+  ): Promise<ValheimCharacterSkill> {
     let skill = await this.skillRepository.findOne({
-      where: { 
-        characterId: addSkillDto.characterId, 
-        skillName: addSkillDto.skillName 
-      }
+      where: {
+        characterId: addSkillDto.characterId,
+        skillName: addSkillDto.skillName,
+      },
     });
 
     if (!skill) {
@@ -56,7 +58,8 @@ export class ValheimSkillService {
 
     // Add experience
     const newExperience = skill.skillExperience + addSkillDto.experienceGained;
-    const newAccumulated = skill.accumulatedExperience + addSkillDto.experienceGained;
+    const newAccumulated =
+      skill.accumulatedExperience + addSkillDto.experienceGained;
     const newLevel = Math.max(1, this.getLevelFromExperience(newExperience));
 
     skill.skillExperience = newExperience;
@@ -66,22 +69,30 @@ export class ValheimSkillService {
     return await this.skillRepository.save(skill);
   }
 
-  async findSkillsByCharacter(characterId: number): Promise<ValheimCharacterSkill[]> {
+  async findSkillsByCharacter(
+    characterId: number,
+  ): Promise<ValheimCharacterSkill[]> {
     return await this.skillRepository.find({
       where: { characterId },
       relations: ['character'],
-      order: { skillLevel: 'DESC' }
+      order: { skillLevel: 'DESC' },
     });
   }
 
-  async findSkillByCharacterAndName(characterId: number, skillName: string): Promise<ValheimCharacterSkill | null> {
+  async findSkillByCharacterAndName(
+    characterId: number,
+    skillName: string,
+  ): Promise<ValheimCharacterSkill | null> {
     return await this.skillRepository.findOne({
       where: { characterId, skillName },
       relations: ['character'],
     });
   }
 
-  async updateSkill(id: string, updateSkillDto: UpdateSkillDto): Promise<ValheimCharacterSkill | null> {
+  async updateSkill(
+    id: string,
+    updateSkillDto: UpdateSkillDto,
+  ): Promise<ValheimCharacterSkill | null> {
     await this.skillRepository.update(id, updateSkillDto);
     return await this.skillRepository.findOne({
       where: { id },
@@ -89,15 +100,25 @@ export class ValheimSkillService {
     });
   }
 
-  async applyDeathPenalty(characterId: number, penaltyPercentage: number = 5): Promise<ValheimCharacterSkill[]> {
+  async applyDeathPenalty(
+    characterId: number,
+    penaltyPercentage: number = 5,
+  ): Promise<ValheimCharacterSkill[]> {
     const skills = await this.findSkillsByCharacter(characterId);
     const updatedSkills: ValheimCharacterSkill[] = [];
 
     for (const skill of skills) {
       if (skill.skillLevel > 1) {
-        const experienceLoss = skill.skillExperience * (penaltyPercentage / 100);
-        const newExperience = Math.max(0, skill.skillExperience - experienceLoss);
-        const newLevel = Math.max(1, this.getLevelFromExperience(newExperience));
+        const experienceLoss =
+          skill.skillExperience * (penaltyPercentage / 100);
+        const newExperience = Math.max(
+          0,
+          skill.skillExperience - experienceLoss,
+        );
+        const newLevel = Math.max(
+          1,
+          this.getLevelFromExperience(newExperience),
+        );
 
         const updatedSkill = await this.updateSkill(skill.id, {
           skillExperience: newExperience,
@@ -114,7 +135,10 @@ export class ValheimSkillService {
     return updatedSkills;
   }
 
-  async getSkillLeaderboard(skillName: string, limit: number = 10): Promise<ValheimCharacterSkill[]> {
+  async getSkillLeaderboard(
+    skillName: string,
+    limit: number = 10,
+  ): Promise<ValheimCharacterSkill[]> {
     return await this.skillRepository.find({
       where: { skillName },
       relations: ['character', 'character.user'],
@@ -125,9 +149,15 @@ export class ValheimSkillService {
 
   async getCharacterSkillSummary(characterId: number): Promise<any> {
     const skills = await this.findSkillsByCharacter(characterId);
-    
-    const totalLevels = skills.reduce((sum, skill) => sum + skill.skillLevel, 0);
-    const totalExperience = skills.reduce((sum, skill) => sum + skill.accumulatedExperience, 0);
+
+    const totalLevels = skills.reduce(
+      (sum, skill) => sum + skill.skillLevel,
+      0,
+    );
+    const totalExperience = skills.reduce(
+      (sum, skill) => sum + skill.accumulatedExperience,
+      0,
+    );
     const averageLevel = skills.length > 0 ? totalLevels / skills.length : 0;
     const highestSkill = skills.length > 0 ? skills[0] : null;
 
@@ -149,7 +179,7 @@ export class ValheimSkillService {
   getAvailableSkills(): string[] {
     return [
       'Swords',
-      'Knives', 
+      'Knives',
       'Clubs',
       'Polearms',
       'Spears',
@@ -166,7 +196,7 @@ export class ValheimSkillService {
       'Swim',
       'Fishing',
       'Cooking',
-      'Farming'
+      'Farming',
     ];
   }
 }

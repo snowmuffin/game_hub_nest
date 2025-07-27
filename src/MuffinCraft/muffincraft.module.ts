@@ -8,7 +8,10 @@ import { MuffinCraftInventory } from './entities/muffincraft-inventory.entity';
 import { MuffinCraftCurrency } from './entities/muffincraft-currency.entity';
 import { MuffinCraftPlayer } from './entities/muffincraft-player.entity';
 import { MuffinCraftAuthCode } from './entities/muffincraft-auth-code.entity';
-import { InventoryController, LegacyInventoryController } from './inventory/inventory.controller';
+import {
+  InventoryController,
+  LegacyInventoryController,
+} from './inventory/inventory.controller';
 import { InventoryService } from './inventory/inventory.service';
 import { MuffinCraftAuthController } from './auth/muffincraft-auth.controller';
 import { MuffinCraftAuthService } from './auth/muffincraft-auth.service';
@@ -20,10 +23,10 @@ import { ResourcePackController } from './resourcepack.controller';
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([
-      MuffinCraftInventory, 
+      MuffinCraftInventory,
       MuffinCraftCurrency,
       MuffinCraftPlayer,
-      MuffinCraftAuthCode
+      MuffinCraftAuthCode,
     ]),
     JwtModule.registerAsync({
       useFactory: () => ({
@@ -32,8 +35,25 @@ import { ResourcePackController } from './resourcepack.controller';
       }),
     }),
   ],
-  controllers: [MuffinCraftController, InventoryController, LegacyInventoryController, MuffinCraftAuthController, MuffinCraftPlayerController, ResourcePackController],
-  providers: [MuffinCraftService, InventoryService, MuffinCraftAuthService, MuffinCraftPlayerService],
-  exports: [MuffinCraftService, InventoryService, MuffinCraftAuthService, MuffinCraftPlayerService],
+  controllers: [
+    MuffinCraftController,
+    InventoryController,
+    LegacyInventoryController,
+    MuffinCraftAuthController,
+    MuffinCraftPlayerController,
+    ResourcePackController,
+  ],
+  providers: [
+    MuffinCraftService,
+    InventoryService,
+    MuffinCraftAuthService,
+    MuffinCraftPlayerService,
+  ],
+  exports: [
+    MuffinCraftService,
+    InventoryService,
+    MuffinCraftAuthService,
+    MuffinCraftPlayerService,
+  ],
 })
 export class MuffinCraftModule {}

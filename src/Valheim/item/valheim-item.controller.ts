@@ -11,11 +11,11 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { 
-  ValheimItemService, 
-  CreateValheimItemDto, 
+import {
+  ValheimItemService,
+  CreateValheimItemDto,
   UpdateValheimItemDto,
-  ValheimItemSearchDto 
+  ValheimItemSearchDto,
 } from './valheim-item.service';
 import { ValheimItemType } from './valheim-item.entity';
 
@@ -103,7 +103,7 @@ export class ValheimItemController {
   @UseGuards(JwtAuthGuard)
   async updateItem(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateDto: UpdateValheimItemDto
+    @Body() updateDto: UpdateValheimItemDto,
   ) {
     return await this.valheimItemService.update(id, updateDto);
   }

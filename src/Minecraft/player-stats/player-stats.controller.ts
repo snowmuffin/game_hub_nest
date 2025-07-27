@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  Logger,
+} from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PlayerStatsService } from './player-stats.service';
 
@@ -19,10 +28,14 @@ export class PlayerStatsController {
   @Post('update')
   async updatePlayerStats(
     @Request() req,
-    @Body() body: { minecraftUuid: string; stats: any }
+    @Body() body: { minecraftUuid: string; stats: any },
   ) {
     const userId = req.user.id;
-    return this.playerStatsService.updatePlayerStats(userId, body.minecraftUuid, body.stats);
+    return this.playerStatsService.updatePlayerStats(
+      userId,
+      body.minecraftUuid,
+      body.stats,
+    );
   }
 
   @Get('leaderboard/:stat')

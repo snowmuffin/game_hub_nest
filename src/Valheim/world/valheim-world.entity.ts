@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { GameServer } from '../../entities/game-server.entity';
 import { ValheimCharacter } from '../character/valheim-character.entity';
 
@@ -60,7 +69,7 @@ export class ValheimWorld {
   @JoinColumn({ name: 'server_id' })
   server: GameServer;
 
-  @OneToMany(() => ValheimCharacter, character => character.world)
+  @OneToMany(() => ValheimCharacter, (character) => character.world)
   characters: ValheimCharacter[];
 }
 

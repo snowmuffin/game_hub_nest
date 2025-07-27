@@ -19,7 +19,7 @@ export class MuffinCraftService {
     return {
       status: 'active',
       message: 'MuffinCraft service is running',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -28,9 +28,9 @@ export class MuffinCraftService {
    */
   async getPlayerCurrency(user: any) {
     this.logger.log(`플레이어 통화 조회: ${JSON.stringify(user)}`);
-    
+
     let targetUserId: number;
-    
+
     if (user.type === 'minecraft_player') {
       // 마인크래프트 플레이어인 경우
       if (user.isLinked && user.userId) {
@@ -47,7 +47,7 @@ export class MuffinCraftService {
 
     return await this.currencyRepository.find({
       where: { user: { id: targetUserId } },
-      relations: ['user']
+      relations: ['user'],
     });
   }
 
@@ -57,7 +57,7 @@ export class MuffinCraftService {
   async getUserCurrency(userId: string) {
     return await this.currencyRepository.find({
       where: { user: { id: parseInt(userId) } },
-      relations: ['user']
+      relations: ['user'],
     });
   }
 
@@ -65,10 +65,12 @@ export class MuffinCraftService {
    * 플레이어 정보 기반으로 통화 업데이트 (연동 여부 무관)
    */
   async updatePlayerCurrency(user: any, currencyData: any) {
-    this.logger.log(`플레이어 통화 업데이트: ${JSON.stringify(user)}, 데이터: ${JSON.stringify(currencyData)}`);
-    
+    this.logger.log(
+      `플레이어 통화 업데이트: ${JSON.stringify(user)}, 데이터: ${JSON.stringify(currencyData)}`,
+    );
+
     let targetUserId: number;
-    
+
     if (user.type === 'minecraft_player') {
       // 마인크래프트 플레이어인 경우
       if (user.isLinked && user.userId) {
@@ -84,10 +86,10 @@ export class MuffinCraftService {
     }
 
     const existingCurrency = await this.currencyRepository.findOne({
-      where: { 
-        user: { id: targetUserId }, 
-        currencyType: currencyData.currencyType 
-      }
+      where: {
+        user: { id: targetUserId },
+        currencyType: currencyData.currencyType,
+      },
     });
 
     if (existingCurrency) {
@@ -99,9 +101,9 @@ export class MuffinCraftService {
           [`${Date.now()}`]: {
             previousAmount: existingCurrency.amount,
             newAmount: currencyData.amount,
-            reason: currencyData.reason || 'Manual update'
-          }
-        }
+            reason: currencyData.reason || 'Manual update',
+          },
+        },
       });
     }
 
@@ -112,9 +114,9 @@ export class MuffinCraftService {
       transactionHistory: {
         [`${Date.now()}`]: {
           initialAmount: currencyData.amount,
-          reason: 'Initial currency creation'
-        }
-      }
+          reason: 'Initial currency creation',
+        },
+      },
     });
   }
 
@@ -123,10 +125,10 @@ export class MuffinCraftService {
    */
   async updateUserCurrency(userId: string, currencyData: any) {
     const existingCurrency = await this.currencyRepository.findOne({
-      where: { 
-        user: { id: parseInt(userId) }, 
-        currencyType: currencyData.currencyType 
-      }
+      where: {
+        user: { id: parseInt(userId) },
+        currencyType: currencyData.currencyType,
+      },
     });
 
     if (existingCurrency) {
@@ -138,9 +140,9 @@ export class MuffinCraftService {
           [`${Date.now()}`]: {
             previousAmount: existingCurrency.amount,
             newAmount: currencyData.amount,
-            reason: currencyData.reason || 'Manual update'
-          }
-        }
+            reason: currencyData.reason || 'Manual update',
+          },
+        },
       });
     }
 
@@ -151,9 +153,9 @@ export class MuffinCraftService {
       transactionHistory: {
         [`${Date.now()}`]: {
           initialAmount: currencyData.amount,
-          reason: 'Initial currency creation'
-        }
-      }
+          reason: 'Initial currency creation',
+        },
+      },
     });
   }
 }

@@ -39,7 +39,9 @@ export class ValheimBuildingService {
     private buildingRepository: Repository<ValheimBuilding>,
   ) {}
 
-  async createBuilding(createBuildingDto: CreateBuildingDto): Promise<ValheimBuilding> {
+  async createBuilding(
+    createBuildingDto: CreateBuildingDto,
+  ): Promise<ValheimBuilding> {
     const building = this.buildingRepository.create(createBuildingDto);
     return await this.buildingRepository.save(building);
   }
@@ -58,7 +60,10 @@ export class ValheimBuildingService {
     });
   }
 
-  async findByUserAndServer(userId: string, serverId: string): Promise<ValheimBuilding[]> {
+  async findByUserAndServer(
+    userId: string,
+    serverId: string,
+  ): Promise<ValheimBuilding[]> {
     return await this.buildingRepository.find({
       where: { userId, serverId, isActive: true },
       relations: ['user', 'server'],
@@ -72,7 +77,10 @@ export class ValheimBuildingService {
     });
   }
 
-  async updateBuilding(id: string, updateBuildingDto: UpdateBuildingDto): Promise<ValheimBuilding | null> {
+  async updateBuilding(
+    id: string,
+    updateBuildingDto: UpdateBuildingDto,
+  ): Promise<ValheimBuilding | null> {
     await this.buildingRepository.update(id, updateBuildingDto);
     return await this.findById(id);
   }
@@ -85,7 +93,10 @@ export class ValheimBuildingService {
     await this.buildingRepository.delete(id);
   }
 
-  async findByType(buildingType: string, serverId?: string): Promise<ValheimBuilding[]> {
+  async findByType(
+    buildingType: string,
+    serverId?: string,
+  ): Promise<ValheimBuilding[]> {
     const where: any = { buildingType, isActive: true };
     if (serverId) {
       where.serverId = serverId;
@@ -97,28 +108,37 @@ export class ValheimBuildingService {
     });
   }
 
-  async damageBuildingOveTime(id: string, damageAmount: number): Promise<ValheimBuilding | null> {
+  async damageBuildingOveTime(
+    id: string,
+    damageAmount: number,
+  ): Promise<ValheimBuilding | null> {
     const building = await this.findById(id);
     if (!building) return null;
 
     const newHealth = Math.max(0, building.health - damageAmount);
     const isActive = newHealth > 0;
 
-    return await this.updateBuilding(id, { 
-      health: newHealth, 
-      isActive 
+    return await this.updateBuilding(id, {
+      health: newHealth,
+      isActive,
     });
   }
 
-  async repairBuilding(id: string, repairAmount: number): Promise<ValheimBuilding | null> {
+  async repairBuilding(
+    id: string,
+    repairAmount: number,
+  ): Promise<ValheimBuilding | null> {
     const building = await this.findById(id);
     if (!building) return null;
 
-    const newHealth = Math.min(building.maxHealth, building.health + repairAmount);
+    const newHealth = Math.min(
+      building.maxHealth,
+      building.health + repairAmount,
+    );
 
-    return await this.updateBuilding(id, { 
+    return await this.updateBuilding(id, {
       health: newHealth,
-      isActive: true 
+      isActive: true,
     });
   }
 }

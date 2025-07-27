@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { ValheimBuildingService, CreateBuildingDto, UpdateBuildingDto } from './valheim-building.service';
+import {
+  ValheimBuildingService,
+  CreateBuildingDto,
+  UpdateBuildingDto,
+} from './valheim-building.service';
 import { ValheimBuilding } from './valheim-building.entity';
 
 @Controller('valheim/buildings')
@@ -9,17 +23,23 @@ export class ValheimBuildingController {
   constructor(private readonly buildingService: ValheimBuildingService) {}
 
   @Post()
-  async createBuilding(@Body() createBuildingDto: CreateBuildingDto): Promise<ValheimBuilding> {
+  async createBuilding(
+    @Body() createBuildingDto: CreateBuildingDto,
+  ): Promise<ValheimBuilding> {
     return await this.buildingService.createBuilding(createBuildingDto);
   }
 
   @Get('user/:userId')
-  async getBuildingsByUser(@Param('userId') userId: string): Promise<ValheimBuilding[]> {
+  async getBuildingsByUser(
+    @Param('userId') userId: string,
+  ): Promise<ValheimBuilding[]> {
     return await this.buildingService.findByUserId(userId);
   }
 
   @Get('server/:serverId')
-  async getBuildingsByServer(@Param('serverId') serverId: string): Promise<ValheimBuilding[]> {
+  async getBuildingsByServer(
+    @Param('serverId') serverId: string,
+  ): Promise<ValheimBuilding[]> {
     return await this.buildingService.findByServer(serverId);
   }
 
@@ -40,7 +60,9 @@ export class ValheimBuildingController {
   }
 
   @Get(':id')
-  async getBuildingById(@Param('id') id: string): Promise<ValheimBuilding | null> {
+  async getBuildingById(
+    @Param('id') id: string,
+  ): Promise<ValheimBuilding | null> {
     return await this.buildingService.findById(id);
   }
 

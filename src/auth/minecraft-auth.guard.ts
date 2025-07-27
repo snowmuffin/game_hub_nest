@@ -1,6 +1,39 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+
+interface MinecraftJwtPayload {
+  type: string;
+  sub: string;
+  steam_id: string;
+  username: string;
+  [key: string]: unknown;
+}
+
+function isMinecraftJwtPayload(
+  payload: unknown,
+): payload is MinecraftJwtPayload {
+  if (typeof payload !== 'object' || payload === null) {
+    return false;
+  }
+
+  const obj = payload as Record<string, unknown>;
+  return (
+    'type' in obj &&
+    'sub' in obj &&
+    'steam_id' in obj &&
+    'username' in obj &&
+    typeof obj.type === 'string' &&
+    typeof obj.sub === 'string' &&
+    typeof obj.steam_id === 'string' &&
+    typeof obj.username === 'string'
+  );
+}
 
 @Injectable()
 export class MinecraftAuthGuard implements CanActivate {
@@ -15,24 +48,33 @@ export class MinecraftAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = this.jwtService.verify(token, {
+      const payload: unknown = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET || 'defaultSecret',
       });
 
-      // 마인크래프트 토큰인지 확인
+      // Type guard to ensure payload has required properties
+      if (!isMinecraftJwtPayload(payload)) {
+        throw new UnauthorizedException('Invalid token payload structure');
+      }
+
+      // Check if it's a Minecraft token
       if (payload.type !== 'minecraft') {
-        throw new UnauthorizedException('Invalid token type for minecraft server');
+        throw new UnauthorizedException(
+          'Invalid token type for minecraft server',
+        );
       }
 
-      // 필수 필드 확인
+      // Check required fields
       if (!payload.sub || !payload.steam_id || !payload.username) {
-        throw new UnauthorizedException('Invalid token payload - missing required fields');
+        throw new UnauthorizedException(
+          'Invalid token payload - missing required fields',
+        );
       }
 
-      // 요청에 사용자 정보 추가 (일반 토큰과 호환성을 위해 id 필드도 추가)
+      // Add user information to request (add id field for compatibility with regular tokens)
       request['user'] = {
         ...payload,
-        id: payload.sub  // 일반 토큰과의 호환성을 위해 id 필드 추가
+        id: payload.sub, // Add id field for compatibility with regular tokens
       };
       return true;
     } catch (error) {

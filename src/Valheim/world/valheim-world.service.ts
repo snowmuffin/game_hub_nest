@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ValheimWorld, ValheimBiome, ValheimBossEncounter } from './valheim-world.entity';
+import {
+  ValheimWorld,
+  ValheimBiome,
+  ValheimBossEncounter,
+} from './valheim-world.entity';
 
 export interface CreateWorldDto {
   serverId: string;
@@ -73,7 +77,10 @@ export class ValheimWorldService {
     });
   }
 
-  async updateWorld(id: string, updateWorldDto: UpdateWorldDto): Promise<ValheimWorld | null> {
+  async updateWorld(
+    id: string,
+    updateWorldDto: UpdateWorldDto,
+  ): Promise<ValheimWorld | null> {
     await this.worldRepository.update(id, updateWorldDto);
     return await this.findWorldById(id);
   }
@@ -86,16 +93,23 @@ export class ValheimWorldService {
     const world = await this.findWorldById(worldId);
     if (!world) return null;
 
-    return await this.updateWorld(worldId, { 
-      dayCount: world.dayCount + 1 
+    return await this.updateWorld(worldId, {
+      dayCount: world.dayCount + 1,
     });
   }
 
-  async updateTimeOfDay(worldId: string, timeOfDay: number): Promise<ValheimWorld | null> {
+  async updateTimeOfDay(
+    worldId: string,
+    timeOfDay: number,
+  ): Promise<ValheimWorld | null> {
     return await this.updateWorld(worldId, { timeOfDay });
   }
 
-  async defeatBoss(worldId: string, bossName: string, participantUserIds: string[]): Promise<ValheimWorld | null> {
+  async defeatBoss(
+    worldId: string,
+    bossName: string,
+    participantUserIds: string[],
+  ): Promise<ValheimWorld | null> {
     const world = await this.findWorldById(worldId);
     if (!world) return null;
 
@@ -106,7 +120,7 @@ export class ValheimWorldService {
 
     // Update boss encounter
     const bossEncounter = await this.bossEncounterRepository.findOne({
-      where: { worldId, bossName }
+      where: { worldId, bossName },
     });
 
     if (bossEncounter) {
@@ -134,44 +148,55 @@ export class ValheimWorldService {
     });
   }
 
-  async updateBiomeExploration(biomeId: string, explorationPercentage: number): Promise<ValheimBiome | null> {
+  async updateBiomeExploration(
+    biomeId: string,
+    explorationPercentage: number,
+  ): Promise<ValheimBiome | null> {
     const isExplored = explorationPercentage >= 100;
-    await this.biomeRepository.update(biomeId, { 
-      explorationPercentage, 
-      isExplored 
+    await this.biomeRepository.update(biomeId, {
+      explorationPercentage,
+      isExplored,
     });
-    
+
     return await this.biomeRepository.findOne({
-      where: { id: biomeId }
+      where: { id: biomeId },
     });
   }
 
   // Boss encounter methods
-  async createBossEncounter(createBossEncounterDto: CreateBossEncounterDto): Promise<ValheimBossEncounter> {
-    const bossEncounter = this.bossEncounterRepository.create(createBossEncounterDto);
+  async createBossEncounter(
+    createBossEncounterDto: CreateBossEncounterDto,
+  ): Promise<ValheimBossEncounter> {
+    const bossEncounter = this.bossEncounterRepository.create(
+      createBossEncounterDto,
+    );
     return await this.bossEncounterRepository.save(bossEncounter);
   }
 
-  async findBossEncountersByWorld(worldId: string): Promise<ValheimBossEncounter[]> {
+  async findBossEncountersByWorld(
+    worldId: string,
+  ): Promise<ValheimBossEncounter[]> {
     return await this.bossEncounterRepository.find({
       where: { worldId },
       relations: ['world'],
     });
   }
 
-  async attemptBoss(bossEncounterId: string): Promise<ValheimBossEncounter | null> {
+  async attemptBoss(
+    bossEncounterId: string,
+  ): Promise<ValheimBossEncounter | null> {
     const bossEncounter = await this.bossEncounterRepository.findOne({
-      where: { id: bossEncounterId }
+      where: { id: bossEncounterId },
     });
-    
+
     if (!bossEncounter) return null;
 
     await this.bossEncounterRepository.update(bossEncounterId, {
-      attempts: bossEncounter.attempts + 1
+      attempts: bossEncounter.attempts + 1,
     });
 
     return await this.bossEncounterRepository.findOne({
-      where: { id: bossEncounterId }
+      where: { id: bossEncounterId },
     });
   }
 
@@ -181,26 +206,28 @@ export class ValheimWorldService {
     const bossEncounters = await this.findBossEncountersByWorld(worldId);
 
     const totalBiomes = biomes.length;
-    const exploredBiomes = biomes.filter(b => b.isExplored).length;
-    const explorationProgress = totalBiomes > 0 ? (exploredBiomes / totalBiomes) * 100 : 0;
+    const exploredBiomes = biomes.filter((b) => b.isExplored).length;
+    const explorationProgress =
+      totalBiomes > 0 ? (exploredBiomes / totalBiomes) * 100 : 0;
 
     const totalBosses = bossEncounters.length;
-    const defeatedBosses = bossEncounters.filter(b => b.isDefeated).length;
-    const bossProgress = totalBosses > 0 ? (defeatedBosses / totalBosses) * 100 : 0;
+    const defeatedBosses = bossEncounters.filter((b) => b.isDefeated).length;
+    const bossProgress =
+      totalBosses > 0 ? (defeatedBosses / totalBosses) * 100 : 0;
 
     return {
       world,
       biomes: {
         total: totalBiomes,
         explored: exploredBiomes,
-        progress: explorationProgress
+        progress: explorationProgress,
       },
       bosses: {
         total: totalBosses,
         defeated: defeatedBosses,
         progress: bossProgress,
-        encounters: bossEncounters
-      }
+        encounters: bossEncounters,
+      },
     };
   }
 }

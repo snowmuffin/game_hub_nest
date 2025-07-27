@@ -1,5 +1,18 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
-import { WalletService, CreateWalletDto, WalletTransactionDto } from './wallet.service';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import {
+  WalletService,
+  CreateWalletDto,
+  WalletTransactionDto,
+} from './wallet.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('wallet')
@@ -46,7 +59,11 @@ export class WalletController {
     @Query('limit') limit: number = 50,
     @Query('offset') offset: number = 0,
   ) {
-    return await this.walletService.getWalletTransactions(walletId, limit, offset);
+    return await this.walletService.getWalletTransactions(
+      walletId,
+      limit,
+      offset,
+    );
   }
 
   // 내 모든 거래 내역 조회
@@ -56,13 +73,18 @@ export class WalletController {
     @Query('limit') limit: number = 50,
     @Query('offset') offset: number = 0,
   ) {
-    return await this.walletService.getUserTransactions(req.user.id, limit, offset);
+    return await this.walletService.getUserTransactions(
+      req.user.id,
+      limit,
+      offset,
+    );
   }
 
   // 지갑 간 전송
   @Post('transfer')
   async transferBetweenWallets(
-    @Body() transferDto: {
+    @Body()
+    transferDto: {
       fromWalletId: number;
       toWalletId: number;
       amount: number;

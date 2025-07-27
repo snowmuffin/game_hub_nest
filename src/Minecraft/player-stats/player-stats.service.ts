@@ -3,6 +3,63 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/user/user.entity';
 
+interface PlayerStats {
+  id?: number;
+  user_id: string;
+  minecraft_uuid: string | null;
+  play_time_minutes: number;
+  blocks_broken: number;
+  blocks_placed: number;
+  items_crafted: number;
+  mobs_killed: number;
+  deaths: number;
+  distance_walked: number;
+  distance_flown: number;
+  distance_swum: number;
+  level: number;
+  experience: number;
+  food_level: number;
+  health: number;
+  last_login: Date | null;
+  last_logout: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface PlayerStatsInput {
+  playTimeMinutes?: number;
+  blocksBroken?: number;
+  blocksPlaced?: number;
+  itemsCrafted?: number;
+  mobsKilled?: number;
+  deaths?: number;
+  distanceWalked?: number;
+  distanceFlown?: number;
+  distanceSwum?: number;
+  level?: number;
+  experience?: number;
+  foodLevel?: number;
+  health?: number;
+  lastLogin?: Date | null;
+  lastLogout?: Date | null;
+}
+
+interface LeaderboardEntry {
+  minecraft_uuid: string;
+  value: number;
+  username: string;
+  updated_at: Date;
+}
+
+interface Achievement {
+  id: number;
+  user_id: number;
+  achievement_id: string;
+  achievement_name: string;
+  description: string;
+  unlocked_at: Date;
+}
+
 @Injectable()
 export class PlayerStatsService {
   private readonly logger = new Logger(PlayerStatsService.name);
@@ -12,13 +69,15 @@ export class PlayerStatsService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async getPlayerStats(userId: string): Promise<any> {
+  async getPlayerStats(userId: string): Promise<PlayerStats> {
     this.logger.log(`Fetching player stats for User ID: ${userId}`);
 
     const statsQuery = `
       SELECT * FROM minecraft.player_stats WHERE user_id = $1
     `;
-    const stats = await this.userRepository.query(statsQuery, [userId]);
+    const stats = (await this.userRepository.query(statsQuery, [
+      userId,
+    ])) as PlayerStats[];
 
     if (stats.length === 0) {
       return this.createDefaultStats(userId);
@@ -27,8 +86,14 @@ export class PlayerStatsService {
     return stats[0];
   }
 
-  async updatePlayerStats(userId: string, minecraftUuid: string, stats: any): Promise<any> {
-    this.logger.log(`Updating player stats for User ID: ${userId}, Minecraft UUID: ${minecraftUuid}`);
+  async updatePlayerStats(
+    userId: string,
+    minecraftUuid: string,
+    stats: PlayerStatsInput,
+  ): Promise<PlayerStats> {
+    this.logger.log(
+      `Updating player stats for User ID: ${userId}, Minecraft UUID: ${minecraftUuid}`,
+    );
 
     // Create table if not exists
     try {
@@ -58,7 +123,10 @@ export class PlayerStatsService {
         )
       `);
     } catch (e) {
-      this.logger.error(`Failed to create 'player_stats' table: ${e.message}`);
+      const error = e as Error;
+      this.logger.error(
+        `Failed to create 'player_stats' table: ${error.message}`,
+      );
     }
 
     const updateQuery = `
@@ -109,14 +177,26 @@ export class PlayerStatsService {
       stats.lastLogout || null,
     ];
 
-    const result = await this.userRepository.query(updateQuery, values);
+    const result = (await this.userRepository.query(
+      updateQuery,
+      values,
+    )) as PlayerStats[];
     return result[0];
   }
 
-  async getLeaderboard(stat: string, limit: number = 10): Promise<any> {
+  async getLeaderboard(
+    stat: string,
+    limit: number = 10,
+  ): Promise<LeaderboardEntry[]> {
     const validStats = [
-      'play_time_minutes', 'blocks_broken', 'blocks_placed', 'items_crafted',
-      'mobs_killed', 'distance_walked', 'level', 'experience'
+      'play_time_minutes',
+      'blocks_broken',
+      'blocks_placed',
+      'items_crafted',
+      'mobs_killed',
+      'distance_walked',
+      'level',
+      'experience',
     ];
 
     if (!validStats.includes(stat)) {
@@ -136,10 +216,12 @@ export class PlayerStatsService {
       LIMIT $1
     `;
 
-    return await this.userRepository.query(leaderboardQuery, [limit]);
+    return (await this.userRepository.query(leaderboardQuery, [
+      limit,
+    ])) as LeaderboardEntry[];
   }
 
-  async getAchievements(userId: string): Promise<any> {
+  async getAchievements(userId: string): Promise<Achievement[]> {
     this.logger.log(`Fetching achievements for User ID: ${userId}`);
 
     try {
@@ -155,18 +237,23 @@ export class PlayerStatsService {
         )
       `);
     } catch (e) {
-      this.logger.error(`Failed to create 'player_achievements' table: ${e.message}`);
+      const error = e as Error;
+      this.logger.error(
+        `Failed to create 'player_achievements' table: ${error.message}`,
+      );
     }
 
     const achievementsQuery = `
       SELECT * FROM minecraft.player_achievements WHERE user_id = $1 ORDER BY unlocked_at DESC
     `;
 
-    return await this.userRepository.query(achievementsQuery, [userId]);
+    return (await this.userRepository.query(achievementsQuery, [
+      userId,
+    ])) as Achievement[];
   }
 
-  private async createDefaultStats(userId: string): Promise<any> {
-    const defaultStats = {
+  private createDefaultStats(userId: string): PlayerStats {
+    const defaultStats: PlayerStats = {
       user_id: userId,
       minecraft_uuid: null,
       play_time_minutes: 0,

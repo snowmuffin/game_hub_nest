@@ -3,14 +3,16 @@ import { User } from '../user/user.entity';
 
 export async function createuser(
   profile: any,
-  userRepository: Repository<User>
+  userRepository: Repository<User>,
 ): Promise<User> {
   if (!profile.steam_id || !profile.username) {
     throw new Error('Invalid profile data received from Steam');
   }
 
   // Find user by steam_id
-  let user = await userRepository.findOne({ where: { steam_id: profile.steam_id } });
+  let user = await userRepository.findOne({
+    where: { steam_id: profile.steam_id },
+  });
 
   // Create user if not found
   if (!user) {
