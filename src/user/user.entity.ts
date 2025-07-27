@@ -23,9 +23,6 @@ export class User {
   @Column({ type: 'varchar', length: 50, unique: true })
   steam_id: string;
 
-  @Column({ type: 'varchar', length: 36, unique: true, nullable: true })
-  minecraft_uuid: string;
-
   @Column({ type: 'float', default: 0 })
   score: number;
 

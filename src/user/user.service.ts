@@ -102,7 +102,6 @@ export class UserService {
   async createUser(userData: {
     steam_id: string;
     username: string;
-    minecraft_uuid?: string;
     email?: string;
   }): Promise<User> {
     this.logger.log(`Creating user: ${JSON.stringify(userData)}`);
@@ -110,7 +109,6 @@ export class UserService {
     const user = this.userRepository.create({
       steam_id: userData.steam_id,
       username: userData.username,
-      minecraft_uuid: userData.minecraft_uuid,
       email: userData.email || `${userData.username.toLowerCase()}@gamehub.com`,
       score: 0,
       created_at: new Date(),
@@ -121,24 +119,5 @@ export class UserService {
     this.logger.log(`User created: ${JSON.stringify(savedUser)}`);
 
     return savedUser;
-  }
-
-  /**
-   * 마인크래프트 UUID 업데이트
-   */
-  async updateMinecraftUuid(
-    userId: number,
-    minecraftUuid: string,
-  ): Promise<void> {
-    this.logger.log(
-      `Updating minecraft UUID for user ${userId}: ${minecraftUuid}`,
-    );
-
-    await this.userRepository.update(userId, {
-      minecraft_uuid: minecraftUuid,
-      updated_at: new Date(),
-    });
-
-    this.logger.log(`Minecraft UUID updated for user ${userId}`);
   }
 }

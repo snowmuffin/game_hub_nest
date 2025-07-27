@@ -209,7 +209,7 @@ export class AuthController {
     @Body() body: { steamId: string; username: string; minecraftUuid?: string },
   ) {
     try {
-      const { steamId, username, minecraftUuid } = body;
+      const { steamId, username } = body;
 
       if (!steamId || !username) {
         throw new Error('Steam ID and username are required');
@@ -223,12 +223,7 @@ export class AuthController {
         user = await this.userService.createUser({
           steam_id: steamId,
           username: username,
-          minecraft_uuid: minecraftUuid,
         });
-      } else if (minecraftUuid && user.minecraft_uuid !== minecraftUuid) {
-        // Update Minecraft UUID
-        await this.userService.updateMinecraftUuid(user.id, minecraftUuid);
-        user.minecraft_uuid = minecraftUuid;
       }
 
       if (!user) {
@@ -239,7 +234,6 @@ export class AuthController {
         id: user.id,
         steam_id: user.steam_id,
         username: user.username,
-        minecraft_uuid: user.minecraft_uuid,
       };
 
       // Generate long-term token for Minecraft (24 hours)
@@ -253,7 +247,6 @@ export class AuthController {
           id: user.id,
           steam_id: user.steam_id,
           username: user.username,
-          minecraft_uuid: user.minecraft_uuid,
         },
         expires_in: '24h',
       };
