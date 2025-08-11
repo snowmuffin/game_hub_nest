@@ -36,13 +36,36 @@ mkdir -p logs
 touch logs/app.log logs/error.log logs/out.log
 echo "✅ Log directories ready"
 
-# 🗄️ 데이터베이스 상태 확인 (선택적)
-echo "🗄️ Checking database connection..."
-if npm run migration:run --silent > /dev/null 2>&1; then
-    echo "✅ Database connection successful"
+# 🗄️ 데이터베이스 및 마이그레이션 확인
+echo "🗄️ Checking database and migrations..."
+
+# 스키마 초기화
+echo "🏗️ Ensuring database schemas exist..."
+if npm run db:init-schemas > /dev/null 2>&1; then
+    echo "✅ Database schemas ready"
 else
-    echo "⚠️ Database connection failed. Please check your DB configuration in .env"
+    echo "⚠️ Schema initialization failed. Please check your DB configuration in .env"
     echo "💡 Make sure your PostgreSQL server is running"
+    exit 1
+fi
+
+# 마이그레이션 상태 확인
+echo "🔍 Checking migration status..."
+MIGRATION_STATUS=$(npm run migration:show 2>&1 || echo "connection-failed")
+
+if echo "$MIGRATION_STATUS" | grep -q "connection-failed"; then
+    echo "❌ Database connection failed!"
+    echo "💡 Please check your database configuration in .env"
+    exit 1
+elif echo "$MIGRATION_STATUS" | grep -q "No migrations"; then
+    echo "📋 No migrations found. You may need to generate initial migration:"
+    echo "   npm run migration:generate -- InitialSchema"
+elif echo "$MIGRATION_STATUS" | grep -q "pending"; then
+    echo "📋 Found pending migrations. Running them..."
+    npm run migration:run
+    echo "✅ Migrations completed"
+else
+    echo "✅ Database is up to date"
 fi
 
 # 🚀 개발 서버 시작

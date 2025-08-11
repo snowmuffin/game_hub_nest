@@ -14,7 +14,19 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'snowmuffin',
   entities: [path.join(process.cwd(), 'src/**/*.entity{.ts,.js}')],
   migrations: [path.join(process.cwd(), 'src/migrations/*{.ts,.js}')],
+  // Always use migrations instead of synchronize for safety
   synchronize: false,
-  logging: false,
+  logging:
+    process.env.NODE_ENV === 'development'
+      ? ['query', 'error', 'schema']
+      : ['error'],
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  // Migration configuration
+  migrationsRun: false, // Don't auto-run migrations on startup
+  migrationsTableName: 'migrations_history',
+  // Schema support for multi-tenant setup
+  extra: {
+    // Create schemas if they don't exist
+    createSchema: true,
+  },
 });

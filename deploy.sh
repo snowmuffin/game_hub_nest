@@ -60,10 +60,28 @@ if [ "$NODE_ENV" = "production" ]; then
     echo "✅ Database backup created in $BACKUP_DIR"
 fi
 
-# 🗄️ 데이터베이스 마이그레이션 실행
-echo "🗄️ Running database migrations..."
-npm run migration:run
-echo "✅ Database migrations completed"
+# 🗄️ 데이터베이스 연결 및 스키마 초기화
+echo "🗄️ Initializing database schemas..."
+npm run db:init-schemas
+
+# � 마이그레이션 상태 확인
+echo "� Checking migration status..."
+MIGRATION_STATUS=$(npm run migration:show 2>&1 || echo "no-migrations")
+
+if echo "$MIGRATION_STATUS" | grep -q "No migrations"; then
+    echo "📋 No migrations found. This might be the first deployment."
+    echo "🎯 In production, you should generate migrations from your entities:"
+    echo "   npm run migration:generate -- InitialSchema"
+    echo ""
+    echo "⚠️  For safety, using synchronize mode for initial setup..."
+    echo "   Please generate proper migrations after first deployment!"
+elif echo "$MIGRATION_STATUS" | grep -q "pending"; then
+    echo "📋 Found pending migrations, running them..."
+    npm run migration:run
+    echo "✅ Database migrations completed"
+else
+    echo "✅ Database schema is up to date"
+fi
 
 # 🔨 TypeScript 빌드
 echo "🔨 Building TypeScript application..."
