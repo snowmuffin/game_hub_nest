@@ -146,8 +146,32 @@ if [ "$NODE_ENV" = "production" ]; then
     # Nginx 설치 확인
     if ! command -v nginx &> /dev/null; then
         echo "📦 Installing Nginx..."
-        sudo apt update
-        sudo apt install -y nginx
+        
+        # 배포판별 패키지 매니저 감지
+        if command -v dnf &> /dev/null; then
+            # Amazon Linux 2023, RHEL, CentOS, Fedora
+            echo "🔍 Detected: Amazon Linux/RHEL/CentOS/Fedora (using dnf)"
+            sudo dnf update -y
+            sudo dnf install -y nginx
+        elif command -v yum &> /dev/null; then
+            # Amazon Linux 2, older RHEL/CentOS
+            echo "🔍 Detected: Amazon Linux 2/older RHEL/CentOS (using yum)"
+            sudo yum update -y
+            sudo yum install -y nginx
+        elif command -v apt &> /dev/null; then
+            # Ubuntu, Debian
+            echo "🔍 Detected: Ubuntu/Debian (using apt)"
+            sudo apt update
+            sudo apt install -y nginx
+        elif command -v pacman &> /dev/null; then
+            # Arch Linux
+            echo "🔍 Detected: Arch Linux (using pacman)"
+            sudo pacman -Sy --noconfirm nginx
+        else
+            echo "❌ Unsupported package manager. Please install nginx manually."
+            exit 1
+        fi
+        
         echo "✅ Nginx installed"
     else
         echo "✅ Nginx is already installed"
@@ -194,9 +218,14 @@ if [ "$NODE_ENV" = "production" ]; then
     # SSL 인증서 설정 안내 (Let's Encrypt)
     echo "🔒 SSL Certificate Setup Information:"
     echo "   To enable HTTPS with Let's Encrypt, run the following commands:"
-    echo "   1. Install certbot: sudo apt install certbot python3-certbot-nginx"
-    echo "   2. Obtain certificate: sudo certbot --nginx -d ${DOMAIN:-api.snowmuffingame.com}"
-    echo "   3. Test auto-renewal: sudo certbot renew --dry-run"
+    echo "   # For Amazon Linux/RHEL/CentOS:"
+    echo "   sudo dnf install certbot python3-certbot-nginx"
+    echo "   # For Ubuntu/Debian:"
+    echo "   sudo apt install certbot python3-certbot-nginx"
+    echo "   # Then obtain certificate:"
+    echo "   sudo certbot --nginx -d ${DOMAIN:-api.snowmuffingame.com}"
+    echo "   # Test auto-renewal:"
+    echo "   sudo certbot renew --dry-run"
     echo ""
 fi
 

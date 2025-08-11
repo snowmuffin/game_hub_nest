@@ -23,8 +23,32 @@ echo "🔗 Domain: $DOMAIN"
 # Nginx 설치
 if ! command -v nginx &> /dev/null; then
     echo "📦 Installing Nginx..."
-    sudo apt update
-    sudo apt install -y nginx
+    
+    # 배포판별 패키지 매니저 감지
+    if command -v dnf &> /dev/null; then
+        # Amazon Linux 2023, RHEL, CentOS, Fedora
+        echo "🔍 Detected: Amazon Linux/RHEL/CentOS/Fedora (using dnf)"
+        sudo dnf update -y
+        sudo dnf install -y nginx
+    elif command -v yum &> /dev/null; then
+        # Amazon Linux 2, older RHEL/CentOS
+        echo "🔍 Detected: Amazon Linux 2/older RHEL/CentOS (using yum)"
+        sudo yum update -y
+        sudo yum install -y nginx
+    elif command -v apt &> /dev/null; then
+        # Ubuntu, Debian
+        echo "🔍 Detected: Ubuntu/Debian (using apt)"
+        sudo apt update
+        sudo apt install -y nginx
+    elif command -v pacman &> /dev/null; then
+        # Arch Linux
+        echo "🔍 Detected: Arch Linux (using pacman)"
+        sudo pacman -Sy --noconfirm nginx
+    else
+        echo "❌ Unsupported package manager. Please install nginx manually."
+        exit 1
+    fi
+    
     echo "✅ Nginx installed"
 else
     echo "✅ Nginx is already installed"
@@ -122,7 +146,28 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     # Certbot 설치
     if ! command -v certbot &> /dev/null; then
         echo "📦 Installing Certbot..."
-        sudo apt install -y certbot python3-certbot-nginx
+        
+        # 배포판별 certbot 설치
+        if command -v dnf &> /dev/null; then
+            # Amazon Linux 2023, RHEL, CentOS, Fedora
+            sudo dnf install -y certbot python3-certbot-nginx
+        elif command -v yum &> /dev/null; then
+            # Amazon Linux 2, older RHEL/CentOS
+            # EPEL 저장소 필요
+            sudo yum install -y epel-release
+            sudo yum install -y certbot python3-certbot-nginx
+        elif command -v apt &> /dev/null; then
+            # Ubuntu, Debian
+            sudo apt install -y certbot python3-certbot-nginx
+        elif command -v pacman &> /dev/null; then
+            # Arch Linux
+            sudo pacman -S --noconfirm certbot certbot-nginx
+        else
+            echo "❌ Unsupported package manager for certbot installation."
+            echo "💡 Please install certbot manually for your distribution."
+            exit 1
+        fi
+        
         echo "✅ Certbot installed"
     fi
     
@@ -137,7 +182,11 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "✅ SSL certificate setup completed"
 else
     echo "⏭️ SSL setup skipped. You can run it later with:"
+    echo "   # For Amazon Linux/RHEL/CentOS:"
+    echo "   sudo dnf install certbot python3-certbot-nginx"
+    echo "   # For Ubuntu/Debian:"
     echo "   sudo apt install certbot python3-certbot-nginx"
+    echo "   # Then obtain certificate:"
     echo "   sudo certbot --nginx -d $DOMAIN"
 fi
 
