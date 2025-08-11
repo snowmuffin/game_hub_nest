@@ -75,8 +75,11 @@ echo "✅ Log directories ready"
 # 📦 PM2 전역 설치 확인
 if ! command -v pm2 &> /dev/null; then
     echo "📦 Installing PM2 globally..."
-    npm install -g pm2
+    echo "🔐 This may require administrator privileges..."
+    sudo npm install -g pm2
     echo "✅ PM2 installed"
+else
+    echo "✅ PM2 is already installed"
 fi
 
 # 🛑 기존 PM2 프로세스 중지 (있다면)
@@ -99,7 +102,8 @@ pm2 save
 # 🔄 프로덕션 환경에서만 startup 설정
 if [ "$NODE_ENV" = "production" ]; then
     echo "🔄 Setting up PM2 auto-startup..."
-    pm2 startup
+    echo "🔐 This may require administrator privileges..."
+    sudo pm2 startup
     echo "✅ PM2 auto-startup configured"
 fi
 
