@@ -11,7 +11,7 @@ import {
 import { User } from '../shared/user.entity';
 import { ValheimItem, ValheimItemQuality } from './valheim-item.entity';
 
-@Entity({ name: 'valheim_inventories' })
+@Entity({ name: 'inventories', schema: 'valheim' })
 @Index(['user_id', 'item_id'], { unique: false })
 export class ValheimInventory {
   @PrimaryGeneratedColumn('increment')

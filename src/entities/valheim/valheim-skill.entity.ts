@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { ValheimCharacter } from './valheim-character.entity';
 
-@Entity({ name: 'valheim_character_skills' })
+@Entity({ name: 'character_skills', schema: 'valheim' })
 export class ValheimCharacterSkill {
   @PrimaryGeneratedColumn('uuid')
   id: string;
