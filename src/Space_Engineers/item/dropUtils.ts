@@ -108,7 +108,7 @@ export function getDrop(
     return null;
   }
 
-  let adjustedWeights: Record<string, number> = {};
+  const adjustedWeights: Record<string, number> = {};
   let totalWeight = 0;
 
   for (const [item, rarity] of Object.entries(dropTable)) {

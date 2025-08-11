@@ -67,7 +67,7 @@ export class WalletService {
       whereCondition.server_id = null;
     }
 
-    let wallet = await this.walletRepository.findOne({
+    const wallet = await this.walletRepository.findOne({
       where: whereCondition,
       relations: ['user', 'game', 'server', 'currency'],
     });
@@ -284,9 +284,7 @@ export class WalletService {
   }
 
   // 지갑 잔액 조회
-  async getWalletBalance(
-    walletId: number,
-  ): Promise<{
+  async getWalletBalance(walletId: number): Promise<{
     balance: number;
     locked_balance: number;
     available_balance: number;

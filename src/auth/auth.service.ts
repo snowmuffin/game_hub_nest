@@ -44,7 +44,7 @@ export class AuthService {
       throw new Error('Invalid profile data received from Steam');
     }
 
-    let user = await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { steam_id: profile.steam_id },
     });
 
