@@ -16,6 +16,5 @@ export const AppDataSource = new DataSource({
   migrations: [path.join(process.cwd(), 'src/migrations/*{.ts,.js}')],
   synchronize: false,
   logging: false,
-  // schema: 'spaceengineers', // Migrated to public schema
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
