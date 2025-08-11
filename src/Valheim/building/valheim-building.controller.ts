@@ -15,7 +15,7 @@ import {
   CreateBuildingDto,
   UpdateBuildingDto,
 } from './valheim-building.service';
-import { ValheimBuilding } from './valheim-building.entity';
+import { ValheimBuilding } from '../../entities/valheim/valheim-building.entity';
 
 @Controller('valheim/buildings')
 @UseGuards(JwtAuthGuard)

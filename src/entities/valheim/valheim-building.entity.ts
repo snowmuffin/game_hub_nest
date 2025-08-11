@@ -7,8 +7,8 @@ import {
   UpdateDateColumn,
   JoinColumn,
 } from 'typeorm';
-import { User } from '../../entities/user.entity';
-import { GameServer } from '../../entities/game-server.entity';
+import { User } from '../shared/user.entity';
+import { GameServer } from '../shared/game-server.entity';
 
 @Entity({ name: 'buildings', schema: 'valheim' })
 export class ValheimBuilding {

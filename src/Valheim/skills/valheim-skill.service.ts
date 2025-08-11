@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ValheimCharacterSkill } from './valheim-skill.entity';
+import { ValheimCharacterSkill } from '../../entities/valheim/valheim-skill.entity';
 
 export interface AddSkillExperienceDto {
   characterId: number;

@@ -8,8 +8,8 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from '../../entities/user.entity';
-import { ValheimItem, ValheimItemQuality } from '../item/valheim-item.entity';
+import { User } from '../shared/user.entity';
+import { ValheimItem, ValheimItemQuality } from './valheim-item.entity';
 
 @Entity({ name: 'inventories', schema: 'valheim' })
 @Index(['user_id', 'item_id'], { unique: false })

@@ -5,7 +5,7 @@ import {
   ValheimWorld,
   ValheimBiome,
   ValheimBossEncounter,
-} from './valheim-world.entity';
+} from '../../entities/valheim/valheim-world.entity';
 
 export interface CreateWorldDto {
   serverId: string;

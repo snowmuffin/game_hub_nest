@@ -20,7 +20,7 @@ import {
   ValheimWorld,
   ValheimBiome,
   ValheimBossEncounter,
-} from './valheim-world.entity';
+} from '../../entities/valheim/valheim-world.entity';
 
 @Controller('valheim/worlds')
 @UseGuards(JwtAuthGuard)

@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ValheimCharacter } from './valheim-character.entity';
-import { User } from '../../entities/user.entity';
+import { ValheimCharacter } from '../../entities/valheim/valheim-character.entity';
+import { User } from '../../entities/shared/user.entity';
 
 export interface CreateCharacterDto {
   user_id: number;

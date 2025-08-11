@@ -8,7 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User } from '../entities/shared/user.entity';
 import { Wallet } from './wallet.entity';
 
 @Entity({ name: 'wallet_transactions' })

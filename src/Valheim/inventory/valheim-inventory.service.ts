@@ -6,9 +6,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ValheimInventory } from './valheim-inventory.entity';
-import { ValheimItem, ValheimItemQuality } from '../item/valheim-item.entity';
-import { User } from '../../entities/user.entity';
+import { ValheimInventory } from '../../entities/valheim/valheim-inventory.entity';
+import {
+  ValheimItem,
+  ValheimItemQuality,
+} from '../../entities/valheim/valheim-item.entity';
+import { User } from '../../entities/shared/user.entity';
 
 export interface AddItemToInventoryDto {
   user_id: number;

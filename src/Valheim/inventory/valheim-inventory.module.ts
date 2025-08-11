@@ -4,9 +4,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { ValheimInventoryController } from './valheim-inventory.controller';
 import { ValheimInventoryService } from './valheim-inventory.service';
-import { ValheimInventory } from './valheim-inventory.entity';
-import { ValheimItem } from '../item/valheim-item.entity';
-import { User } from '../../entities/user.entity';
+import { ValheimInventory } from '../../entities/valheim/valheim-inventory.entity';
+import { ValheimItem } from '../../entities/valheim/valheim-item.entity';
+import { User } from '../../entities/shared/user.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @Module({

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
-import { ValheimCharacterSkill } from './valheim-skill.entity';
+import { ValheimCharacterSkill } from '../../entities/valheim/valheim-skill.entity';
 import { ValheimSkillService } from './valheim-skill.service';
 import { ValheimSkillController } from './valheim-skill.controller';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';

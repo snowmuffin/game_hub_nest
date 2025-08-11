@@ -17,7 +17,7 @@ import {
   UpdateValheimItemDto,
   ValheimItemSearchDto,
 } from './valheim-item.service';
-import { ValheimItemType } from './valheim-item.entity';
+import { ValheimItemType } from '../../entities/valheim/valheim-item.entity';
 
 @Controller('valheim/item')
 export class ValheimItemController {

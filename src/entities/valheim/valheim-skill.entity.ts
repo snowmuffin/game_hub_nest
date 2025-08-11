@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
   JoinColumn,
 } from 'typeorm';
-import { ValheimCharacter } from '../character/valheim-character.entity';
+import { ValheimCharacter } from './valheim-character.entity';
 
 @Entity({ name: 'character_skills', schema: 'valheim' })
 export class ValheimCharacterSkill {

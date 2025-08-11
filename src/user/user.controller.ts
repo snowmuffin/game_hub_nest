@@ -9,7 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from 'src/entities/user.entity';
+import { User } from 'src/entities/shared/user.entity';
 import { Response } from 'express';
 
 @Controller('user')

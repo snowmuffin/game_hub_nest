@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { ValheimItemController } from './valheim-item.controller';
 import { ValheimItemService } from './valheim-item.service';
-import { ValheimItem } from './valheim-item.entity';
+import { ValheimItem } from '../../entities/valheim/valheim-item.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @Module({

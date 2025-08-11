@@ -6,7 +6,7 @@ import {
   ValheimWorld,
   ValheimBiome,
   ValheimBossEncounter,
-} from './valheim-world.entity';
+} from '../../entities/valheim/valheim-world.entity';
 import { ValheimWorldService } from './valheim-world.service';
 import { ValheimWorldController } from './valheim-world.controller';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';

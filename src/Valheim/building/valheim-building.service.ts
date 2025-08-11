@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ValheimBuilding } from './valheim-building.entity';
+import { ValheimBuilding } from '../../entities/valheim/valheim-building.entity';
 
 export interface CreateBuildingDto {
   userId: string;

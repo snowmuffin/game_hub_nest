@@ -4,12 +4,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { WalletController } from './wallet.controller';
 import { WalletService } from './wallet.service';
-import { Wallet } from '../entities/wallet.entity';
-import { WalletTransaction } from '../entities/wallet-transaction.entity';
-import { User } from '../entities/user.entity';
-import { Game } from '../entities/game.entity';
-import { GameServer } from '../entities/game-server.entity';
-import { Currency } from '../entities/currency.entity';
+import { Wallet } from '../entities/shared/wallet.entity';
+import { WalletTransaction } from '../entities/shared/wallet-transaction.entity';
+import { User } from '../entities/shared/user.entity';
+import { Game } from '../entities/shared/game.entity';
+import { GameServer } from '../entities/shared/game-server.entity';
+import { Currency } from '../entities/shared/currency.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Module({

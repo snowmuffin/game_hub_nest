@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Wallet } from '../entities/wallet.entity';
-import { WalletTransaction } from '../entities/wallet-transaction.entity';
-import { User } from '../entities/user.entity';
-import { Game } from '../entities/game.entity';
-import { GameServer } from '../entities/game-server.entity';
-import { Currency } from '../entities/currency.entity';
+import { Wallet } from '../entities/shared/wallet.entity';
+import { WalletTransaction } from '../entities/shared/wallet-transaction.entity';
+import { User } from '../entities/shared/user.entity';
+import { Game } from '../entities/shared/game.entity';
+import { GameServer } from '../entities/shared/game-server.entity';
+import { Currency } from '../entities/shared/currency.entity';
 
 export interface CreateWalletDto {
   userId: number;

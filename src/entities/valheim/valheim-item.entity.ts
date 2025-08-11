@@ -7,8 +7,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from '../../entities/user.entity';
-import { Game } from '../../entities/game.entity';
+import { User } from '../shared/user.entity';
+import { Game } from '../shared/game.entity';
 
 export enum ValheimItemQuality {
   LEVEL_1 = 1,

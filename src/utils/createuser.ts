@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User } from '../entities/shared/user.entity';
 
 export async function createuser(
   profile: any,

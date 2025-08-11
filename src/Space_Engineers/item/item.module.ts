@@ -3,7 +3,7 @@ import { ItemService } from './item.service';
 import { ItemController } from './item.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { User } from 'src/entities/user.entity';
+import { User } from 'src/entities/shared/user.entity';
 import { JwtModule } from '@nestjs/jwt'; // JwtModule 추가
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 

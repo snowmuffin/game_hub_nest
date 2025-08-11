@@ -5,7 +5,7 @@ import {
   ValheimItem,
   ValheimItemType,
   ValheimItemQuality,
-} from './valheim-item.entity';
+} from '../../entities/valheim/valheim-item.entity';
 
 export interface CreateValheimItemDto {
   name: string;

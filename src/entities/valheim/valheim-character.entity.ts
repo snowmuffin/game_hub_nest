@@ -8,8 +8,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from '../../entities/user.entity';
-import { ValheimWorld } from '../world/valheim-world.entity';
+import { User } from '../shared/user.entity';
+import { ValheimWorld } from './valheim-world.entity';
 
 @Entity({ name: 'characters', schema: 'valheim' })
 export class ValheimCharacter {

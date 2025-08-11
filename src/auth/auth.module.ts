@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SteamStrategy } from './steam.strategy';
-import { User } from '../entities/user.entity';
+import { User } from '../entities/shared/user.entity';
 import { UserModule } from '../user/user.module';
 
 @Module({

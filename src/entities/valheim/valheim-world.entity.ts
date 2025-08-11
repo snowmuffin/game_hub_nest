@@ -8,8 +8,8 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { GameServer } from '../../entities/game-server.entity';
-import { ValheimCharacter } from '../character/valheim-character.entity';
+import { GameServer } from '../shared/game-server.entity';
+import { ValheimCharacter } from './valheim-character.entity';
 
 @Entity({ name: 'worlds', schema: 'valheim' })
 export class ValheimWorld {

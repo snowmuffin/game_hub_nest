@@ -15,7 +15,7 @@ import {
   AddSkillExperienceDto,
   UpdateSkillDto,
 } from './valheim-skill.service';
-import { ValheimCharacterSkill } from './valheim-skill.entity';
+import { ValheimCharacterSkill } from '../../entities/valheim/valheim-skill.entity';
 
 @Controller('valheim/skills')
 @UseGuards(JwtAuthGuard)
