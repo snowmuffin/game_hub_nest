@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from 'src/user/user.entity';
+import { User } from 'src/entities/user.entity';
 
 @Injectable()
 export class ItemService {
@@ -209,7 +209,9 @@ export class ItemService {
     quantity: number,
   ): Promise<any> {
     if (!steamid || !index_name) {
-      this.logger.error(`requestDownloadItem: steamid or index_name is undefined. steamid=${steamid}, index_name=${index_name}`);
+      this.logger.error(
+        `requestDownloadItem: steamid or index_name is undefined. steamid=${steamid}, index_name=${index_name}`,
+      );
       throw new Error('steamid and index_name are required.');
     }
     this.logger.log(
@@ -229,7 +231,9 @@ export class ItemService {
         )
       `);
     } catch (e) {
-      this.logger.error(`Failed to create 'item_download_log' table: ${e.message}`);
+      this.logger.error(
+        `Failed to create 'item_download_log' table: ${e.message}`,
+      );
       throw e;
     }
 
@@ -253,19 +257,22 @@ export class ItemService {
 
     const currentQtyResult = await this.userRepository.query(
       `SELECT quantity FROM space_engineers.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
-      [storageId, itemId]
+      [storageId, itemId],
     );
-    const currentQty = currentQtyResult.length > 0 ? Number(currentQtyResult[0].quantity) : 0;
+    const currentQty =
+      currentQtyResult.length > 0 ? Number(currentQtyResult[0].quantity) : 0;
     if (quantity > currentQty) {
       this.logger.warn(
-        `Download request exceeds available quantity: requested=${quantity}, available=${currentQty}, steamid=${steamid}, item=${index_name}`
+        `Download request exceeds available quantity: requested=${quantity}, available=${currentQty}, steamid=${steamid}, item=${index_name}`,
       );
-      throw new Error(`Not enough items in storage. Requested: ${quantity}, Available: ${currentQty}`);
+      throw new Error(
+        `Not enough items in storage. Requested: ${quantity}, Available: ${currentQty}`,
+      );
     }
 
     await this.userRepository.query(
       `INSERT INTO item_download_log (storage_id, item_id, quantity, status) VALUES ($1, $2, $3, 'PENDING')`,
-      [storageId, itemId, quantity]
+      [storageId, itemId, quantity],
     );
 
     return {
@@ -311,17 +318,17 @@ export class ItemService {
 
     await this.userRepository.query(
       `UPDATE space_engineers.space_engineers.online_storage_items SET quantity = quantity - $1 WHERE storage_id = $2 AND item_id = $3`,
-      [quantity, storageId, itemId]
+      [quantity, storageId, itemId],
     );
 
     await this.userRepository.query(
       `UPDATE item_download_log SET status = 'CONFIRMED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
-      [storageId, itemId]
+      [storageId, itemId],
     );
 
     const remainResult = await this.userRepository.query(
       `SELECT quantity FROM space_engineers.online_storage_items WHERE storage_id = $1 AND item_id = $2`,
-      [storageId, itemId]
+      [storageId, itemId],
     );
     const remain = remainResult.length > 0 ? remainResult[0].quantity : 0;
 
@@ -369,7 +376,7 @@ export class ItemService {
 
     await this.userRepository.query(
       `UPDATE item_download_log SET status = 'CANCELED' WHERE storage_id = $1 AND item_id = $2 AND status = 'PENDING'`,
-      [storageId, itemId]
+      [storageId, itemId],
     );
 
     return {
@@ -480,7 +487,9 @@ export class ItemService {
           AND tc.constraint_type = 'UNIQUE'
           AND ccu.column_name = 'index_name'
       `;
-      const uniqueConstraintResult = await this.userRepository.query(uniqueConstraintCheckQuery);
+      const uniqueConstraintResult = await this.userRepository.query(
+        uniqueConstraintCheckQuery,
+      );
       const hasUnique = Number(uniqueConstraintResult[0]?.count) > 0;
       if (!hasUnique) {
         this.logger.warn(`Adding UNIQUE constraint to items.index_name`);
@@ -513,9 +522,12 @@ export class ItemService {
       if (
         !item.DisplayName ||
         !item.Id ||
-        (typeof item.Id === 'string' && item.Id.includes('MyObjectBuilder_TreeObject'))
+        (typeof item.Id === 'string' &&
+          item.Id.includes('MyObjectBuilder_TreeObject'))
       ) {
-        this.logger.warn(`Skipping item (invalid or excluded): ${JSON.stringify(item)}`);
+        this.logger.warn(
+          `Skipping item (invalid or excluded): ${JSON.stringify(item)}`,
+        );
         continue;
       }
 

@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class CreateOnlineStorageTable20250322020300 implements MigrationInterface {
+export class CreateOnlineStorageTable20250322020300
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -11,7 +13,7 @@ export class CreateOnlineStorageTable20250322020300 implements MigrationInterfac
           { name: 'items', type: 'jsonb', default: "'{}'" },
         ],
       }),
-      true
+      true,
     );
   }
 

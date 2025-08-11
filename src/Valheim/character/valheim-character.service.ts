@@ -1,8 +1,13 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ValheimCharacter } from './valheim-character.entity';
-import { User } from '../../user/user.entity';
+import { User } from '../../entities/user.entity';
 
 export interface CreateCharacterDto {
   user_id: number;
@@ -69,7 +74,7 @@ export class ValheimCharacterService {
     return await this.characterRepository.find({
       relations: ['user'],
       where: { is_active: true },
-      order: { level: 'DESC' }
+      order: { level: 'DESC' },
     });
   }
 
@@ -79,7 +84,7 @@ export class ValheimCharacterService {
   async findByUserId(userId: number): Promise<ValheimCharacter> {
     const character = await this.characterRepository.findOne({
       where: { user_id: userId, is_active: true },
-      relations: ['user']
+      relations: ['user'],
     });
 
     if (!character) {
@@ -95,7 +100,7 @@ export class ValheimCharacterService {
   async findById(id: number): Promise<ValheimCharacter> {
     const character = await this.characterRepository.findOne({
       where: { id, is_active: true },
-      relations: ['user']
+      relations: ['user'],
     });
 
     if (!character) {
@@ -110,33 +115,44 @@ export class ValheimCharacterService {
    */
   async create(createDto: CreateCharacterDto): Promise<ValheimCharacter> {
     // 사용자 존재 확인
-    const user = await this.userRepository.findOne({ where: { id: createDto.user_id } });
+    const user = await this.userRepository.findOne({
+      where: { id: createDto.user_id },
+    });
     if (!user) {
-      throw new NotFoundException(`User with ID ${createDto.user_id} not found`);
+      throw new NotFoundException(
+        `User with ID ${createDto.user_id} not found`,
+      );
     }
 
     // 이미 캐릭터가 있는지 확인
     const existingCharacter = await this.characterRepository.findOne({
-      where: { user_id: createDto.user_id, is_active: true }
+      where: { user_id: createDto.user_id, is_active: true },
     });
 
     if (existingCharacter) {
-      throw new BadRequestException(`Character already exists for user ${createDto.user_id}`);
+      throw new BadRequestException(
+        `Character already exists for user ${createDto.user_id}`,
+      );
     }
 
     const character = this.characterRepository.create(createDto);
     const savedCharacter = await this.characterRepository.save(character);
 
-    this.logger.log(`Created new character: ${savedCharacter.character_name} for user ${createDto.user_id}`);
+    this.logger.log(
+      `Created new character: ${savedCharacter.character_name} for user ${createDto.user_id}`,
+    );
     return savedCharacter;
   }
 
   /**
    * 캐릭터 정보 업데이트
    */
-  async update(userId: number, updateDto: UpdateCharacterDto): Promise<ValheimCharacter> {
+  async update(
+    userId: number,
+    updateDto: UpdateCharacterDto,
+  ): Promise<ValheimCharacter> {
     const character = await this.findByUserId(userId);
-    
+
     Object.assign(character, updateDto);
     const updatedCharacter = await this.characterRepository.save(character);
 
@@ -147,13 +163,18 @@ export class ValheimCharacterService {
   /**
    * 캐릭터 스킬 업데이트
    */
-  async updateSkills(userId: number, skillsDto: UpdateSkillsDto): Promise<ValheimCharacter> {
+  async updateSkills(
+    userId: number,
+    skillsDto: UpdateSkillsDto,
+  ): Promise<ValheimCharacter> {
     const character = await this.findByUserId(userId);
-    
+
     // 스킬 레벨은 0-100 사이여야 함
     for (const [skill, level] of Object.entries(skillsDto)) {
       if (level !== undefined && (level < 0 || level > 100)) {
-        throw new BadRequestException(`${skill} level must be between 0 and 100`);
+        throw new BadRequestException(
+          `${skill} level must be between 0 and 100`,
+        );
       }
     }
 
@@ -167,9 +188,12 @@ export class ValheimCharacterService {
   /**
    * 보스 처치 기록
    */
-  async defeatBoss(userId: number, bossName: string): Promise<ValheimCharacter> {
+  async defeatBoss(
+    userId: number,
+    bossName: string,
+  ): Promise<ValheimCharacter> {
     const character = await this.findByUserId(userId);
-    
+
     if (!character.defeated_bosses) {
       character.defeated_bosses = [];
     }
@@ -177,8 +201,10 @@ export class ValheimCharacterService {
     if (!character.defeated_bosses.includes(bossName)) {
       character.defeated_bosses.push(bossName);
       const updatedCharacter = await this.characterRepository.save(character);
-      
-      this.logger.log(`Character ${character.character_name} defeated boss: ${bossName}`);
+
+      this.logger.log(
+        `Character ${character.character_name} defeated boss: ${bossName}`,
+      );
       return updatedCharacter;
     }
 
@@ -188,9 +214,12 @@ export class ValheimCharacterService {
   /**
    * 위치 발견 기록
    */
-  async discoverLocation(userId: number, locationName: string): Promise<ValheimCharacter> {
+  async discoverLocation(
+    userId: number,
+    locationName: string,
+  ): Promise<ValheimCharacter> {
     const character = await this.findByUserId(userId);
-    
+
     if (!character.discovered_locations) {
       character.discovered_locations = [];
     }
@@ -198,8 +227,10 @@ export class ValheimCharacterService {
     if (!character.discovered_locations.includes(locationName)) {
       character.discovered_locations.push(locationName);
       const updatedCharacter = await this.characterRepository.save(character);
-      
-      this.logger.log(`Character ${character.character_name} discovered location: ${locationName}`);
+
+      this.logger.log(
+        `Character ${character.character_name} discovered location: ${locationName}`,
+      );
       return updatedCharacter;
     }
 
@@ -209,9 +240,12 @@ export class ValheimCharacterService {
   /**
    * 제작법 해금
    */
-  async unlockRecipe(userId: number, recipeName: string): Promise<ValheimCharacter> {
+  async unlockRecipe(
+    userId: number,
+    recipeName: string,
+  ): Promise<ValheimCharacter> {
     const character = await this.findByUserId(userId);
-    
+
     if (!character.unlocked_recipes) {
       character.unlocked_recipes = [];
     }
@@ -219,8 +253,10 @@ export class ValheimCharacterService {
     if (!character.unlocked_recipes.includes(recipeName)) {
       character.unlocked_recipes.push(recipeName);
       const updatedCharacter = await this.characterRepository.save(character);
-      
-      this.logger.log(`Character ${character.character_name} unlocked recipe: ${recipeName}`);
+
+      this.logger.log(
+        `Character ${character.character_name} unlocked recipe: ${recipeName}`,
+      );
       return updatedCharacter;
     }
 
@@ -234,7 +270,7 @@ export class ValheimCharacterService {
     const character = await this.findByUserId(userId);
     character.is_active = false;
     await this.characterRepository.save(character);
-    
+
     this.logger.log(`Deactivated character for user ${userId}`);
   }
 
@@ -246,14 +282,17 @@ export class ValheimCharacterService {
       where: { is_active: true },
       relations: ['user'],
       order: { level: 'DESC', experience: 'DESC' },
-      take: limit
+      take: limit,
     });
   }
 
   /**
    * 스킬 랭킹 조회
    */
-  async getSkillRankings(skillName: string, limit: number = 10): Promise<ValheimCharacter[]> {
+  async getSkillRankings(
+    skillName: string,
+    limit: number = 10,
+  ): Promise<ValheimCharacter[]> {
     return await this.characterRepository
       .createQueryBuilder('character')
       .leftJoinAndSelect('character.user', 'user')
@@ -271,7 +310,7 @@ export class ValheimCharacterService {
       where: { is_active: true },
       relations: ['user'],
       order: { play_time_seconds: 'DESC' },
-      take: limit
+      take: limit,
     });
   }
 
@@ -279,8 +318,10 @@ export class ValheimCharacterService {
    * 캐릭터 통계
    */
   async getCharacterStats(): Promise<any> {
-    const totalCharacters = await this.characterRepository.count({ where: { is_active: true } });
-    
+    const totalCharacters = await this.characterRepository.count({
+      where: { is_active: true },
+    });
+
     const avgLevel = await this.characterRepository
       .createQueryBuilder('character')
       .select('AVG(character.level)', 'avg_level')
@@ -303,7 +344,9 @@ export class ValheimCharacterService {
       total_characters: totalCharacters,
       average_level: Math.round(parseFloat(avgLevel.avg_level) || 0),
       max_level: parseInt(maxLevel.max_level) || 0,
-      total_play_time_hours: Math.round((parseInt(totalPlayTime.total_play_time) || 0) / 3600)
+      total_play_time_hours: Math.round(
+        (parseInt(totalPlayTime.total_play_time) || 0) / 3600,
+      ),
     };
   }
 }

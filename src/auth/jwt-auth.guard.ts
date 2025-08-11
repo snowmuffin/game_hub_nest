@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as dotenv from 'dotenv';
@@ -19,7 +25,9 @@ export class JwtAuthGuard implements CanActivate {
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       this.logger.error('Authorization header is missing or invalid');
-      throw new UnauthorizedException('Authorization header is missing or invalid');
+      throw new UnauthorizedException(
+        'Authorization header is missing or invalid',
+      );
     }
 
     const token = authHeader.split(' ')[1];
@@ -34,10 +42,15 @@ export class JwtAuthGuard implements CanActivate {
         username: decoded.username,
         ...decoded,
       };
-      this.logger.log(`User attached to request: ${JSON.stringify(request.user)}`);
+      this.logger.log(
+        `User attached to request: ${JSON.stringify(request.user)}`,
+      );
       return true;
     } catch (error) {
-      this.logger.error(`JWT Verification Error: ${error.message}`, error.stack);
+      this.logger.error(
+        `JWT Verification Error: ${error.message}`,
+        error.stack,
+      );
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

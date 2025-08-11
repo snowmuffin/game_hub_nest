@@ -1,6 +1,13 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from 'typeorm';
 
-export class RefactorOnlineStorageTable20250329000600 implements MigrationInterface {
+export class RefactorOnlineStorageTable20250329000600
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 1. 기존 online_storage 테이블에서 items 컬럼 제거
     await queryRunner.query(`
@@ -48,15 +55,22 @@ export class RefactorOnlineStorageTable20250329000600 implements MigrationInterf
   public async down(queryRunner: QueryRunner): Promise<void> {
     // 1. 외래 키 제거 (item_id)
     const table = await queryRunner.getTable('online_storage_items');
-    const itemForeignKey = table?.foreignKeys.find((fk) => fk.columnNames.indexOf('item_id') !== -1);
+    const itemForeignKey = table?.foreignKeys.find(
+      (fk) => fk.columnNames.indexOf('item_id') !== -1,
+    );
     if (itemForeignKey) {
       await queryRunner.dropForeignKey('online_storage_items', itemForeignKey);
     }
 
     // 2. 외래 키 제거 (storage_id)
-    const storageForeignKey = table?.foreignKeys.find((fk) => fk.columnNames.indexOf('storage_id') !== -1);
+    const storageForeignKey = table?.foreignKeys.find(
+      (fk) => fk.columnNames.indexOf('storage_id') !== -1,
+    );
     if (storageForeignKey) {
-      await queryRunner.dropForeignKey('online_storage_items', storageForeignKey);
+      await queryRunner.dropForeignKey(
+        'online_storage_items',
+        storageForeignKey,
+      );
     }
 
     // 3. online_storage_items 테이블 삭제

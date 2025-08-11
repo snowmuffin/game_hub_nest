@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AlterStorageAndItemIdToBigInt20250413000300 implements MigrationInterface {
+export class AlterStorageAndItemIdToBigInt20250413000300
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       ALTER TABLE online_storage_items

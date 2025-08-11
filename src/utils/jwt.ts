@@ -8,8 +8,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'defaultSecretKey';
  * @param expiresIn - 토큰 만료 시간 (예: '2h', '1d')
  * @returns 생성된 JWT 토큰
  */
-export const generateToken = (payload: object, expiresIn: string = '2h'): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
+export const generateToken = (
+  payload: object,
+  expiresIn: string = '2h',
+): string => {
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: expiresIn as jwt.SignOptions['expiresIn'],
+  });
 };
 
 /**

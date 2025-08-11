@@ -9,7 +9,8 @@ const client = new Client({
   database: process.env.DB_NAME || 'snowmuffin',
 });
 
-client.connect()
+client
+  .connect()
   .then(() => console.log('Connected to PostgreSQL'))
   .catch((err) => console.error('Connection error:', err))
   .finally(() => client.end());

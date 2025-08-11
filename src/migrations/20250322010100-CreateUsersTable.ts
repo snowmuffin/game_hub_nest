@@ -6,7 +6,13 @@ export class CreateUsersTable20250322010100 implements MigrationInterface {
       new Table({
         name: 'users',
         columns: [
-          { name: 'id', type: 'bigint', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
+          {
+            name: 'id',
+            type: 'bigint',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
           { name: 'username', type: 'varchar', isUnique: true },
           { name: 'email', type: 'varchar', isUnique: true, isNullable: true },
           { name: 'password', type: 'varchar', isNullable: true },
@@ -15,7 +21,7 @@ export class CreateUsersTable20250322010100 implements MigrationInterface {
           { name: 'updated_at', type: 'timestamp', default: 'now()' },
         ],
       }),
-      true
+      true,
     );
   }
 

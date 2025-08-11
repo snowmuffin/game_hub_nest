@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ValheimCharacterController } from './valheim-character.controller';
 import { ValheimCharacterService } from './valheim-character.service';
 import { ValheimCharacter } from './valheim-character.entity';
-import { User } from '../../user/user.entity';
+import { User } from '../../entities/user.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @Module({

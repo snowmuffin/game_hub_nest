@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Req, Res, UseGuards, Query, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+  Query,
+  Body,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -18,7 +27,6 @@ export class AuthController {
   async steamLogin(@Req() req, @Res() res: Response) {
     // Steam 인증으로 리다이렉트 (passport-steam이 자동 처리)
   }
-
 
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
@@ -113,33 +121,39 @@ export class AuthController {
   }
 
   @Get('generate-test-token')
-  async generateTestToken(@Query('steam_id') steamId: string, @Query('username') username: string) {
+  async generateTestToken(
+    @Query('steam_id') steamId: string,
+    @Query('username') username: string,
+  ) {
     try {
       // 테스트 사용자를 생성하거나 기존 사용자 조회
       const testSteamId = steamId || 'test_user_999999';
       const testUsername = username || 'TestUser';
-      
+
       // 데이터베이스에서 테스트 사용자 조회 또는 생성
       let testUser = await this.userService.findBySteamId(testSteamId);
-      
+
       if (!testUser) {
         // 테스트 사용자가 없으면 생성
-        testUser = await this.userService.createTestUser(testSteamId, testUsername);
+        testUser = await this.userService.createTestUser(
+          testSteamId,
+          testUsername,
+        );
       }
-      
-      const user = { 
-        id: testUser.id, 
-        steam_id: testUser.steam_id, 
-        username: testUser.username 
+
+      const user = {
+        id: testUser.id,
+        steam_id: testUser.steam_id,
+        username: testUser.username,
       };
-      
+
       return {
         accessToken: this.authService.generateJwtToken(user),
         user: {
           id: testUser.id,
           steam_id: testUser.steam_id,
-          username: testUser.username
-        }
+          username: testUser.username,
+        },
       };
     } catch (error) {
       console.error('Error generating test token:', error);
@@ -165,7 +179,9 @@ export class AuthController {
 
       return res.json({ token: newAccessToken });
     } catch (error) {
-      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+      return res
+        .status(401)
+        .json({ message: 'Invalid or expired refresh token' });
     }
   }
 }

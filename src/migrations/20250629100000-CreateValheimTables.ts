@@ -38,7 +38,17 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
           {
             name: 'type',
             type: 'enum',
-            enum: ['WEAPON', 'TOOL', 'ARMOR', 'FOOD', 'MATERIAL', 'BUILDING', 'CONSUMABLE', 'TROPHY', 'MISC'],
+            enum: [
+              'WEAPON',
+              'TOOL',
+              'ARMOR',
+              'FOOD',
+              'MATERIAL',
+              'BUILDING',
+              'CONSUMABLE',
+              'TROPHY',
+              'MISC',
+            ],
             default: "'MISC'",
           },
           {
@@ -109,7 +119,7 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
 
     // 2. Valheim Inventories 테이블 생성
@@ -201,7 +211,7 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
 
     // 3. Valheim Characters 테이블 생성
@@ -443,7 +453,7 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
 
     // 4. 인덱스 생성
@@ -452,13 +462,16 @@ export class CreateValheimTables1751198000000 implements MigrationInterface {
       new TableIndex({
         name: 'idx_valheim_inventory_user_item',
         columnNames: ['user_id', 'item_id'],
-      })
+      }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // 인덱스 삭제
-    await queryRunner.dropIndex('valheim_inventories', 'idx_valheim_inventory_user_item');
+    await queryRunner.dropIndex(
+      'valheim_inventories',
+      'idx_valheim_inventory_user_item',
+    );
 
     // 테이블 삭제 (역순)
     await queryRunner.dropTable('valheim_characters');

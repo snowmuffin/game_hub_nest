@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class RenameNameToDisplayNameInItemsTable20250329000400 implements MigrationInterface {
+export class RenameNameToDisplayNameInItemsTable20250329000400
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('items');
     const nameColumn = table?.findColumnByName('name');

@@ -1,4 +1,11 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableIndex, TableColumn } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+  TableIndex,
+  TableColumn,
+} from 'typeorm';
 
 export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -10,7 +17,7 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
         name: 'game_id',
         type: 'int',
         isNullable: true,
-      })
+      }),
     );
 
     // type 컬럼 추가
@@ -21,7 +28,7 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
         type: 'enum',
         enum: ['GLOBAL', 'GAME_SPECIFIC'],
         default: "'GAME_SPECIFIC'",
-      })
+      }),
     );
 
     // decimal_places 컬럼 추가
@@ -31,7 +38,7 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
         name: 'decimal_places',
         type: 'int',
         default: 2,
-      })
+      }),
     );
 
     // is_active 컬럼 추가
@@ -41,7 +48,7 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
         name: 'is_active',
         type: 'boolean',
         default: true,
-      })
+      }),
     );
 
     // metadata 컬럼 추가
@@ -51,7 +58,7 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
         name: 'metadata',
         type: 'json',
         isNullable: true,
-      })
+      }),
     );
 
     // 외래 키 추가: currencies.game_id -> games.id
@@ -61,9 +68,9 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
         columnNames: ['game_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'games',
-        
+
         onDelete: 'SET NULL',
-      })
+      }),
     );
 
     // 인덱스 추가
@@ -72,7 +79,7 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_currencies_game_id',
         columnNames: ['game_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -80,7 +87,7 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_currencies_type',
         columnNames: ['type'],
-      })
+      }),
     );
   }
 
@@ -88,7 +95,9 @@ export class UpdateCurrenciesTable20250629000200 implements MigrationInterface {
     // 외래 키 삭제
     const currenciesTable = await queryRunner.getTable('currencies');
     if (currenciesTable) {
-      const foreignKey = currenciesTable.foreignKeys.find(fk => fk.columnNames.indexOf('game_id') !== -1);
+      const foreignKey = currenciesTable.foreignKeys.find(
+        (fk) => fk.columnNames.indexOf('game_id') !== -1,
+      );
       if (foreignKey) {
         await queryRunner.dropForeignKey('currencies', foreignKey);
       }

@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { User } from '../user/user.entity';
+import { User } from '../entities/user.entity';
 import { AppDataSource } from '../data-source';
 
 /**
@@ -26,17 +26,19 @@ export class TestUserManager {
    */
   async createOrGetTestUser(
     steamId: string = 'test_user_999999',
-    username: string = 'TestUser'
+    username: string = 'TestUser',
   ): Promise<User> {
     const userRepository = this.dataSource.getRepository(User);
 
     // 기존 테스트 사용자 확인
     let testUser = await userRepository.findOne({
-      where: { steam_id: steamId }
+      where: { steam_id: steamId },
     });
 
     if (testUser) {
-      console.log(`✅ Existing test user found: ID ${testUser.id}, Steam ID: ${steamId}`);
+      console.log(
+        `✅ Existing test user found: ID ${testUser.id}, Steam ID: ${steamId}`,
+      );
       return testUser;
     }
 
@@ -50,8 +52,10 @@ export class TestUserManager {
     testUser.updated_at = new Date();
 
     testUser = await userRepository.save(testUser);
-    console.log(`🆕 New test user created: ID ${testUser.id}, Steam ID: ${steamId}`);
-    
+    console.log(
+      `🆕 New test user created: ID ${testUser.id}, Steam ID: ${steamId}`,
+    );
+
     return testUser;
   }
 
@@ -61,14 +65,16 @@ export class TestUserManager {
    */
   async deleteTestUser(steamId: string): Promise<void> {
     const userRepository = this.dataSource.getRepository(User);
-    
+
     const testUser = await userRepository.findOne({
-      where: { steam_id: steamId }
+      where: { steam_id: steamId },
     });
 
     if (testUser) {
       await userRepository.remove(testUser);
-      console.log(`🗑️ Test user deleted: ID ${testUser.id}, Steam ID: ${steamId}`);
+      console.log(
+        `🗑️ Test user deleted: ID ${testUser.id}, Steam ID: ${steamId}`,
+      );
     } else {
       console.log(`❌ Test user not found: Steam ID ${steamId}`);
     }
@@ -79,11 +85,11 @@ export class TestUserManager {
    */
   async cleanupAllTestUsers(): Promise<void> {
     const userRepository = this.dataSource.getRepository(User);
-    
+
     const testUsers = await userRepository.find({
       where: {
-        steam_id: `test_%` as any // LIKE 패턴은 쿼리빌더로 처리해야 함
-      }
+        steam_id: `test_%` as any, // LIKE 패턴은 쿼리빌더로 처리해야 함
+      },
     });
 
     // 쿼리빌더 사용
@@ -105,7 +111,7 @@ export class TestUserManager {
    */
   async listTestUsers(): Promise<User[]> {
     const userRepository = this.dataSource.getRepository(User);
-    
+
     const testUsers = await userRepository
       .createQueryBuilder('user')
       .where('user.steam_id LIKE :pattern', { pattern: 'test_%' })
@@ -125,10 +131,10 @@ export class TestUserManager {
 if (require.main === module) {
   async function main() {
     const manager = new TestUserManager();
-    
+
     try {
       await manager.initialize();
-      
+
       const args = process.argv.slice(2);
       const command = args[0];
 
@@ -143,8 +149,10 @@ if (require.main === module) {
         case 'list':
           const users = await manager.listTestUsers();
           console.log(`Found ${users.length} test users:`);
-          users.forEach(user => {
-            console.log(`  - ID: ${user.id}, Steam ID: ${user.steam_id}, Username: ${user.username}`);
+          users.forEach((user) => {
+            console.log(
+              `  - ID: ${user.id}, Steam ID: ${user.steam_id}, Username: ${user.username}`,
+            );
           });
           break;
 

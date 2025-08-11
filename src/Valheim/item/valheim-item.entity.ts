@@ -1,5 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../../user/user.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../../entities/user.entity';
 import { Game } from '../../entities/game.entity';
 
 export enum ValheimItemQuality {
@@ -36,17 +44,17 @@ export class ValheimItem {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: ValheimItemType, 
-    default: ValheimItemType.MISC 
+  @Column({
+    type: 'enum',
+    enum: ValheimItemType,
+    default: ValheimItemType.MISC,
   })
   type: ValheimItemType;
 
-  @Column({ 
-    type: 'enum', 
-    enum: ValheimItemQuality, 
-    default: ValheimItemQuality.LEVEL_1 
+  @Column({
+    type: 'enum',
+    enum: ValheimItemQuality,
+    default: ValheimItemQuality.LEVEL_1,
   })
   max_quality: ValheimItemQuality;
 

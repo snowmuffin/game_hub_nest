@@ -10,12 +10,27 @@ export class CreateItemsTable20250322010200 implements MigrationInterface {
           { name: 'name', type: 'varchar', isNullable: false },
           { name: 'rarity', type: 'int', isNullable: false },
           { name: 'description', type: 'text', isNullable: true },
-          { name: 'category', type: 'varchar', length: '10', isNullable: false },
-          { name: 'created_at', type: 'timestamp', default: 'now()', isNullable: false },
-          { name: 'updated_at', type: 'timestamp', default: 'now()', isNullable: false },
+          {
+            name: 'category',
+            type: 'varchar',
+            length: '10',
+            isNullable: false,
+          },
+          {
+            name: 'created_at',
+            type: 'timestamp',
+            default: 'now()',
+            isNullable: false,
+          },
+          {
+            name: 'updated_at',
+            type: 'timestamp',
+            default: 'now()',
+            isNullable: false,
+          },
         ],
       }),
-      true
+      true,
     );
   }
 

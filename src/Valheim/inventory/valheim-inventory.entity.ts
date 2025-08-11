@@ -1,5 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { User } from '../../user/user.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
+import { User } from '../../entities/user.entity';
 import { ValheimItem, ValheimItemQuality } from '../item/valheim-item.entity';
 
 @Entity({ name: 'inventories', schema: 'valheim' })
@@ -17,10 +26,10 @@ export class ValheimInventory {
   @Column({ type: 'integer', default: 1 })
   quantity: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: ValheimItemQuality, 
-    default: ValheimItemQuality.LEVEL_1 
+  @Column({
+    type: 'enum',
+    enum: ValheimItemQuality,
+    default: ValheimItemQuality.LEVEL_1,
   })
   quality: ValheimItemQuality;
 

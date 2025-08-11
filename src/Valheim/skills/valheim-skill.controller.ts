@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { ValheimSkillService, AddSkillExperienceDto, UpdateSkillDto } from './valheim-skill.service';
+import {
+  ValheimSkillService,
+  AddSkillExperienceDto,
+  UpdateSkillDto,
+} from './valheim-skill.service';
 import { ValheimCharacterSkill } from './valheim-skill.entity';
 
 @Controller('valheim/skills')
@@ -9,17 +23,23 @@ export class ValheimSkillController {
   constructor(private readonly skillService: ValheimSkillService) {}
 
   @Post('experience')
-  async addSkillExperience(@Body() addSkillDto: AddSkillExperienceDto): Promise<ValheimCharacterSkill> {
+  async addSkillExperience(
+    @Body() addSkillDto: AddSkillExperienceDto,
+  ): Promise<ValheimCharacterSkill> {
     return await this.skillService.createOrUpdateSkill(addSkillDto);
   }
 
   @Get('character/:characterId')
-  async getSkillsByCharacter(@Param('characterId') characterId: number): Promise<ValheimCharacterSkill[]> {
+  async getSkillsByCharacter(
+    @Param('characterId') characterId: number,
+  ): Promise<ValheimCharacterSkill[]> {
     return await this.skillService.findSkillsByCharacter(characterId);
   }
 
   @Get('character/:characterId/summary')
-  async getCharacterSkillSummary(@Param('characterId') characterId: number): Promise<any> {
+  async getCharacterSkillSummary(
+    @Param('characterId') characterId: number,
+  ): Promise<any> {
     return await this.skillService.getCharacterSkillSummary(characterId);
   }
 
@@ -28,7 +48,10 @@ export class ValheimSkillController {
     @Param('characterId') characterId: number,
     @Param('skillName') skillName: string,
   ): Promise<ValheimCharacterSkill | null> {
-    return await this.skillService.findSkillByCharacterAndName(characterId, skillName);
+    return await this.skillService.findSkillByCharacterAndName(
+      characterId,
+      skillName,
+    );
   }
 
   @Put(':id')
@@ -44,7 +67,10 @@ export class ValheimSkillController {
     @Param('characterId') characterId: number,
     @Body('penaltyPercentage') penaltyPercentage?: number,
   ): Promise<ValheimCharacterSkill[]> {
-    return await this.skillService.applyDeathPenalty(characterId, penaltyPercentage);
+    return await this.skillService.applyDeathPenalty(
+      characterId,
+      penaltyPercentage,
+    );
   }
 
   @Get('leaderboard/:skillName')

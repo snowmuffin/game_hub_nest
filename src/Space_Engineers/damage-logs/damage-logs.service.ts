@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from 'src/user/user.entity';
+import { User } from 'src/entities/user.entity';
 import { createuser } from '../../utils/createuser';
 
 @Injectable()
@@ -13,7 +13,7 @@ export class DamageLogsService {
 
   async processDamageLogs(logs: any[]): Promise<void> {
     for (const log of logs) {
-      const { steam_id, damage,server_id } = log;
+      const { steam_id, damage, server_id } = log;
 
       if (!steam_id || damage == null) {
         console.error(`Invalid log entry: ${JSON.stringify(log)}`);
@@ -23,11 +23,13 @@ export class DamageLogsService {
       let user = await this.userRepository.findOne({ where: { steam_id } });
 
       if (!user) {
-        console.log(`User not found for steam_id=${steam_id}, creating user...`);
+        console.log(
+          `User not found for steam_id=${steam_id}, creating user...`,
+        );
         try {
           user = await createuser(
-            { steam_id, username:'', email:'' },
-            this.userRepository
+            { steam_id, username: '', email: '' },
+            this.userRepository,
           );
         } catch (error) {
           console.error(`Error creating user for steam_id=${steam_id}:`, error);

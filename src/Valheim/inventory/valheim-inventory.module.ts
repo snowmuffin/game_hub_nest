@@ -6,7 +6,7 @@ import { ValheimInventoryController } from './valheim-inventory.controller';
 import { ValheimInventoryService } from './valheim-inventory.service';
 import { ValheimInventory } from './valheim-inventory.entity';
 import { ValheimItem } from '../item/valheim-item.entity';
-import { User } from '../../user/user.entity';
+import { User } from '../../entities/user.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @Module({

@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddIndexNameColumnToItemsTable20250329000300 implements MigrationInterface {
+export class AddIndexNameColumnToItemsTable20250329000300
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('items');
     const indexNameColumn = table?.findColumnByName('index_name');

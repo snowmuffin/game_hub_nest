@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../user/user.entity';
+import { User } from '../entities/user.entity';
 import { createuser } from 'src/utils/createuser';
 
 @Injectable()
@@ -44,7 +44,9 @@ export class AuthService {
       throw new Error('Invalid profile data received from Steam');
     }
 
-    let user = await this.userRepository.findOne({ where: { steam_id: profile.steam_id } });
+    let user = await this.userRepository.findOne({
+      where: { steam_id: profile.steam_id },
+    });
 
     if (!user) {
       await createuser(profile, this.userRepository);

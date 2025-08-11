@@ -1,5 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../../user/user.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../../entities/user.entity';
 import { ValheimWorld } from '../world/valheim-world.entity';
 
 @Entity({ name: 'characters', schema: 'valheim' })

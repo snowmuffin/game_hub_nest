@@ -19,22 +19,30 @@ async function bootstrap() {
   const baseUrl = process.env.BASE_URL;
   const isProduction = process.env.NODE_ENV === 'production';
 
-  console.log(`🚀 Starting Game Hub API in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode...`);
+  console.log(
+    `🚀 Starting Game Hub API in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode...`,
+  );
 
   // 🔧 CORS 설정
   let allowedOrigins: string[] = [];
-  
+
   if (process.env.CORS_ORIGINS) {
-    allowedOrigins = process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
+    allowedOrigins = process.env.CORS_ORIGINS.split(',').map((origin) =>
+      origin.trim(),
+    );
   } else {
     // 기본값 설정
     allowedOrigins = isProduction
       ? ['https://se.snowmuffingame.com', 'https://snowmuffingame.com']
-      : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001'];
+      : [
+          'http://localhost:3000',
+          'http://localhost:5173',
+          'http://localhost:3001',
+        ];
   }
-  
+
   console.log('🔐 Allowed CORS origins:', allowedOrigins);
-  
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -44,12 +52,12 @@ async function bootstrap() {
       'Accept-Language',
       'Content-Language',
       'Content-Type',
-      'Authorization', 
-      'Cookie', 
+      'Authorization',
+      'Cookie',
       'X-Requested-With',
       'X-HTTP-Method-Override',
       'Cache-Control',
-      'Pragma'
+      'Pragma',
     ],
     exposedHeaders: ['Content-Length', 'X-Total-Count'],
     optionsSuccessStatus: 200,
@@ -60,14 +68,16 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // 🔍 전역 검증 파이프
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-    transformOptions: {
-      enableImplicitConversion: true,
-    },
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
 
   // 🌐 API 글로벌 프리픽스
   app.setGlobalPrefix('api');
@@ -75,7 +85,7 @@ async function bootstrap() {
   // 🚀 서버 시작
   await app.listen(port, host, () => {
     const serverUrl = baseUrl || `http://${host}:${port}`;
-    
+
     console.log('');
     console.log('🎉 ===============================================');
     console.log('🎉 Game Hub API Server Started Successfully!');
@@ -85,11 +95,11 @@ async function bootstrap() {
     console.log(`🌐 Server URL: ${serverUrl}`);
     console.log(`📝 API Base: ${serverUrl}/api`);
     console.log(`🏥 Health Check: ${serverUrl}/api/health`);
-    
+
     if (domain) {
       console.log(`🔗 Domain: ${domain}`);
     }
-    
+
     console.log('');
     console.log('🔐 Security:');
     console.log(`   • CORS Origins: ${allowedOrigins.length} configured`);

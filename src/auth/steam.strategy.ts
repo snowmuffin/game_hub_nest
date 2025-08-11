@@ -11,17 +11,18 @@ if (!process.env.STEAM_API_KEY) {
 export class SteamStrategy extends PassportStrategy(Strategy, 'steam') {
   constructor() {
     super({
-        returnURL: process.env.RETURN_URL || 'http://localhost:3000/api/auth/steam/return',
-        realm: process.env.REALM || 'http://localhost:3000/',
-        apiKey: process.env.STEAM_API_KEY
+      returnURL:
+        process.env.RETURN_URL || 'http://localhost:3000/api/auth/steam/return',
+      realm: process.env.REALM || 'http://localhost:3000/',
+      apiKey: process.env.STEAM_API_KEY,
     });
   }
 
   async validate(identifier: string, profile: any): Promise<any> {
     return {
-      steam_id: profile.id, 
+      steam_id: profile.id,
       username: profile.displayName,
-      email: null, 
+      email: null,
     };
   }
 }

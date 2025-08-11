@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
-export class CreateValheimExtendedTables1751198100000 implements MigrationInterface {
+export class CreateValheimExtendedTables1751198100000
+  implements MigrationInterface
+{
   name = 'CreateValheimExtendedTables1751198100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -117,7 +119,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           },
         ],
       }),
-      true
+      true,
     );
 
     // 2. Valheim Worlds 테이블 생성
@@ -227,7 +229,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           },
         ],
       }),
-      true
+      true,
     );
 
     // 3. Valheim Biomes 테이블 생성
@@ -305,7 +307,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           },
         ],
       }),
-      true
+      true,
     );
 
     // 4. Valheim Boss Encounters 테이블 생성
@@ -393,7 +395,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           },
         ],
       }),
-      true
+      true,
     );
 
     // 5. Valheim Character Skills 테이블 생성
@@ -461,7 +463,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
           },
         ],
       }),
-      true
+      true,
     );
 
     // 6. Valheim Characters 테이블에 world_id 컬럼 추가
@@ -478,7 +480,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_buildings_user_server',
         columnNames: ['user_id', 'server_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -486,7 +488,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_buildings_type',
         columnNames: ['building_type'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -494,7 +496,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_worlds_server',
         columnNames: ['server_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -502,7 +504,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_biomes_world',
         columnNames: ['world_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -510,7 +512,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_boss_encounters_world',
         columnNames: ['world_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -518,7 +520,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_boss_encounters_defeated',
         columnNames: ['is_defeated'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -526,7 +528,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_skills_character',
         columnNames: ['character_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -534,7 +536,7 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_skills_character_skill',
         columnNames: ['character_id', 'skill_name'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -542,21 +544,42 @@ export class CreateValheimExtendedTables1751198100000 implements MigrationInterf
       new TableIndex({
         name: 'idx_valheim_skills_leaderboard',
         columnNames: ['skill_name', 'skill_level'],
-      })
+      }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // 인덱스 삭제
-    await queryRunner.dropIndex('valheim.character_skills', 'idx_valheim_skills_leaderboard');
-    await queryRunner.dropIndex('valheim.character_skills', 'idx_valheim_skills_character_skill');
-    await queryRunner.dropIndex('valheim.character_skills', 'idx_valheim_skills_character');
-    await queryRunner.dropIndex('valheim.boss_encounters', 'idx_valheim_boss_encounters_defeated');
-    await queryRunner.dropIndex('valheim.boss_encounters', 'idx_valheim_boss_encounters_world');
+    await queryRunner.dropIndex(
+      'valheim.character_skills',
+      'idx_valheim_skills_leaderboard',
+    );
+    await queryRunner.dropIndex(
+      'valheim.character_skills',
+      'idx_valheim_skills_character_skill',
+    );
+    await queryRunner.dropIndex(
+      'valheim.character_skills',
+      'idx_valheim_skills_character',
+    );
+    await queryRunner.dropIndex(
+      'valheim.boss_encounters',
+      'idx_valheim_boss_encounters_defeated',
+    );
+    await queryRunner.dropIndex(
+      'valheim.boss_encounters',
+      'idx_valheim_boss_encounters_world',
+    );
     await queryRunner.dropIndex('valheim.biomes', 'idx_valheim_biomes_world');
     await queryRunner.dropIndex('valheim.worlds', 'idx_valheim_worlds_server');
-    await queryRunner.dropIndex('valheim.buildings', 'idx_valheim_buildings_type');
-    await queryRunner.dropIndex('valheim.buildings', 'idx_valheim_buildings_user_server');
+    await queryRunner.dropIndex(
+      'valheim.buildings',
+      'idx_valheim_buildings_type',
+    );
+    await queryRunner.dropIndex(
+      'valheim.buildings',
+      'idx_valheim_buildings_user_server',
+    );
 
     // world_id 컬럼 삭제
     await queryRunner.query(`

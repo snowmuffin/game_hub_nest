@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddIconsColumnToItemsTable20250329000200 implements MigrationInterface {
+export class AddIconsColumnToItemsTable20250329000200
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('items');
     const iconsColumn = table?.findColumnByName('icons');

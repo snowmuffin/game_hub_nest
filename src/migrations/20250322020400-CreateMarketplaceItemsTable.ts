@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class CreateMarketplaceItemsTable20250322020400 implements MigrationInterface {
+export class CreateMarketplaceItemsTable20250322020400
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -11,10 +13,14 @@ export class CreateMarketplaceItemsTable20250322020400 implements MigrationInter
           { name: 'item_name', type: 'varchar' },
           { name: 'price', type: 'integer' },
           { name: 'quantity', type: 'integer' },
-          { name: 'created_at', type: 'timestamp', default: 'CURRENT_TIMESTAMP' },
+          {
+            name: 'created_at',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
         ],
       }),
-      true
+      true,
     );
   }
 
