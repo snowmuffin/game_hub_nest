@@ -23,6 +23,10 @@ fi
 
 echo "📋 Using environment file: $ENV_FILE"
 
+# 환경 변수 로드
+source $ENV_FILE
+echo "✅ Environment variables loaded"
+
 # 📊 Node.js 버전 확인
 NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
 echo "📊 Current Node.js version: $(node --version)"
@@ -134,6 +138,67 @@ for i in $(seq 1 $MAX_ATTEMPTS); do
         fi
     fi
 done
+
+# 🌐 Nginx 설정 (프로덕션에서만)
+if [ "$NODE_ENV" = "production" ]; then
+    echo "🌐 Setting up Nginx configuration..."
+    
+    # Nginx 설치 확인
+    if ! command -v nginx &> /dev/null; then
+        echo "📦 Installing Nginx..."
+        sudo apt update
+        sudo apt install -y nginx
+        echo "✅ Nginx installed"
+    else
+        echo "✅ Nginx is already installed"
+    fi
+    
+    # Nginx 설정 파일 복사
+    if [ -f "nginx.conf.example" ]; then
+        echo "📝 Deploying Nginx configuration..."
+        sudo cp nginx.conf.example /etc/nginx/sites-available/game-hub-nest
+        
+        # 심볼릭 링크 생성 (기존 것이 있으면 제거 후 생성)
+        sudo rm -f /etc/nginx/sites-enabled/game-hub-nest
+        sudo ln -s /etc/nginx/sites-available/game-hub-nest /etc/nginx/sites-enabled/
+        
+        # 기본 사이트 비활성화 (충돌 방지)
+        sudo rm -f /etc/nginx/sites-enabled/default
+        
+        # Nginx 설정 테스트
+        echo "🔍 Testing Nginx configuration..."
+        if sudo nginx -t; then
+            echo "✅ Nginx configuration test passed"
+            
+            # Nginx 재시작
+            echo "🔄 Restarting Nginx..."
+            sudo systemctl restart nginx
+            sudo systemctl enable nginx
+            echo "✅ Nginx restarted and enabled"
+        else
+            echo "❌ Nginx configuration test failed"
+            echo "💡 Please check the configuration file manually"
+        fi
+    else
+        echo "⚠️ nginx.conf.example not found, skipping Nginx setup"
+    fi
+    
+    # 방화벽 설정 (ufw가 설치되어 있는 경우)
+    if command -v ufw &> /dev/null; then
+        echo "🔥 Configuring firewall..."
+        sudo ufw allow 'Nginx Full'
+        sudo ufw allow 22
+        echo "✅ Firewall configured"
+    fi
+    
+    # SSL 인증서 설정 안내 (Let's Encrypt)
+    echo "🔒 SSL Certificate Setup Information:"
+    echo "   To enable HTTPS with Let's Encrypt, run the following commands:"
+    echo "   1. Install certbot: sudo apt install certbot python3-certbot-nginx"
+    echo "   2. Obtain certificate: sudo certbot --nginx -d ${DOMAIN:-api.snowmuffingame.com}"
+    echo "   3. Test auto-renewal: sudo certbot renew --dry-run"
+    echo ""
+fi
 
 echo ""
 echo "🎉 ==============================================="
