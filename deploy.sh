@@ -38,7 +38,7 @@ echo "✅ Node.js version check passed"
 # 📥 Git 최신 상태로 업데이트 (프로덕션에서)
 if [ "$NODE_ENV" = "production" ]; then
     echo "📥 Pulling latest changes from repository..."
-    git pull origin main
+    git pull
     echo "✅ Repository updated"
 fi
 

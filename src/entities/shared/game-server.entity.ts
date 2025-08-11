@@ -9,45 +9,87 @@ import {
   OneToMany,
 } from 'typeorm';
 
+/**
+ * GameServer Entity
+ *
+ * Represents a game server instance within the game hub system.
+ * Each server belongs to a specific game and can host multiple user wallets.
+ * Servers can be configured with different types (main, creative, survival, etc.)
+ * and can be activated or deactivated as needed.
+ */
 @Entity({ name: 'game_servers' })
 export class GameServer {
+  /** Primary key - unique identifier for the game server */
   @PrimaryGeneratedColumn()
   id: number;
 
+  /** Foreign key reference to the game this server belongs to */
   @Column({ type: 'int' })
   game_id: number;
 
-  @Column({ type: 'varchar', length: 50 })
-  code: string; // 서버 코드 (예: 'main', 'creative', 'survival')
-
-  @Column({ type: 'varchar', length: 100 })
-  name: string; // 서버 이름 (예: 'Main Server', 'Creative Server')
-
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  description: string; // 서버 설명
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  server_url: string; // 서버 URL 또는 IP
-
+  /** Foreign key reference to the primary currency used by this server */
   @Column({ type: 'int', nullable: true })
-  port: number; // 서버 포트
+  currency_id: number;
 
+  /**
+   * Server code identifier (e.g., 'main', 'creative', 'survival')
+   * Used for programmatic identification and routing
+   */
+  @Column({ type: 'varchar', length: 50 })
+  code: string;
+
+  /**
+   * Human-readable server name (e.g., 'Main Server', 'Creative Server')
+   * Displayed to users in the interface
+   */
+  @Column({ type: 'varchar', length: 100 })
+  name: string;
+
+  /** Optional detailed description of the server's purpose and features */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  description: string;
+
+  /** Server connection URL or IP address for client connections */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  server_url: string;
+
+  /** Network port number for server connections */
+  @Column({ type: 'int', nullable: true })
+  port: number;
+
+  /**
+   * Server activation status
+   * When false, server is temporarily disabled and unavailable to users
+   */
   @Column({ type: 'boolean', default: true })
-  is_active: boolean; // 서버 활성화 상태
+  is_active: boolean;
 
+  /**
+   * JSON object containing server-specific configuration and metadata
+   * Can include server rules, settings, mod configurations, etc.
+   */
   @Column({ type: 'json', nullable: true })
-  metadata: object; // 서버별 추가 정보 (설정, 규칙 등)
+  metadata: object;
 
+  /** Many-to-one relationship: multiple servers can belong to one game */
   @ManyToOne('Game', 'servers')
   @JoinColumn({ name: 'game_id' })
   game: any;
 
+  /** One-to-many relationship: one server can host multiple user wallets */
   @OneToMany('Wallet', 'server')
   wallets: any[];
 
+  /** Timestamp when the server record was created */
   @CreateDateColumn()
   created_at: Date;
 
+  /** One-to-one relationship: one server has one primary currency */
+  @ManyToOne('Currency')
+  @JoinColumn({ name: 'currency_id' })
+  currency: any;
+
+  /** Timestamp when the server record was last updated */
   @UpdateDateColumn()
   updated_at: Date;
 }
