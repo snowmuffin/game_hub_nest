@@ -35,7 +35,7 @@ export class UserController {
   }
 
   @Options('rankings')
-  async rankingsOptions(@Res() res: Response) {
+  rankingsOptions(@Res() res: Response) {
     res.header('Access-Control-Allow-Origin', 'https://se.snowmuffingame.com');
     res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.header(
