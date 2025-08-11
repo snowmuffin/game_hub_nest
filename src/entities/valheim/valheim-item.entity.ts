@@ -30,7 +30,7 @@ export enum ValheimItemType {
   MISC = 'MISC',
 }
 
-@Entity({ name: 'items', schema: 'valheim' })
+@Entity({ name: 'valheim_items' })
 export class ValheimItem {
   @PrimaryGeneratedColumn('increment')
   id: number;

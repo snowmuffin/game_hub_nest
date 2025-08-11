@@ -11,7 +11,7 @@ import {
 import { GameServer } from '../shared/game-server.entity';
 import { ValheimCharacter } from './valheim-character.entity';
 
-@Entity({ name: 'worlds', schema: 'valheim' })
+@Entity({ name: 'valheim_worlds' })
 export class ValheimWorld {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -73,7 +73,7 @@ export class ValheimWorld {
   characters: ValheimCharacter[];
 }
 
-@Entity({ name: 'biomes', schema: 'valheim' })
+@Entity({ name: 'valheim_biomes' })
 export class ValheimBiome {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -114,7 +114,7 @@ export class ValheimBiome {
   world: ValheimWorld;
 }
 
-@Entity({ name: 'boss_encounters', schema: 'valheim' })
+@Entity({ name: 'valheim_boss_encounters' })
 export class ValheimBossEncounter {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -11,7 +11,7 @@ import {
 import { User } from '../shared/user.entity';
 import { ValheimWorld } from './valheim-world.entity';
 
-@Entity({ name: 'characters', schema: 'valheim' })
+@Entity({ name: 'valheim_characters' })
 export class ValheimCharacter {
   @PrimaryGeneratedColumn('increment')
   id: number;

@@ -10,7 +10,7 @@ import {
 import { User } from '../shared/user.entity';
 import { GameServer } from '../shared/game-server.entity';
 
-@Entity({ name: 'buildings', schema: 'valheim' })
+@Entity({ name: 'valheim_buildings' })
 export class ValheimBuilding {
   @PrimaryGeneratedColumn('uuid')
   id: string;
