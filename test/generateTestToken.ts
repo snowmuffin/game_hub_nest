@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 const secret = 'your-secret-key';
 const payload = {
@@ -12,7 +12,7 @@ const token = jwt.sign(payload, secret, { expiresIn: '1h' }); // 1시간 유효
 console.log('Generated Test Token:', token);
 
 // 테스트 요청 보내기
-async function testGetItems() {
+async function testGetItems(): Promise<void> {
   const apiUrl = 'http://localhost:4000/items'; // API 엔드포인트 URL
 
   try {
@@ -24,12 +24,23 @@ async function testGetItems() {
     });
     console.log('Response:', response.data);
   } catch (error) {
-    if (error.response) {
+    if (error instanceof AxiosError && error.response) {
       console.error('Error Response:', error.response.data);
-    } else {
+    } else if (error instanceof Error) {
       console.error('Error:', error.message);
+    } else {
+      console.error('Unknown error:', error);
     }
   }
 }
 
-testGetItems();
+// Run the test and handle the promise properly
+testGetItems()
+  .then(() => {
+    console.log('✅ Test completed successfully');
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('💥 Test failed:', err);
+    process.exit(1);
+  });

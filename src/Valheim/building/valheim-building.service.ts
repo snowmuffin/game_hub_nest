@@ -97,7 +97,11 @@ export class ValheimBuildingService {
     buildingType: string,
     serverId?: string,
   ): Promise<ValheimBuilding[]> {
-    const where: any = { buildingType, isActive: true };
+    const where: {
+      buildingType: string;
+      isActive: boolean;
+      serverId?: string;
+    } = { buildingType, isActive: true };
     if (serverId) {
       where.serverId = serverId;
     }

@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   ValheimItem,
   ValheimItemType,
@@ -46,6 +46,13 @@ export interface ValheimItemSearchDto {
   is_tradeable?: boolean;
   is_teleportable?: boolean;
   name?: string;
+}
+
+export interface ItemStatsDto {
+  total_items: number;
+  items_by_type: Array<{ type: string; count: string }>;
+  tradeable_items: number;
+  teleportable_items: number;
 }
 
 @Injectable()
@@ -217,7 +224,7 @@ export class ValheimItemService {
   /**
    * 아이템 통계
    */
-  async getItemStats(): Promise<any> {
+  async getItemStats(): Promise<ItemStatsDto> {
     const totalItems = await this.valheimItemRepository.count();
 
     const itemsByType = await this.valheimItemRepository
@@ -236,7 +243,7 @@ export class ValheimItemService {
 
     return {
       total_items: totalItems,
-      items_by_type: itemsByType,
+      items_by_type: itemsByType as Array<{ type: string; count: string }>,
       tradeable_items: tradeableCount,
       teleportable_items: teleportableCount,
     };

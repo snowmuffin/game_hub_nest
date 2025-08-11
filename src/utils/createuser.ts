@@ -1,8 +1,14 @@
 import { Repository } from 'typeorm';
 import { User } from '../entities/shared/user.entity';
 
+interface SteamProfile {
+  steam_id: string;
+  username: string;
+  email?: string | null;
+}
+
 export async function createuser(
-  profile: any,
+  profile: SteamProfile,
   userRepository: Repository<User>,
 ): Promise<User> {
   if (!profile.steam_id || !profile.username) {
@@ -19,7 +25,7 @@ export async function createuser(
     user = userRepository.create({
       steam_id: profile.steam_id,
       username: profile.username,
-      email: profile.email,
+      email: profile.email || undefined,
       score: 0, // Initialize score with a default value of 0
       created_at: new Date(), // Set current timestamp for created_at
       updated_at: new Date(), // Set current timestamp for updated_at

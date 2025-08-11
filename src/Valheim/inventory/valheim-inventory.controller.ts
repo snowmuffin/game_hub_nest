@@ -6,17 +6,26 @@ import {
   Delete,
   Body,
   Param,
-  Query,
   UseGuards,
   ParseIntPipe,
   Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import {
   ValheimInventoryService,
   AddItemToInventoryDto,
   UpdateInventoryItemDto,
+  InventoryStatsDto,
 } from './valheim-inventory.service';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: number;
+    steamId: string;
+    username: string;
+  };
+}
 
 @Controller('valheim/inventory')
 @UseGuards(JwtAuthGuard)
@@ -27,7 +36,7 @@ export class ValheimInventoryController {
    * 현재 사용자의 전체 인벤토리 조회
    */
   @Get()
-  async getMyInventory(@Req() req: any) {
+  async getMyInventory(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return await this.inventoryService.getUserInventory(userId);
   }
@@ -45,7 +54,7 @@ export class ValheimInventoryController {
    */
   @Get('storage/:storageType')
   async getInventoryByStorageType(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('storageType') storageType: string,
   ) {
     const userId = req.user.id;
@@ -60,7 +69,7 @@ export class ValheimInventoryController {
    */
   @Get('item/:itemId/quantity')
   async getItemQuantity(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('itemId', ParseIntPipe) itemId: number,
   ) {
     const userId = req.user.id;
@@ -75,7 +84,9 @@ export class ValheimInventoryController {
    * 인벤토리 통계
    */
   @Get('stats')
-  async getInventoryStats(@Req() req: any) {
+  async getInventoryStats(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<InventoryStatsDto> {
     const userId = req.user.id;
     return await this.inventoryService.getInventoryStats(userId);
   }
@@ -84,7 +95,10 @@ export class ValheimInventoryController {
    * 인벤토리에 아이템 추가
    */
   @Post('add')
-  async addItem(@Req() req: any, @Body() addDto: AddItemToInventoryDto) {
+  async addItem(
+    @Req() req: AuthenticatedRequest,
+    @Body() addDto: AddItemToInventoryDto,
+  ) {
     // 사용자 ID를 토큰에서 설정
     addDto.user_id = req.user.id;
     return await this.inventoryService.addItem(addDto);
@@ -95,7 +109,7 @@ export class ValheimInventoryController {
    */
   @Delete('remove')
   async removeItem(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() body: { item_id: number; quantity: number },
   ) {
     const userId = req.user.id;
@@ -136,7 +150,7 @@ export class ValheimInventoryController {
    * 인벤토리 초기화
    */
   @Delete('clear')
-  async clearInventory(@Req() req: any) {
+  async clearInventory(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     await this.inventoryService.clearInventory(userId);
     return { message: 'Inventory cleared successfully' };

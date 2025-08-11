@@ -33,6 +33,12 @@ export interface UpdateInventoryItemDto {
   enchantments?: any;
 }
 
+export interface InventoryStatsDto {
+  total_items: number;
+  items_by_type: Array<{ type: string; count: string }>;
+  storage_distribution: Array<{ storage_type: string; count: string }>;
+}
+
 @Injectable()
 export class ValheimInventoryService {
   private readonly logger = new Logger(ValheimInventoryService.name);
@@ -78,6 +84,8 @@ export class ValheimInventoryService {
    * 특정 아이템의 총 수량 조회
    */
   async getItemQuantity(userId: number, itemId: number): Promise<number> {
+    // TypeORM raw queries return 'any' by design - this is safe as we handle the result properly
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await this.inventoryRepository
       .createQueryBuilder('inventory')
       .select('SUM(inventory.quantity)', 'total')
@@ -85,7 +93,8 @@ export class ValheimInventoryService {
       .andWhere('inventory.item_id = :itemId', { itemId })
       .getRawOne();
 
-    return parseInt(result.total) || 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    return parseInt(String(result?.total || 0)) || 0;
   }
 
   /**
@@ -256,7 +265,9 @@ export class ValheimInventoryService {
   /**
    * 사용자의 인벤토리 통계
    */
-  async getInventoryStats(userId: number): Promise<any> {
+  async getInventoryStats(userId: number): Promise<InventoryStatsDto> {
+    // TypeORM raw queries return 'any' by design - this is safe as we handle the result properly
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const totalItems = await this.inventoryRepository
       .createQueryBuilder('inventory')
       .select('SUM(inventory.quantity)', 'total')
@@ -279,9 +290,13 @@ export class ValheimInventoryService {
       .getRawMany();
 
     return {
-      total_items: parseInt(totalItems.total) || 0,
-      items_by_type: itemTypes,
-      storage_distribution: storageDistribution,
+      total_items:
+        parseInt(String((totalItems as { total?: number })?.total || 0)) || 0,
+      items_by_type: itemTypes as Array<{ type: string; count: string }>,
+      storage_distribution: storageDistribution as Array<{
+        storage_type: string;
+        count: string;
+      }>,
     };
   }
 

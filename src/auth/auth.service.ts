@@ -5,6 +5,26 @@ import { Repository } from 'typeorm';
 import { User } from '../entities/shared/user.entity';
 import { createuser } from 'src/utils/createuser';
 
+interface UserPayload {
+  id: number;
+  username: string;
+}
+
+interface SteamProfile {
+  steam_id: string;
+  username: string;
+  email?: string;
+}
+
+interface FormattedUserData {
+  id: number;
+  username: string;
+  email: string;
+  steamId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -14,19 +34,19 @@ export class AuthService {
   ) {}
 
   // 액세스 토큰 생성
-  generateJwtToken(user: any): string {
+  generateJwtToken(user: UserPayload): string {
     const payload = { sub: user.id, username: user.username };
     return this.jwtService.sign(payload, { expiresIn: '15m' }); // 액세스 토큰 유효 기간: 15분
   }
 
   // 리프레시 토큰 생성
-  generateRefreshToken(user: any): string {
+  generateRefreshToken(user: UserPayload): string {
     const payload = { sub: user.id, username: user.username };
     return this.jwtService.sign(payload, { expiresIn: '7d' }); // 리프레시 토큰 유효 기간: 7일
   }
 
   // 사용자 데이터 포맷팅
-  formatUserData(user: any): any {
+  formatUserData(user: User): FormattedUserData {
     return {
       id: user.id,
       username: user.username,
@@ -37,19 +57,19 @@ export class AuthService {
     };
   }
 
-  async findOrCreateUser(profile: any): Promise<User> {
+  async findOrCreateUser(profile: SteamProfile): Promise<User> {
     console.log('Profile received:', profile);
 
     if (!profile.steam_id || !profile.username) {
       throw new Error('Invalid profile data received from Steam');
     }
 
-    const user = await this.userRepository.findOne({
+    let user = await this.userRepository.findOne({
       where: { steam_id: profile.steam_id },
     });
 
     if (!user) {
-      await createuser(profile, this.userRepository);
+      user = await createuser(profile, this.userRepository);
     }
 
     if (!user) {

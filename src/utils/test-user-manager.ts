@@ -86,12 +86,6 @@ export class TestUserManager {
   async cleanupAllTestUsers(): Promise<void> {
     const userRepository = this.dataSource.getRepository(User);
 
-    const testUsers = await userRepository.find({
-      where: {
-        steam_id: `test_%` as any, // LIKE 패턴은 쿼리빌더로 처리해야 함
-      },
-    });
-
     // 쿼리빌더 사용
     const testUsersQuery = await userRepository
       .createQueryBuilder('user')
@@ -139,14 +133,15 @@ if (require.main === module) {
       const command = args[0];
 
       switch (command) {
-        case 'create':
+        case 'create': {
           const steamId = args[1] || 'test_user_999999';
           const username = args[2] || 'TestUser';
           const user = await manager.createOrGetTestUser(steamId, username);
           console.log(`Test user ready: ID ${user.id}`);
           break;
+        }
 
-        case 'list':
+        case 'list': {
           const users = await manager.listTestUsers();
           console.log(`Found ${users.length} test users:`);
           users.forEach((user) => {
@@ -155,12 +150,14 @@ if (require.main === module) {
             );
           });
           break;
+        }
 
-        case 'cleanup':
+        case 'cleanup': {
           await manager.cleanupAllTestUsers();
           break;
+        }
 
-        case 'delete':
+        case 'delete': {
           const deleteId = args[1];
           if (!deleteId) {
             console.error('Error: Please provide steam_id to delete');
@@ -168,6 +165,7 @@ if (require.main === module) {
           }
           await manager.deleteTestUser(deleteId);
           break;
+        }
 
         default:
           console.log(`
@@ -194,5 +192,8 @@ Examples:
     }
   }
 
-  main();
+  main().catch((error) => {
+    console.error('Unhandled error:', error);
+    process.exit(1);
+  });
 }

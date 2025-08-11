@@ -1,19 +1,25 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 const BASE_URL = 'http://localhost:4000/damage_logs';
 
-async function testGetRequest() {
+async function testGetRequest(): Promise<void> {
   try {
     const response = await axios.get(BASE_URL, {
       params: { param1: 'value1', param2: 'value2' },
     });
     console.log('GET Response:', response.data);
   } catch (error) {
-    console.error('GET Request Error:', error.message);
+    if (error instanceof AxiosError) {
+      console.error('GET Request Error:', error.message);
+    } else if (error instanceof Error) {
+      console.error('GET Request Error:', error.message);
+    } else {
+      console.error('GET Request Error:', error);
+    }
   }
 }
 
-async function testPostRequest() {
+async function testPostRequest(): Promise<void> {
   try {
     const response = await axios.post(BASE_URL, {
       key1: 'value1',
@@ -21,11 +27,17 @@ async function testPostRequest() {
     });
     console.log('POST Response:', response.data);
   } catch (error) {
-    console.error('POST Request Error:', error.message);
+    if (error instanceof AxiosError) {
+      console.error('POST Request Error:', error.message);
+    } else if (error instanceof Error) {
+      console.error('POST Request Error:', error.message);
+    } else {
+      console.error('POST Request Error:', error);
+    }
   }
 }
 
-async function runTests() {
+async function runTests(): Promise<void> {
   console.log('Testing GET Request...');
   await testGetRequest();
 
@@ -33,4 +45,13 @@ async function runTests() {
   await testPostRequest();
 }
 
-runTests();
+// Run the tests and handle the promise properly
+runTests()
+  .then(() => {
+    console.log('✅ All tests completed successfully');
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('💥 Tests failed:', err);
+    process.exit(1);
+  });

@@ -7,8 +7,25 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
 import * as dotenv from 'dotenv';
+
 dotenv.config();
+
+interface JwtPayload {
+  sub: number;
+  username: string;
+  iat?: number;
+  exp?: number;
+}
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: number;
+    username: string;
+    sub: number;
+  };
+}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -20,8 +37,8 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers['authorization'];
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       this.logger.error('Authorization header is missing or invalid');
@@ -35,22 +52,24 @@ export class JwtAuthGuard implements CanActivate {
     // this.logger.log(`JWT Secret (from ConfigService): ${secret}`);
 
     try {
-      const decoded = this.jwtService.verify(token, { secret });
+      const decoded = this.jwtService.verify(token, {
+        secret,
+      }) as unknown as JwtPayload;
       this.logger.log(`Decoded Token: ${JSON.stringify(decoded)}`);
       request.user = {
         id: decoded.sub,
         username: decoded.username,
-        ...decoded,
+        sub: decoded.sub,
       };
       this.logger.log(
         `User attached to request: ${JSON.stringify(request.user)}`,
       );
       return true;
-    } catch (error) {
-      this.logger.error(
-        `JWT Verification Error: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`JWT Verification Error: ${errorMessage}`, errorStack);
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

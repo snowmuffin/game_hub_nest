@@ -6,13 +6,36 @@ import {
   Res,
   UseGuards,
   Query,
-  Body,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    steam_id: string;
+    username: string;
+    email?: string;
+  };
+}
+
+interface JwtPayload {
+  sub: number;
+  username: string;
+  iat?: number;
+  exp?: number;
+}
+
+interface FormattedUserData {
+  id: number;
+  username: string;
+  email: string;
+  steamId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -24,13 +47,16 @@ export class AuthController {
 
   @Get('steam')
   @UseGuards(AuthGuard('steam'))
-  async steamLogin(@Req() req, @Res() res: Response) {
+  async steamLogin(): Promise<void> {
     // Steam 인증으로 리다이렉트 (passport-steam이 자동 처리)
   }
 
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
-  async steamLoginReturn(@Req() req, @Res() res: Response) {
+  async steamLoginReturn(
+    @Req() req: AuthenticatedRequest,
+    @Res() res: Response,
+  ): Promise<void> {
     console.log('Steam return endpoint hit'); // 디버깅용
     console.log('User:', req.user); // 디버깅용
 
@@ -59,7 +85,9 @@ export class AuthController {
 
       const accessToken = this.authService.generateJwtToken(user);
       const refreshToken = this.authService.generateRefreshToken(user);
-      const userData = this.authService.formatUserData(user);
+      const userData = this.authService.formatUserData(
+        user,
+      ) as FormattedUserData;
 
       console.log('Tokens generated successfully'); // 디버깅용
 
@@ -162,23 +190,23 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refreshAccessToken(@Req() req: Request, @Res() res: Response) {
-    const refreshToken = req.cookies['refreshToken'];
+  refreshAccessToken(@Req() req: Request, @Res() res: Response): Response {
+    const refreshToken: unknown = req.cookies['refreshToken'];
 
-    if (!refreshToken) {
+    if (!refreshToken || typeof refreshToken !== 'string') {
       return res.status(401).json({ message: 'Refresh token is missing' });
     }
 
     try {
       const decoded = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_SECRET || 'defaultSecret',
-      });
+      }) as unknown as JwtPayload;
 
       const user = { id: decoded.sub, username: decoded.username };
       const newAccessToken = this.authService.generateJwtToken(user);
 
       return res.json({ token: newAccessToken });
-    } catch (error) {
+    } catch {
       return res
         .status(401)
         .json({ message: 'Invalid or expired refresh token' });

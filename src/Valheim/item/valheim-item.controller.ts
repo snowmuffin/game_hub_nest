@@ -16,6 +16,7 @@ import {
   CreateValheimItemDto,
   UpdateValheimItemDto,
   ValheimItemSearchDto,
+  ItemStatsDto,
 } from './valheim-item.service';
 import { ValheimItemType } from '../../entities/valheim/valheim-item.entity';
 
@@ -83,7 +84,7 @@ export class ValheimItemController {
    * 아이템 통계
    */
   @Get('stats/overview')
-  async getItemStats() {
+  async getItemStats(): Promise<ItemStatsDto> {
     return await this.valheimItemService.getItemStats();
   }
 

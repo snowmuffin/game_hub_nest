@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, IsNull } from 'typeorm';
 import { Wallet } from '../entities/shared/wallet.entity';
 import { WalletTransaction } from '../entities/shared/wallet-transaction.entity';
 import { User } from '../entities/shared/user.entity';
@@ -55,17 +55,15 @@ export class WalletService {
   ) {} // 지갑 생성 또는 조회
   async getOrCreateWallet(dto: CreateWalletDto): Promise<Wallet> {
     // 기존 지갑 확인
-    const whereCondition: any = {
+    const baseCondition = {
       user_id: dto.userId,
       game_id: dto.gameId,
       currency_id: dto.currencyId,
     };
 
-    if (dto.serverId) {
-      whereCondition.server_id = dto.serverId;
-    } else {
-      whereCondition.server_id = null;
-    }
+    const whereCondition = dto.serverId
+      ? { ...baseCondition, server_id: dto.serverId }
+      : { ...baseCondition, server_id: IsNull() };
 
     const wallet = await this.walletRepository.findOne({
       where: whereCondition,
@@ -110,19 +108,6 @@ export class WalletService {
     }
 
     // 새 지갑 생성
-    const walletData: any = {
-      user_id: dto.userId,
-      game_id: dto.gameId,
-      currency_id: dto.currencyId,
-      balance: 0,
-      locked_balance: 0,
-      is_active: true,
-    };
-
-    if (dto.serverId) {
-      walletData.server_id = dto.serverId;
-    }
-
     const newWallet = new Wallet();
     newWallet.user_id = dto.userId;
     newWallet.game_id = dto.gameId;
@@ -260,27 +245,26 @@ export class WalletService {
     fromTransaction: WalletTransaction;
     toTransaction: WalletTransaction;
   }> {
-    return await this.dataSource.transaction(async (manager) => {
-      // 출금 거래
-      const fromTransaction = await this.executeTransaction({
-        walletId: fromWalletId,
-        type: 'TRANSFER_OUT',
-        amount: amount,
-        description: description || `Transfer to wallet ${toWalletId}`,
-        referenceId: `transfer_${Date.now()}`,
-      });
-
-      // 입금 거래
-      const toTransaction = await this.executeTransaction({
-        walletId: toWalletId,
-        type: 'TRANSFER_IN',
-        amount: amount,
-        description: description || `Transfer from wallet ${fromWalletId}`,
-        referenceId: fromTransaction.reference_id,
-      });
-
-      return { fromTransaction, toTransaction };
+    // Execute both transactions sequentially
+    // Each executeTransaction handles its own transaction
+    const fromTransaction = await this.executeTransaction({
+      walletId: fromWalletId,
+      type: 'TRANSFER_OUT',
+      amount: amount,
+      description: description || `Transfer to wallet ${toWalletId}`,
+      referenceId: `transfer_${Date.now()}`,
     });
+
+    // 입금 거래
+    const toTransaction = await this.executeTransaction({
+      walletId: toWalletId,
+      type: 'TRANSFER_IN',
+      amount: amount,
+      description: description || `Transfer from wallet ${fromWalletId}`,
+      referenceId: fromTransaction.reference_id,
+    });
+
+    return { fromTransaction, toTransaction };
   }
 
   // 지갑 잔액 조회

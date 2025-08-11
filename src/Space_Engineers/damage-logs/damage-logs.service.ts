@@ -4,6 +4,12 @@ import { Repository } from 'typeorm';
 import { User } from 'src/entities/shared/user.entity';
 import { createuser } from '../../utils/createuser';
 
+export interface DamageLogEntry {
+  steam_id: string;
+  damage: number;
+  server_id?: string;
+}
+
 @Injectable()
 export class DamageLogsService {
   constructor(
@@ -11,16 +17,18 @@ export class DamageLogsService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async processDamageLogs(logs: any[]): Promise<void> {
+  async processDamageLogs(logs: DamageLogEntry[]): Promise<void> {
     for (const log of logs) {
-      const { steam_id, damage, server_id } = log;
+      const { steam_id, damage } = log;
 
       if (!steam_id || damage == null) {
         console.error(`Invalid log entry: ${JSON.stringify(log)}`);
         continue; // Skip invalid entries
       }
 
-      let user = await this.userRepository.findOne({ where: { steam_id } });
+      let user: User | null = await this.userRepository.findOne({
+        where: { steam_id },
+      });
 
       if (!user) {
         console.log(
@@ -38,7 +46,11 @@ export class DamageLogsService {
       }
 
       try {
-        await this.userRepository.increment({ steam_id }, 'score', damage);
+        await this.userRepository.increment(
+          { steam_id },
+          'score',
+          Number(damage),
+        );
         console.log(`Updated score for steam_id=${steam_id} by ${damage}`);
       } catch (error) {
         console.error(`Error updating score for steam_id=${steam_id}:`, error);

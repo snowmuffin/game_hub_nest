@@ -15,6 +15,14 @@ import {
 } from './wallet.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+interface AuthenticatedRequest {
+  user: {
+    id: number;
+    steam_id: string;
+    username: string;
+  };
+}
+
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
 export class WalletController {
@@ -22,7 +30,10 @@ export class WalletController {
 
   // 지갑 생성 또는 조회
   @Post('create')
-  async createWallet(@Body() createWalletDto: CreateWalletDto, @Request() req) {
+  async createWallet(
+    @Body() createWalletDto: CreateWalletDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
     // 요청한 사용자의 ID로 제한
     createWalletDto.userId = req.user.id;
     return await this.walletService.getOrCreateWallet(createWalletDto);
@@ -30,13 +41,16 @@ export class WalletController {
 
   // 내 지갑 목록 조회
   @Get('my-wallets')
-  async getMyWallets(@Request() req) {
+  async getMyWallets(@Request() req: AuthenticatedRequest) {
     return await this.walletService.getUserWallets(req.user.id);
   }
 
   // 특정 게임의 내 지갑들 조회
   @Get('my-wallets/game/:gameId')
-  async getMyWalletsByGame(@Param('gameId') gameId: number, @Request() req) {
+  async getMyWalletsByGame(
+    @Param('gameId') gameId: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return await this.walletService.getUserWalletsByGame(req.user.id, gameId);
   }
 
@@ -69,7 +83,7 @@ export class WalletController {
   // 내 모든 거래 내역 조회
   @Get('my-transactions')
   async getMyTransactions(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Query('limit') limit: number = 50,
     @Query('offset') offset: number = 0,
   ) {

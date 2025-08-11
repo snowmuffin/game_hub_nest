@@ -94,7 +94,7 @@ export class ItemService {
           return '';
         }
 
-        const normalizedPath = iconPath[0].replace(/\\/g, '/');
+        const normalizedPath = String(iconPath[0]).replace(/\\/g, '/');
         const fileName = normalizedPath.split('/').pop();
         return fileName || '';
       }
@@ -111,7 +111,7 @@ export class ItemService {
       return '';
     } catch (error) {
       this.logger.warn(
-        `Failed to parse or extract file name from icon path: ${JSON.stringify(iconPath)}. Error: ${error.message}`,
+        `Failed to parse or extract file name from icon path: ${JSON.stringify(iconPath)}. Error: ${error instanceof Error ? error.message : String(error)}`,
       );
       return '';
     }
@@ -186,7 +186,10 @@ export class ItemService {
       );
       return { message: `${quantity}x '${identifier}' added to storage.` };
     } catch (error) {
-      this.logger.error(`Error uploading item: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error uploading item: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
@@ -261,8 +264,8 @@ export class ItemService {
       };
     } catch (error) {
       this.logger.error(
-        `Error requesting download: ${error.message}`,
-        error.stack,
+        `Error requesting download: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
       throw error;
     }
@@ -327,8 +330,8 @@ export class ItemService {
       };
     } catch (error) {
       this.logger.error(
-        `Error confirming download: ${error.message}`,
-        error.stack,
+        `Error confirming download: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
       throw error;
     }
@@ -380,32 +383,32 @@ export class ItemService {
       };
     } catch (error) {
       this.logger.error(
-        `Error canceling download: ${error.message}`,
-        error.stack,
+        `Error canceling download: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
       throw error;
     }
   }
 
-  async upgradeItem(steamId: string, targetItem: string): Promise<any> {
+  upgradeItem(steamId: string, targetItem: string): Promise<any> {
     this.logger.log(
       `Upgrading item: Steam ID=${steamId}, Target Item=${targetItem}`,
     );
 
     // Note: This method requires a blueprints table/entity that doesn't exist yet
     // TODO: Implement blueprint system with proper entities
-    throw new Error(
-      'Blueprint system not yet implemented with TypeORM entities',
+    return Promise.reject(
+      new Error('Blueprint system not yet implemented with TypeORM entities'),
     );
   }
 
-  async getBlueprints(): Promise<any> {
+  getBlueprints(): Promise<any> {
     this.logger.log(`Fetching blueprints`);
 
     // Note: This method requires a blueprints table/entity that doesn't exist yet
     // TODO: Implement blueprint system with proper entities
-    throw new Error(
-      'Blueprint system not yet implemented with TypeORM entities',
+    return Promise.reject(
+      new Error('Blueprint system not yet implemented with TypeORM entities'),
     );
   }
 
@@ -413,11 +416,20 @@ export class ItemService {
     this.logger.log(`Updating items: ${JSON.stringify(itemList)}`);
 
     for (const item of itemList) {
+      // Type checking for item properties
+      const typedItem = item as {
+        DisplayName?: string;
+        Id?: string;
+        Description?: string;
+        Category?: string;
+        Icons?: any[];
+      };
+
       if (
-        !item.DisplayName ||
-        !item.Id ||
-        (typeof item.Id === 'string' &&
-          item.Id.includes('MyObjectBuilder_TreeObject'))
+        !typedItem.DisplayName ||
+        !typedItem.Id ||
+        (typeof typedItem.Id === 'string' &&
+          typedItem.Id.includes('MyObjectBuilder_TreeObject'))
       ) {
         this.logger.warn(
           `Skipping item (invalid or excluded): ${JSON.stringify(item)}`,
@@ -426,12 +438,12 @@ export class ItemService {
       }
 
       const mappedItem = {
-        displayName: item.DisplayName,
+        displayName: typedItem.DisplayName,
         rarity: 1,
-        description: item.Description || null,
-        category: item.Category || this.determineCategory(item.Id),
-        icons: item.Icons || [],
-        indexName: item.Id,
+        description: typedItem.Description || undefined,
+        category: typedItem.Category || this.determineCategory(typedItem.Id),
+        icons: typedItem.Icons || [],
+        indexName: typedItem.Id,
       };
 
       try {
@@ -444,7 +456,7 @@ export class ItemService {
           // Update existing item
           existingItem.displayName = mappedItem.displayName;
           existingItem.rarity = mappedItem.rarity;
-          existingItem.description = mappedItem.description;
+          existingItem.description = mappedItem.description || '';
           existingItem.category = mappedItem.category;
           existingItem.icons = mappedItem.icons;
           await this.itemRepository.save(existingItem);
@@ -457,7 +469,7 @@ export class ItemService {
         this.logger.log(`Successfully processed item: ${mappedItem.indexName}`);
       } catch (error) {
         this.logger.error(
-          `Failed to process item ${mappedItem.indexName}: ${error.message}`,
+          `Failed to process item ${mappedItem.indexName}: ${error instanceof Error ? error.message : String(error)}`,
         );
         continue;
       }

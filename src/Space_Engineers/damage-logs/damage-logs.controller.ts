@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { DamageLogsService } from './damage-logs.service';
+import { DamageLogsService, DamageLogEntry } from './damage-logs.service';
 
 @Controller('damage_logs')
 export class DamageLogsController {
@@ -13,7 +13,7 @@ export class DamageLogsController {
   }
 
   @Post()
-  async logPostRequest(@Body() body: any): Promise<string> {
+  async logPostRequest(@Body() body: DamageLogEntry[]): Promise<string> {
     await this.damageLogsService.processDamageLogs(body);
     return 'POST request logged';
   }

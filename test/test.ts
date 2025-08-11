@@ -1,24 +1,38 @@
 import { AppDataSource } from '../src/data-source';
-import { Client } from 'pg';
 
-const client = new Client({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'password',
-  database: process.env.DB_NAME || 'snowmuffin',
-});
+async function testDataSource(): Promise<void> {
+  try {
+    console.log('Initializing data source...');
+    await AppDataSource.initialize();
+    console.log('✅ Data Source has been initialized successfully!');
 
-client
-  .connect()
-  .then(() => console.log('Connected to PostgreSQL'))
-  .catch((err) => console.error('Connection error:', err))
-  .finally(() => client.end());
+    // Test database connection
+    const result: unknown = await AppDataSource.query(
+      'SELECT NOW() as current_time',
+    );
+    const typedResult = result as Array<{ current_time: Date }>;
+    console.log(
+      '✅ Database connection test successful:',
+      typedResult[0]?.current_time,
+    );
+  } catch (err) {
+    console.error('❌ Error during Data Source initialization:', err);
+    throw err;
+  } finally {
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+      console.log('✅ Data Source connection closed');
+    }
+  }
+}
 
-AppDataSource.initialize()
+// Run the test
+testDataSource()
   .then(() => {
-    console.log('Data Source has been initialized!');
+    console.log('🎉 All tests completed successfully!');
+    process.exit(0);
   })
   .catch((err) => {
-    console.error('Error during Data Source initialization:', err);
+    console.error('💥 Test execution failed:', err);
+    process.exit(1);
   });

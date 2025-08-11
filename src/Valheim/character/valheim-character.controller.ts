@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import {
   ValheimCharacterService,
@@ -18,6 +19,14 @@ import {
   UpdateCharacterDto,
   UpdateSkillsDto,
 } from './valheim-character.service';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: number;
+    steamId: string;
+    username: string;
+  };
+}
 
 @Controller('valheim/character')
 export class ValheimCharacterController {
@@ -36,7 +45,7 @@ export class ValheimCharacterController {
    */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getMyCharacter(@Req() req: any) {
+  async getMyCharacter(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return await this.characterService.findByUserId(userId);
   }
@@ -93,7 +102,7 @@ export class ValheimCharacterController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async createCharacter(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() createDto: CreateCharacterDto,
   ) {
     createDto.user_id = req.user.id;
@@ -106,7 +115,7 @@ export class ValheimCharacterController {
   @Put()
   @UseGuards(JwtAuthGuard)
   async updateCharacter(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() updateDto: UpdateCharacterDto,
   ) {
     const userId = req.user.id;
@@ -118,7 +127,10 @@ export class ValheimCharacterController {
    */
   @Put('skills')
   @UseGuards(JwtAuthGuard)
-  async updateSkills(@Req() req: any, @Body() skillsDto: UpdateSkillsDto) {
+  async updateSkills(
+    @Req() req: AuthenticatedRequest,
+    @Body() skillsDto: UpdateSkillsDto,
+  ) {
     const userId = req.user.id;
     return await this.characterService.updateSkills(userId, skillsDto);
   }
@@ -128,7 +140,10 @@ export class ValheimCharacterController {
    */
   @Post('boss/defeat')
   @UseGuards(JwtAuthGuard)
-  async defeatBoss(@Req() req: any, @Body() body: { boss_name: string }) {
+  async defeatBoss(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { boss_name: string },
+  ) {
     const userId = req.user.id;
     return await this.characterService.defeatBoss(userId, body.boss_name);
   }
@@ -139,7 +154,7 @@ export class ValheimCharacterController {
   @Post('location/discover')
   @UseGuards(JwtAuthGuard)
   async discoverLocation(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() body: { location_name: string },
   ) {
     const userId = req.user.id;
@@ -154,7 +169,10 @@ export class ValheimCharacterController {
    */
   @Post('recipe/unlock')
   @UseGuards(JwtAuthGuard)
-  async unlockRecipe(@Req() req: any, @Body() body: { recipe_name: string }) {
+  async unlockRecipe(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { recipe_name: string },
+  ) {
     const userId = req.user.id;
     return await this.characterService.unlockRecipe(userId, body.recipe_name);
   }
@@ -164,7 +182,7 @@ export class ValheimCharacterController {
    */
   @Delete()
   @UseGuards(JwtAuthGuard)
-  async deleteCharacter(@Req() req: any) {
+  async deleteCharacter(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     await this.characterService.delete(userId);
     return { message: 'Character deleted successfully' };
