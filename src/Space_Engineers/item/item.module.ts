@@ -6,10 +6,26 @@ import { ConfigModule } from '@nestjs/config';
 import { User } from 'src/entities/shared/user.entity';
 import { JwtModule } from '@nestjs/jwt'; // JwtModule 추가
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import {
+  SpaceEngineersItem,
+  SpaceEngineersOnlineStorage,
+  SpaceEngineersOnlineStorageItem,
+  SpaceEngineersMarketplaceItem,
+  SpaceEngineersItemDownloadLog,
+  SpaceEngineersDropTable,
+} from 'src/entities/space_engineers';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([
+      User,
+      SpaceEngineersItem,
+      SpaceEngineersOnlineStorage,
+      SpaceEngineersOnlineStorageItem,
+      SpaceEngineersMarketplaceItem,
+      SpaceEngineersItemDownloadLog,
+      SpaceEngineersDropTable,
+    ]),
     JwtModule.registerAsync({
       useFactory: () => ({
         secret: process.env.JWT_SECRET || 'defaultSecret',
