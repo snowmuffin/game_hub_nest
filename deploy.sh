@@ -180,14 +180,32 @@ if [ "$NODE_ENV" = "production" ]; then
     # Nginx 설정 파일 복사
     if [ -f "nginx.conf.example" ]; then
         echo "📝 Deploying Nginx configuration..."
-        sudo cp nginx.conf.example /etc/nginx/sites-available/game-hub-nest
         
-        # 심볼릭 링크 생성 (기존 것이 있으면 제거 후 생성)
-        sudo rm -f /etc/nginx/sites-enabled/game-hub-nest
-        sudo ln -s /etc/nginx/sites-available/game-hub-nest /etc/nginx/sites-enabled/
-        
-        # 기본 사이트 비활성화 (충돌 방지)
-        sudo rm -f /etc/nginx/sites-enabled/default
+        # 배포판별 설정 파일 경로 처리
+        if [ -d "/etc/nginx/sites-available" ]; then
+            # Ubuntu/Debian 방식 (sites-available/sites-enabled)
+            echo "🔍 Using Ubuntu/Debian configuration structure"
+            sudo cp nginx.conf.example /etc/nginx/sites-available/game-hub-nest
+            
+            # 심볼릭 링크 생성 (기존 것이 있으면 제거 후 생성)
+            sudo rm -f /etc/nginx/sites-enabled/game-hub-nest
+            sudo ln -s /etc/nginx/sites-available/game-hub-nest /etc/nginx/sites-enabled/
+            
+            # 기본 사이트 비활성화 (충돌 방지)
+            sudo rm -f /etc/nginx/sites-enabled/default
+        else
+            # RHEL/CentOS/Amazon Linux 방식 (conf.d)
+            echo "🔍 Using RHEL/CentOS/Amazon Linux configuration structure"
+            
+            # conf.d 디렉토리에 직접 배치
+            sudo cp nginx.conf.example /etc/nginx/conf.d/game-hub-nest.conf
+            
+            # 기본 설정 파일 백업 및 비활성화
+            if [ -f "/etc/nginx/conf.d/default.conf" ]; then
+                sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.backup
+                echo "ℹ️ Backed up default.conf to default.conf.backup"
+            fi
+        fi
         
         # Nginx 설정 테스트
         echo "🔍 Testing Nginx configuration..."
