@@ -133,8 +133,7 @@ server {
 # 
 # 2. Set environment variables and generate final config:
 #    export DOMAIN="your-api-domain.com"
-#    export FRONTEND_DOMAIN="your-frontend-domain.com"
-#    envsubst < nginx.conf.example > /etc/nginx/conf.d/game-hub-nest.conf
+#    envsubst '${DOMAIN}' < nginx.conf.example > /etc/nginx/conf.d/game-hub-nest.conf
 # 
 # 3. Obtain SSL certificate:
 #    sudo certbot --nginx -d $DOMAIN

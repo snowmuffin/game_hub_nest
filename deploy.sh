@@ -212,7 +212,7 @@ if [ "$NODE_ENV" = "production" ]; then
         if [ -d "/etc/nginx/sites-available" ]; then
             # Ubuntu/Debian 방식 (sites-available/sites-enabled)
             echo "🔍 Using Ubuntu/Debian configuration structure"
-            envsubst < nginx.conf.example | sudo tee /etc/nginx/sites-available/game-hub-nest > /dev/null
+            envsubst '${DOMAIN}' < nginx.conf.example | sudo tee /etc/nginx/sites-available/game-hub-nest > /dev/null
             
             # 심볼릭 링크 생성 (기존 것이 있으면 제거 후 생성)
             sudo rm -f /etc/nginx/sites-enabled/game-hub-nest
@@ -225,7 +225,7 @@ if [ "$NODE_ENV" = "production" ]; then
             echo "🔍 Using RHEL/CentOS/Amazon Linux configuration structure"
             
             # conf.d 디렉토리에 환경변수 치환하여 배치
-            envsubst < nginx.conf.example | sudo tee /etc/nginx/conf.d/game-hub-nest.conf > /dev/null
+            envsubst '${DOMAIN}' < nginx.conf.example | sudo tee /etc/nginx/conf.d/game-hub-nest.conf > /dev/null
             
             # 기본 설정 파일 백업 및 비활성화
             if [ -f "/etc/nginx/conf.d/default.conf" ]; then
