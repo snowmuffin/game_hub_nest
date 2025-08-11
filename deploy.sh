@@ -199,11 +199,20 @@ if [ "$NODE_ENV" = "production" ]; then
     if [ -f "nginx.conf.example" ]; then
         echo "📝 Deploying Nginx configuration..."
         
+        # 도메인 환경변수 확인
+        if [ -z "$DOMAIN" ]; then
+            echo "❌ DOMAIN environment variable is not set!"
+            echo "💡 Please set DOMAIN in your $ENV_FILE"
+            exit 1
+        fi
+        
+        echo "🌐 Using domain: $DOMAIN"
+        
         # 배포판별 설정 파일 경로 처리
         if [ -d "/etc/nginx/sites-available" ]; then
             # Ubuntu/Debian 방식 (sites-available/sites-enabled)
             echo "🔍 Using Ubuntu/Debian configuration structure"
-            sudo cp nginx.conf.example /etc/nginx/sites-available/game-hub-nest
+            envsubst < nginx.conf.example | sudo tee /etc/nginx/sites-available/game-hub-nest > /dev/null
             
             # 심볼릭 링크 생성 (기존 것이 있으면 제거 후 생성)
             sudo rm -f /etc/nginx/sites-enabled/game-hub-nest
@@ -215,8 +224,8 @@ if [ "$NODE_ENV" = "production" ]; then
             # RHEL/CentOS/Amazon Linux 방식 (conf.d)
             echo "🔍 Using RHEL/CentOS/Amazon Linux configuration structure"
             
-            # conf.d 디렉토리에 직접 배치
-            sudo cp nginx.conf.example /etc/nginx/conf.d/game-hub-nest.conf
+            # conf.d 디렉토리에 환경변수 치환하여 배치
+            envsubst < nginx.conf.example | sudo tee /etc/nginx/conf.d/game-hub-nest.conf > /dev/null
             
             # 기본 설정 파일 백업 및 비활성화
             if [ -f "/etc/nginx/conf.d/default.conf" ]; then
