@@ -66,8 +66,8 @@ server {
     server_name $DOMAIN _;
 
     # IP로 직접 접근하는 경우 (개발/테스트용)
-    location /api/ {
-        proxy_pass http://127.0.0.1:4000/api/;
+    location / {
+        proxy_pass http://127.0.0.1:4000/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -97,7 +97,7 @@ server {
 
     # 헬스체크 엔드포인트
     location /health {
-        proxy_pass http://127.0.0.1:4000/api/health;
+        proxy_pass http://127.0.0.1:4000/health;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -229,7 +229,7 @@ echo "   • HTTPS Port: 443"
 echo "   • Backend: http://127.0.0.1:4000"
 echo ""
 echo "🔗 URLs:"
-echo "   • API: https://$DOMAIN/api/"
+echo "   • API: https://$DOMAIN/"
 echo "   • Health: https://$DOMAIN/health"
 echo ""
 echo "🛠️ Management Commands:"

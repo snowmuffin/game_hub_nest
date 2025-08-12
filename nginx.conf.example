@@ -6,8 +6,8 @@ server {
     server_name ${DOMAIN} _;
 
     # IP로 직접 접근하는 경우 (개발/테스트용)
-    location /api/ {
-        proxy_pass http://127.0.0.1:4000/api/;
+    location / {
+        proxy_pass http://127.0.0.1:4000/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -37,7 +37,7 @@ server {
 
     # 헬스체크 엔드포인트
     location /health {
-        proxy_pass http://127.0.0.1:4000/api/health;
+        proxy_pass http://127.0.0.1:4000/health;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -79,11 +79,11 @@ server {
 #     error_log /var/log/nginx/game-hub-nest.error.log;
 # 
 #     # API 프록시 설정
-#     location /api/ {
+#     location / {
 #         # Rate limiting (DDoS 방지)
 #         limit_req zone=api burst=20 nodelay;
 #         
-#         proxy_pass http://127.0.0.1:4000/api/;
+#         proxy_pass http://127.0.0.1:4000/;
 #         proxy_http_version 1.1;
 #         proxy_set_header Upgrade $http_upgrade;
 #         proxy_set_header Connection 'upgrade';
@@ -101,7 +101,7 @@ server {
 # 
 #     # 헬스체크 엔드포인트
 #     location /health {
-#         proxy_pass http://127.0.0.1:4000/api/health;
+#         proxy_pass http://127.0.0.1:4000/health;
 #         proxy_http_version 1.1;
 #         proxy_set_header Host $host;
 #         proxy_set_header X-Real-IP $remote_addr;

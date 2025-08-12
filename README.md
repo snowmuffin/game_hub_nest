@@ -116,10 +116,10 @@ nano .env
 ### 4️⃣ 접속 확인
 ```bash
 # Health check
-curl http://localhost:4000/api/health
+curl http://localhost:4000/health
 
 # API 문서 (브라우저에서)
-open http://localhost:4000/api
+open http://localhost:4000
 ```
 
 ## ⚙️ 환경 설정

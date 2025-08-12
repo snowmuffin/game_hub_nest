@@ -34,7 +34,7 @@ export class SteamStrategy extends PassportStrategy(Strategy, 'steam') {
   constructor() {
     const config = {
       returnURL:
-        process.env.RETURN_URL || 'http://localhost:3000/api/auth/steam/return',
+        process.env.RETURN_URL || 'http://localhost:3000/auth/steam/return',
       realm: process.env.REALM || 'http://localhost:3000/',
       apiKey: steamApiKey as string, // We've already validated this is not null above
     };
