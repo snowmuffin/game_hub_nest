@@ -1,16 +1,6 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Logger,
-  Get,
-  Options,
-  Res,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Post, Body, Logger, Get } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from 'src/entities/shared/user.entity';
-import { Response } from 'express';
 
 @Controller('user')
 export class UserController {
@@ -32,19 +22,6 @@ export class UserController {
 
     await this.userService.updateOrCreateUser(steamid, nickname);
     return 'User database updated successfully';
-  }
-
-  @Options('rankings')
-  rankingsOptions(@Res() res: Response) {
-    const frontendUrl = process.env.FRONTEND_URL;
-    res.header('Access-Control-Allow-Origin', frontendUrl);
-    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Accept, Accept-Language, Content-Language, Content-Type, Authorization, Cookie, X-Requested-With',
-    );
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.status(HttpStatus.OK).send();
   }
 
   @Get('rankings')
