@@ -31,14 +31,21 @@ async function bootstrap() {
       origin.trim(),
     );
   } else {
-    // 기본값 설정
-    allowedOrigins = isProduction
-      ? ['https://se.snowmuffingame.com', 'https://snowmuffingame.com']
+    // Default values
+    const prodOrigins = (process.env.PROD_CORS_ORIGINS || '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+
+    const devOrigins = process.env.DEV_CORS_ORIGINS
+      ? process.env.DEV_CORS_ORIGINS.split(',').map((origin) => origin.trim())
       : [
           'http://localhost:3000',
           'http://localhost:5173',
           'http://localhost:3001',
         ];
+
+    allowedOrigins = isProduction ? prodOrigins : devOrigins;
   }
 
   console.log('🔐 Allowed CORS origins:', allowedOrigins);

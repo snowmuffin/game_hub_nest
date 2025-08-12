@@ -36,7 +36,8 @@ export class UserController {
 
   @Options('rankings')
   rankingsOptions(@Res() res: Response) {
-    res.header('Access-Control-Allow-Origin', 'https://se.snowmuffingame.com');
+    const frontendUrl = process.env.FRONTEND_URL;
+    res.header('Access-Control-Allow-Origin', frontendUrl);
     res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.header(
       'Access-Control-Allow-Headers',

@@ -62,13 +62,14 @@ export class AuthController {
 
     if (!req.user) {
       console.log('No user found in request'); // Debug log
+      const frontendUrl = process.env.FRONTEND_URL;
       res.status(401).send(`
         <script>
           console.log('Authentication failed - no user');
           if (window.opener) {
             window.opener.postMessage(
               { status: 401, error: 'Steam authentication failed' },
-              'https://se.snowmuffingame.com'
+              '${frontendUrl}'
             );
             window.close();
           } else {
@@ -100,6 +101,7 @@ export class AuthController {
       });
 
       res.setHeader('Authorization', `Bearer ${accessToken}`);
+      const frontendUrl = process.env.FRONTEND_URL;
       res.send(`
         <script>
           console.log('Steam authentication successful');
@@ -115,7 +117,7 @@ export class AuthController {
                 token: "${accessToken}",
                 success: true
               },
-              'https://se.snowmuffingame.com'
+              '${frontendUrl}'
             );
             
             // Close window after short delay
@@ -131,13 +133,14 @@ export class AuthController {
       `);
     } catch (error) {
       console.error('Error in steamLoginReturn:', error); // Debug log
+      const frontendUrl = process.env.FRONTEND_URL;
       res.status(500).send(`
         <script>
           console.error('Server error during authentication');
           if (window.opener) {
             window.opener.postMessage(
               { status: 500, error: 'Server error during authentication' },
-              'https://se.snowmuffingame.com'
+              '${frontendUrl}'
             );
             window.close();
           } else {
