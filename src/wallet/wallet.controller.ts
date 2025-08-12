@@ -28,24 +28,24 @@ interface AuthenticatedRequest {
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
-  // 지갑 생성 또는 조회
+  // Create or get wallet
   @Post('create')
   async createWallet(
     @Body() createWalletDto: CreateWalletDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    // 요청한 사용자의 ID로 제한
+    // Limit to requesting user's ID
     createWalletDto.userId = req.user.id;
     return await this.walletService.getOrCreateWallet(createWalletDto);
   }
 
-  // 내 지갑 목록 조회
+  // Get my wallet list
   @Get('my-wallets')
   async getMyWallets(@Request() req: AuthenticatedRequest) {
     return await this.walletService.getUserWallets(req.user.id);
   }
 
-  // 특정 게임의 내 지갑들 조회
+  // Get my wallets for specific game
   @Get('my-wallets/game/:gameId')
   async getMyWalletsByGame(
     @Param('gameId') gameId: number,
@@ -54,19 +54,19 @@ export class WalletController {
     return await this.walletService.getUserWalletsByGame(req.user.id, gameId);
   }
 
-  // 지갑 잔액 조회
+  // Get wallet balance
   @Get(':walletId/balance')
   async getWalletBalance(@Param('walletId') walletId: number) {
     return await this.walletService.getWalletBalance(walletId);
   }
 
-  // 거래 실행
+  // Execute transaction
   @Post('transaction')
   async executeTransaction(@Body() transactionDto: WalletTransactionDto) {
     return await this.walletService.executeTransaction(transactionDto);
   }
 
-  // 지갑 거래 내역 조회
+  // Get wallet transaction history
   @Get(':walletId/transactions')
   async getWalletTransactions(
     @Param('walletId') walletId: number,
@@ -80,7 +80,7 @@ export class WalletController {
     );
   }
 
-  // 내 모든 거래 내역 조회
+  // Get all my transaction history
   @Get('my-transactions')
   async getMyTransactions(
     @Request() req: AuthenticatedRequest,
@@ -94,7 +94,7 @@ export class WalletController {
     );
   }
 
-  // 지갑 간 전송
+  // Transfer between wallets
   @Post('transfer')
   async transferBetweenWallets(
     @Body()

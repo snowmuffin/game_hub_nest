@@ -68,7 +68,7 @@ export class ValheimCharacterService {
   ) {}
 
   /**
-   * 모든 캐릭터 조회
+   * Find all characters
    */
   async findAll(): Promise<ValheimCharacter[]> {
     return await this.characterRepository.find({
@@ -79,7 +79,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 사용자의 캐릭터 조회
+   * Find character by user ID
    */
   async findByUserId(userId: number): Promise<ValheimCharacter> {
     const character = await this.characterRepository.findOne({
@@ -95,7 +95,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * ID로 캐릭터 조회
+   * Find character by ID
    */
   async findById(id: number): Promise<ValheimCharacter> {
     const character = await this.characterRepository.findOne({
@@ -111,10 +111,10 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 새 캐릭터 생성
+   * Create new character
    */
   async create(createDto: CreateCharacterDto): Promise<ValheimCharacter> {
-    // 사용자 존재 확인
+    // Check user existence
     const user = await this.userRepository.findOne({
       where: { id: createDto.user_id },
     });
@@ -124,7 +124,7 @@ export class ValheimCharacterService {
       );
     }
 
-    // 이미 캐릭터가 있는지 확인
+    // Check if character already exists
     const existingCharacter = await this.characterRepository.findOne({
       where: { user_id: createDto.user_id, is_active: true },
     });
@@ -145,7 +145,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 캐릭터 정보 업데이트
+   * Update character information
    */
   async update(
     userId: number,
@@ -161,7 +161,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 캐릭터 스킬 업데이트
+   * Update character skills
    */
   async updateSkills(
     userId: number,
@@ -169,7 +169,7 @@ export class ValheimCharacterService {
   ): Promise<ValheimCharacter> {
     const character = await this.findByUserId(userId);
 
-    // 스킬 레벨은 0-100 사이여야 함
+    // Skill level must be between 0-100
     for (const [skill, level] of Object.entries(skillsDto)) {
       if (level !== undefined && (level < 0 || level > 100)) {
         throw new BadRequestException(
@@ -186,7 +186,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 보스 처치 기록
+   * Record boss defeat
    */
   async defeatBoss(
     userId: number,
@@ -212,7 +212,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 위치 발견 기록
+   * Record location discovery
    */
   async discoverLocation(
     userId: number,
@@ -238,7 +238,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 제작법 해금
+   * Unlock recipe
    */
   async unlockRecipe(
     userId: number,
@@ -264,7 +264,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 캐릭터 삭제 (비활성화)
+   * Delete character (deactivate)
    */
   async delete(userId: number): Promise<void> {
     const character = await this.findByUserId(userId);
@@ -275,7 +275,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 레벨 랭킹 조회
+   * Get level rankings
    */
   async getLevelRankings(limit: number = 10): Promise<ValheimCharacter[]> {
     return await this.characterRepository.find({
@@ -287,7 +287,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 스킬 랭킹 조회
+   * Get skill rankings
    */
   async getSkillRankings(
     skillName: string,
@@ -303,7 +303,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 플레이 시간 랭킹 조회
+   * Get playtime rankings
    */
   async getPlayTimeRankings(limit: number = 10): Promise<ValheimCharacter[]> {
     return await this.characterRepository.find({
@@ -315,7 +315,7 @@ export class ValheimCharacterService {
   }
 
   /**
-   * 캐릭터 통계
+   * Character statistics
    */
   async getCharacterStats(): Promise<{
     total_characters: number;

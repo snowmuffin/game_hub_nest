@@ -78,7 +78,7 @@ export class UserService {
   }
 
   /**
-   * 테스트 사용자 삭제 (steam_id가 'test_'로 시작하는 사용자들)
+   * Delete test user (steam_id가 'test_'로 시작하는 사용자들)
    */
   async cleanupTestUsers(): Promise<void> {
     this.logger.log('Cleaning up test users...');

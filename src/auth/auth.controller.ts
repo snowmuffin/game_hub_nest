@@ -48,7 +48,7 @@ export class AuthController {
   @Get('steam')
   @UseGuards(AuthGuard('steam'))
   async steamLogin(): Promise<void> {
-    // Steam 인증으로 리다이렉트 (passport-steam이 자동 처리)
+    // Redirect to Steam authentication (automatically handled by passport-steam)
   }
 
   @Get('steam/return')
@@ -57,11 +57,11 @@ export class AuthController {
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ): Promise<void> {
-    console.log('Steam return endpoint hit'); // 디버깅용
-    console.log('User:', req.user); // 디버깅용
+    console.log('Steam return endpoint hit'); // Debug log
+    console.log('User:', req.user); // Debug log
 
     if (!req.user) {
-      console.log('No user found in request'); // 디버깅용
+      console.log('No user found in request'); // Debug log
       res.status(401).send(`
         <script>
           console.log('Authentication failed - no user');
@@ -81,7 +81,7 @@ export class AuthController {
 
     try {
       const user = await this.authService.findOrCreateUser(req.user);
-      console.log('User found/created:', user); // 디버깅용
+      console.log('User found/created:', user); // Debug log
 
       const accessToken = this.authService.generateJwtToken(user);
       const refreshToken = this.authService.generateRefreshToken(user);
@@ -89,14 +89,14 @@ export class AuthController {
         user,
       ) as FormattedUserData;
 
-      console.log('Tokens generated successfully'); // 디버깅용
+      console.log('Tokens generated successfully'); // Debug log
 
-      // HTTP 환경에서는 secure: false로 설정
+      // Set secure: false for HTTP environment
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: false, // HTTP 환경에서는 false
-        sameSite: 'lax', // 'strict'에서 'lax'로 변경
-        domain: '.snowmuffingame.com', // 도메인 설정
+        secure: false, // false for HTTP environment
+        sameSite: 'lax', // Changed from 'strict' to 'lax'
+        domain: '.snowmuffingame.com', // Domain setting
       });
 
       res.setHeader('Authorization', `Bearer ${accessToken}`);
@@ -118,7 +118,7 @@ export class AuthController {
               'https://se.snowmuffingame.com'
             );
             
-            // 짧은 지연 후 창 닫기
+            // Close window after short delay
             setTimeout(() => {
               window.close();
             }, 1000);
@@ -130,7 +130,7 @@ export class AuthController {
         </script>
       `);
     } catch (error) {
-      console.error('Error in steamLoginReturn:', error); // 디버깅용
+      console.error('Error in steamLoginReturn:', error); // Debug log
       res.status(500).send(`
         <script>
           console.error('Server error during authentication');
@@ -154,15 +154,15 @@ export class AuthController {
     @Query('username') username: string,
   ) {
     try {
-      // 테스트 사용자를 생성하거나 기존 사용자 조회
+      // Create or find test user
       const testSteamId = steamId || 'test_user_999999';
       const testUsername = username || 'TestUser';
 
-      // 데이터베이스에서 테스트 사용자 조회 또는 생성
+      // Find or create test user in database
       let testUser = await this.userService.findBySteamId(testSteamId);
 
       if (!testUser) {
-        // 테스트 사용자가 없으면 생성
+        // Create test user if not found
         testUser = await this.userService.createTestUser(
           testSteamId,
           testUsername,

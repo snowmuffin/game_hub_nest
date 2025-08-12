@@ -3,7 +3,7 @@ import { User } from '../entities/shared/user.entity';
 import { AppDataSource } from '../data-source';
 
 /**
- * 테스트 전용 사용자 관리 유틸리티
+ * Test-only user management utility
  */
 export class TestUserManager {
   private dataSource: DataSource;
@@ -19,10 +19,10 @@ export class TestUserManager {
   }
 
   /**
-   * 테스트 사용자 생성 또는 조회
-   * @param steamId 스팀 ID (기본값: test_user_999999)
-   * @param username 사용자명 (기본값: TestUser)
-   * @returns 생성되거나 기존 테스트 사용자
+   * Create or get test user
+   * @param steamId Steam ID (default: test_user_999999)
+   * @param username Username (default: TestUser)
+   * @returns Created or existing test user
    */
   async createOrGetTestUser(
     steamId: string = 'test_user_999999',
@@ -30,7 +30,7 @@ export class TestUserManager {
   ): Promise<User> {
     const userRepository = this.dataSource.getRepository(User);
 
-    // 기존 테스트 사용자 확인
+    // Check existing test user
     let testUser = await userRepository.findOne({
       where: { steam_id: steamId },
     });
@@ -42,7 +42,7 @@ export class TestUserManager {
       return testUser;
     }
 
-    // 새 테스트 사용자 생성
+    // Create new test user
     testUser = new User();
     testUser.steam_id = steamId;
     testUser.username = username;
@@ -60,8 +60,8 @@ export class TestUserManager {
   }
 
   /**
-   * 테스트 사용자 삭제
-   * @param steamId 삭제할 테스트 사용자의 스팀 ID
+   * Delete test user
+   * @param steamId Steam ID of test user to delete
    */
   async deleteTestUser(steamId: string): Promise<void> {
     const userRepository = this.dataSource.getRepository(User);
@@ -81,12 +81,12 @@ export class TestUserManager {
   }
 
   /**
-   * 모든 테스트 사용자 삭제 (steam_id가 'test_'로 시작하는 사용자들)
+   * 모든 Delete test user (steam_id가 'test_'로 시작하는 사용자들)
    */
   async cleanupAllTestUsers(): Promise<void> {
     const userRepository = this.dataSource.getRepository(User);
 
-    // 쿼리빌더 사용
+    // Use query builder
     const testUsersQuery = await userRepository
       .createQueryBuilder('user')
       .where('user.steam_id LIKE :pattern', { pattern: 'test_%' })
@@ -101,7 +101,7 @@ export class TestUserManager {
   }
 
   /**
-   * 테스트 사용자 목록 조회
+   * Get test user list
    */
   async listTestUsers(): Promise<User[]> {
     const userRepository = this.dataSource.getRepository(User);
@@ -121,7 +121,7 @@ export class TestUserManager {
   }
 }
 
-// CLI 스크립트로 사용할 수 있도록
+// For use as CLI script
 if (require.main === module) {
   async function main() {
     const manager = new TestUserManager();

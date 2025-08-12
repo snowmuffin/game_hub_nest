@@ -33,7 +33,7 @@ export class JwtAuthGuard implements CanActivate {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService, // ConfigService 주입
+    private readonly configService: ConfigService, // Inject ConfigService
   ) {}
 
   canActivate(context: ExecutionContext): boolean {

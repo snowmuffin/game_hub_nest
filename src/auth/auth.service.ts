@@ -33,19 +33,19 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // 액세스 토큰 생성
+  // Generate access token
   generateJwtToken(user: UserPayload): string {
     const payload = { sub: user.id, username: user.username };
-    return this.jwtService.sign(payload, { expiresIn: '15m' }); // 액세스 토큰 유효 기간: 15분
+    return this.jwtService.sign(payload, { expiresIn: '15m' }); // Access token expiry: 15 minutes
   }
 
-  // 리프레시 토큰 생성
+  // Generate refresh token
   generateRefreshToken(user: UserPayload): string {
     const payload = { sub: user.id, username: user.username };
-    return this.jwtService.sign(payload, { expiresIn: '7d' }); // 리프레시 토큰 유효 기간: 7일
+    return this.jwtService.sign(payload, { expiresIn: '7d' }); // Refresh token expiry: 7 days
   }
 
-  // 사용자 데이터 포맷팅
+  // Format user data
   formatUserData(user: User): FormattedUserData {
     return {
       id: user.id,

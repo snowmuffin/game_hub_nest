@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ItemService } from './item.service';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard'; // Guard 경로
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard'; // Guard path
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -40,16 +40,16 @@ interface ItemListEntry {
   [key: string]: any; // Since we don't know the exact structure
 }
 
-@Controller('space-engineers/item') // 엔드포인트에 space_engineers 추가
+@Controller('space-engineers/item') // Add space_engineers to endpoint
 export class ItemController {
   private readonly logger = new Logger(ItemController.name);
 
   constructor(private readonly itemService: ItemService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard) // 인증 Guard 적용
+  @UseGuards(JwtAuthGuard) // Apply authentication guard
   async getItems(@Req() req: AuthenticatedRequest) {
-    const userId = req.user?.id; // steamId 대신 id 사용
+    const userId = req.user?.id; // Use id instead of steamId
     if (!userId) {
       this.logger.error(`Authorization header is missing or invalid.`);
       throw new UnauthorizedException(

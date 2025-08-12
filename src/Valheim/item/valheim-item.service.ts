@@ -65,7 +65,7 @@ export class ValheimItemService {
   ) {}
 
   /**
-   * 모든 Valheim 아이템 조회
+   * Get all Valheim items
    */
   async findAll(searchDto?: ValheimItemSearchDto): Promise<ValheimItem[]> {
     const queryBuilder = this.valheimItemRepository.createQueryBuilder('item');
@@ -117,7 +117,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 아이템 코드로 조회
+   * Get item by code
    */
   async findByItemCode(itemCode: string): Promise<ValheimItem> {
     const item = await this.valheimItemRepository.findOne({
@@ -134,7 +134,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 타입별 아이템 조회
+   * Get items by type
    */
   async findByType(type: ValheimItemType): Promise<ValheimItem[]> {
     return await this.valheimItemRepository.find({
@@ -144,7 +144,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 바이옴별 아이템 조회
+   * Get items by biome
    */
   async findByBiome(biome: string): Promise<ValheimItem[]> {
     return await this.valheimItemRepository
@@ -155,7 +155,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 거래 가능한 아이템 조회
+   * Get tradeable items
    */
   async findTradeableItems(): Promise<ValheimItem[]> {
     return await this.valheimItemRepository.find({
@@ -165,7 +165,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 포탈 이동 가능한 아이템 조회
+   * Get teleportable items
    */
   async findTeleportableItems(): Promise<ValheimItem[]> {
     return await this.valheimItemRepository.find({
@@ -175,7 +175,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 새 아이템 생성
+   * Create new item
    */
   async create(createDto: CreateValheimItemDto): Promise<ValheimItem> {
     const existingItem = await this.valheimItemRepository.findOne({
@@ -196,7 +196,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 아이템 정보 업데이트
+   * Update item information
    */
   async update(
     id: number,
@@ -212,7 +212,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 아이템 삭제
+   * Delete item
    */
   async delete(id: number): Promise<void> {
     const item = await this.findById(id);
@@ -222,7 +222,7 @@ export class ValheimItemService {
   }
 
   /**
-   * 아이템 통계
+   * Item statistics
    */
   async getItemStats(): Promise<ItemStatsDto> {
     const totalItems = await this.valheimItemRepository.count();

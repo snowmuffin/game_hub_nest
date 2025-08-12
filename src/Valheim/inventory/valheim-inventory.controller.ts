@@ -33,7 +33,7 @@ export class ValheimInventoryController {
   constructor(private readonly inventoryService: ValheimInventoryService) {}
 
   /**
-   * 현재 사용자의 전체 인벤토리 조회
+   * Get current user's full inventory
    */
   @Get()
   async getMyInventory(@Req() req: AuthenticatedRequest) {
@@ -42,7 +42,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 특정 사용자의 인벤토리 조회 (관리자용)
+   * Get specific user's inventory (admin only)
    */
   @Get('user/:userId')
   async getUserInventory(@Param('userId', ParseIntPipe) userId: number) {
@@ -50,7 +50,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 보관 타입별 인벤토리 조회
+   * Get inventory by storage type
    */
   @Get('storage/:storageType')
   async getInventoryByStorageType(
@@ -65,7 +65,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 특정 아이템의 보유 수량 조회
+   * Get item quantity
    */
   @Get('item/:itemId/quantity')
   async getItemQuantity(
@@ -81,7 +81,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 인벤토리 통계
+   * Inventory statistics
    */
   @Get('stats')
   async getInventoryStats(
@@ -92,20 +92,20 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 인벤토리에 아이템 추가
+   * Add item to inventory
    */
   @Post('add')
   async addItem(
     @Req() req: AuthenticatedRequest,
     @Body() addDto: AddItemToInventoryDto,
   ) {
-    // 사용자 ID를 토큰에서 설정
+    // Set user ID from token
     addDto.user_id = req.user.id;
     return await this.inventoryService.addItem(addDto);
   }
 
   /**
-   * 인벤토리에서 아이템 제거
+   * Remove item from inventory
    */
   @Delete('remove')
   async removeItem(
@@ -118,7 +118,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 인벤토리 아이템 업데이트
+   * Update inventory item
    */
   @Put(':inventoryId')
   async updateInventoryItem(
@@ -132,7 +132,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 아이템 이동 (보관소 변경)
+   * Move item (change storage)
    */
   @Put(':inventoryId/move')
   async moveItem(
@@ -147,7 +147,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 인벤토리 초기화
+   * Clear inventory
    */
   @Delete('clear')
   async clearInventory(@Req() req: AuthenticatedRequest) {

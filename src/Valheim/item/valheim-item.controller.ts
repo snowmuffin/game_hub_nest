@@ -25,7 +25,7 @@ export class ValheimItemController {
   constructor(private readonly valheimItemService: ValheimItemService) {}
 
   /**
-   * 모든 Valheim 아이템 조회
+   * Get all Valheim items
    */
   @Get()
   async getAllItems(@Query() searchDto: ValheimItemSearchDto) {
@@ -33,7 +33,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 특정 아이템 조회 (ID)
+   * Get specific item (ID)
    */
   @Get(':id')
   async getItemById(@Param('id', ParseIntPipe) id: number) {
@@ -41,7 +41,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 아이템 코드로 조회
+   * Get item by code
    */
   @Get('code/:itemCode')
   async getItemByCode(@Param('itemCode') itemCode: string) {
@@ -49,7 +49,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 타입별 아이템 조회
+   * Get items by type
    */
   @Get('type/:type')
   async getItemsByType(@Param('type') type: ValheimItemType) {
@@ -57,7 +57,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 바이옴별 아이템 조회
+   * Get items by biome
    */
   @Get('biome/:biome')
   async getItemsByBiome(@Param('biome') biome: string) {
@@ -65,7 +65,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 거래 가능한 아이템 조회
+   * Get tradeable items
    */
   @Get('filter/tradeable')
   async getTradeableItems() {
@@ -73,7 +73,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 포탈 이동 가능한 아이템 조회
+   * Get teleportable items
    */
   @Get('filter/teleportable')
   async getTeleportableItems() {
@@ -81,7 +81,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 아이템 통계
+   * Item statistics
    */
   @Get('stats/overview')
   async getItemStats(): Promise<ItemStatsDto> {
@@ -89,7 +89,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 새 아이템 생성 (관리자 전용)
+   * Create new item (admin only)
    */
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -98,7 +98,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 아이템 정보 업데이트 (관리자 전용)
+   * Update item information (admin only)
    */
   @Put(':id')
   @UseGuards(JwtAuthGuard)
@@ -110,7 +110,7 @@ export class ValheimItemController {
   }
 
   /**
-   * 아이템 삭제 (관리자 전용)
+   * Delete item (admin only)
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)

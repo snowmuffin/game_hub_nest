@@ -33,7 +33,7 @@ export class ValheimCharacterController {
   constructor(private readonly characterService: ValheimCharacterService) {}
 
   /**
-   * 모든 캐릭터 조회 (랭킹)
+   * Get all characters (ranking)
    */
   @Get()
   async getAllCharacters() {
@@ -41,7 +41,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 현재 사용자의 캐릭터 조회
+   * Get current user's character
    */
   @Get('me')
   @UseGuards(JwtAuthGuard)
@@ -51,7 +51,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 특정 캐릭터 조회
+   * Get specific character
    */
   @Get(':id')
   async getCharacterById(@Param('id', ParseIntPipe) id: number) {
@@ -59,7 +59,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 레벨 랭킹 조회
+   * Get level rankings
    */
   @Get('rankings/level')
   async getLevelRankings(@Query('limit') limit: string = '10') {
@@ -67,7 +67,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 스킬 랭킹 조회
+   * Get skill rankings
    */
   @Get('rankings/skill/:skillName')
   async getSkillRankings(
@@ -81,7 +81,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 플레이 시간 랭킹 조회
+   * Get playtime rankings
    */
   @Get('rankings/playtime')
   async getPlayTimeRankings(@Query('limit') limit: string = '10') {
@@ -89,7 +89,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 캐릭터 통계
+   * Get character statistics
    */
   @Get('stats/overview')
   async getCharacterStats() {
@@ -97,7 +97,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 새 캐릭터 생성
+   * Create new character
    */
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -110,7 +110,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 캐릭터 정보 업데이트
+   * Update character information
    */
   @Put()
   @UseGuards(JwtAuthGuard)
@@ -123,7 +123,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 캐릭터 스킬 업데이트
+   * Update character skills
    */
   @Put('skills')
   @UseGuards(JwtAuthGuard)
@@ -136,7 +136,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 보스 처치 기록
+   * Record boss defeat
    */
   @Post('boss/defeat')
   @UseGuards(JwtAuthGuard)
@@ -149,7 +149,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 위치 발견 기록
+   * Record location discovery
    */
   @Post('location/discover')
   @UseGuards(JwtAuthGuard)
@@ -165,7 +165,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 제작법 해금
+   * Unlock recipe
    */
   @Post('recipe/unlock')
   @UseGuards(JwtAuthGuard)
@@ -178,7 +178,7 @@ export class ValheimCharacterController {
   }
 
   /**
-   * 캐릭터 삭제
+   * Delete character
    */
   @Delete()
   @UseGuards(JwtAuthGuard)

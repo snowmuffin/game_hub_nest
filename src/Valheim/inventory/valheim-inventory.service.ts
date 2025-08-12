@@ -53,7 +53,7 @@ export class ValheimInventoryService {
   ) {}
 
   /**
-   * 사용자의 전체 인벤토리 조회
+   * Get user's full inventory
    */
   async getUserInventory(userId: number): Promise<ValheimInventory[]> {
     return await this.inventoryRepository.find({
@@ -64,7 +64,7 @@ export class ValheimInventoryService {
   }
 
   /**
-   * 특정 보관 타입의 아이템들 조회
+   * Get items by storage type
    */
   async getUserInventoryByStorageType(
     userId: number,
@@ -81,7 +81,7 @@ export class ValheimInventoryService {
   }
 
   /**
-   * 특정 아이템의 총 수량 조회
+   * Get total quantity of specific item
    */
   async getItemQuantity(userId: number, itemId: number): Promise<number> {
     // TypeORM raw queries return 'any' by design - this is safe as we handle the result properly
@@ -98,10 +98,10 @@ export class ValheimInventoryService {
   }
 
   /**
-   * 인벤토리에 아이템 추가
+   * Add item to inventory
    */
   async addItem(addDto: AddItemToInventoryDto): Promise<ValheimInventory> {
-    // 사용자 및 아이템 존재 확인
+    // Check user and item existence
     const user = await this.userRepository.findOne({
       where: { id: addDto.user_id },
     });
@@ -116,14 +116,14 @@ export class ValheimInventoryService {
       throw new NotFoundException(`Item with ID ${addDto.item_id} not found`);
     }
 
-    // 스택 제한 확인
+    // Check stack limit
     if (addDto.quantity > item.max_stack) {
       throw new BadRequestException(
         `Quantity ${addDto.quantity} exceeds max stack size ${item.max_stack}`,
       );
     }
 
-    // 기존 동일한 아이템이 있는지 확인 (품질, 내구도 등이 같으면 스택 가능)
+    // Check if same item exists (stackable if quality, durability match)
     const existingItem = await this.inventoryRepository.findOne({
       where: {
         user_id: addDto.user_id,
@@ -138,7 +138,7 @@ export class ValheimInventoryService {
       existingItem &&
       existingItem.quantity + addDto.quantity <= item.max_stack
     ) {
-      // 기존 아이템에 수량 추가
+      // Add quantity to existing item
       existingItem.quantity += addDto.quantity;
       const updatedItem = await this.inventoryRepository.save(existingItem);
 
@@ -147,7 +147,7 @@ export class ValheimInventoryService {
       );
       return updatedItem;
     } else {
-      // 새로운 인벤토리 항목 생성
+      // Create new inventory item
       const inventoryItem = this.inventoryRepository.create({
         ...addDto,
         quality: addDto.quality || ValheimItemQuality.LEVEL_1,
@@ -164,7 +164,7 @@ export class ValheimInventoryService {
   }
 
   /**
-   * 인벤토리 아이템 수량 감소
+   * Reduce inventory item quantity
    */
   async removeItem(
     userId: number,
@@ -173,7 +173,7 @@ export class ValheimInventoryService {
   ): Promise<void> {
     const inventoryItems = await this.inventoryRepository.find({
       where: { user_id: userId, item_id: itemId },
-      order: { created_at: 'ASC' }, // 오래된 것부터 제거
+      order: { created_at: 'ASC' }, // Remove oldest first
     });
 
     if (inventoryItems.length === 0) {
@@ -197,11 +197,11 @@ export class ValheimInventoryService {
       if (remainingToRemove <= 0) break;
 
       if (inventoryItem.quantity <= remainingToRemove) {
-        // 전체 스택 제거
+        // Remove entire stack
         remainingToRemove -= inventoryItem.quantity;
         await this.inventoryRepository.remove(inventoryItem);
       } else {
-        // 일부만 제거
+        // Remove partial
         inventoryItem.quantity -= remainingToRemove;
         await this.inventoryRepository.save(inventoryItem);
         remainingToRemove = 0;
@@ -214,7 +214,7 @@ export class ValheimInventoryService {
   }
 
   /**
-   * 인벤토리 아이템 업데이트
+   * Update inventory item
    */
   async updateInventoryItem(
     inventoryId: number,
@@ -231,7 +231,7 @@ export class ValheimInventoryService {
       );
     }
 
-    // 수량 제한 확인
+    // Check quantity limit
     if (
       updateDto.quantity &&
       updateDto.quantity > inventoryItem.item.max_stack
@@ -249,7 +249,7 @@ export class ValheimInventoryService {
   }
 
   /**
-   * 아이템 이동 (보관소 변경)
+   * Move item (change storage)
    */
   async moveItem(
     inventoryId: number,
@@ -263,7 +263,7 @@ export class ValheimInventoryService {
   }
 
   /**
-   * 사용자의 인벤토리 통계
+   * 사용자의 Inventory statistics
    */
   async getInventoryStats(userId: number): Promise<InventoryStatsDto> {
     // TypeORM raw queries return 'any' by design - this is safe as we handle the result properly
@@ -301,7 +301,7 @@ export class ValheimInventoryService {
   }
 
   /**
-   * 인벤토리 초기화 (모든 아이템 삭제)
+   * Clear inventory (모든 Delete item)
    */
   async clearInventory(userId: number): Promise<void> {
     await this.inventoryRepository.delete({ user_id: userId });
