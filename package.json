@@ -29,6 +29,7 @@
     "db:generate-migration": "npm run migration:generate InitialSchema",
     "db:init-schemas": "npx ts-node src/utils/init-schemas.ts",
     "db:safe-migration": "npm run db:init-schemas && npm run migration:run",
+    "db:production-setup": "npx ts-node src/utils/production-schema-setup.ts",
     "db:dev-setup": "npm run db:init-schemas && npm run db:generate-first-migration && npm run migration:run",
     "db:generate-first-migration": "npm run migration:generate -- InitialSchema || echo 'Migration generation completed or no changes detected'",
     "generate:game-module": "node scripts/generate-game-module.js",
