@@ -8,7 +8,7 @@ export class DamageLogsController {
 
   @Get()
   logGetRequest(@Req() req: Request): string {
-    console.log('GET Request received at /api/damage_logs:', req.query);
+    console.log('GET Request received at /damage_logs:', req.query);
     return 'GET request logged';
   }
 

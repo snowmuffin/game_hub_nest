@@ -111,8 +111,8 @@ nano .env
 
 ### 4️⃣ Verify
 ```bash
-curl http://localhost:4000/api/health
-open http://localhost:4000/api
+curl http://localhost:4000/health
+open http://localhost:4000
 ```
 
 ## ⚙️ Environment Configuration

@@ -93,8 +93,8 @@ async function bootstrap() {
     console.log('');
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🌐 Server URL: ${serverUrl}`);
-    console.log(`📝 API Base: ${serverUrl}/api`);
-    console.log(`🏥 Health Check: ${serverUrl}/api/health`);
+    console.log(`📝 API Base: ${serverUrl}`);
+    console.log(`🏥 Health Check: ${serverUrl}/health`);
 
     if (domain) {
       console.log(`🔗 Domain: ${domain}`);
@@ -107,8 +107,8 @@ async function bootstrap() {
     console.log(`   • Cookie Parser: Enabled`);
     console.log('');
     console.log('📝 Useful URLs:');
-    console.log(`   • API Documentation: ${serverUrl}/api/docs`);
-    console.log(`   • Metrics: ${serverUrl}/api/metrics`);
+    console.log(`   • API Documentation: ${serverUrl}/docs`);
+    console.log(`   • Metrics: ${serverUrl}/metrics`);
     console.log('');
   });
 }

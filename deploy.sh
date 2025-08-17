@@ -139,7 +139,7 @@ MAX_ATTEMPTS=5
 for i in $(seq 1 $MAX_ATTEMPTS); do
     echo "🔍 Health check attempt $i/$MAX_ATTEMPTS..."
     
-    if curl -f -s http://localhost:4000/api/health > /dev/null 2>&1; then
+    if curl -f -s http://localhost:4000/health > /dev/null 2>&1; then
         echo "✅ Health check passed! Application is running healthy."
         break
     else
@@ -282,7 +282,7 @@ echo ""
 echo "📊 Application Status:"
 echo "   • Port: 4000"
 echo "   • Environment: $NODE_ENV"
-echo "   • Health endpoint: http://localhost:4000/api/health"
+echo "   • Health endpoint: http://localhost:4000/health"
 echo ""
 echo "🛠️ Management Commands:"
 echo "   • Check status: pm2 status"
