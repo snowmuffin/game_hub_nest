@@ -79,10 +79,6 @@ async function bootstrap() {
     }),
   );
 
-  // 🌐 API 글로벌 프리픽스
-  app.setGlobalPrefix('api');
-
-  // 🚀 서버 시작
   await app.listen(port, host, () => {
     const serverUrl = baseUrl || `http://${host}:${port}`;
 
