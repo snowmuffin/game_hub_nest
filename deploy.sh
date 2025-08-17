@@ -69,12 +69,28 @@ else
     echo "✅ DB_HOST is set: $DB_HOST"
 fi
 
-if [ -z "$DB_DATABASE" ]; then
-    echo "❌ DB_DATABASE is not set!"
-    echo "💡 Please set DB_DATABASE in your $ENV_FILE"
+if [ -z "$DB_NAME" ]; then
+    echo "❌ DB_NAME is not set!"
+    echo "💡 Please set DB_NAME in your $ENV_FILE"
     exit 1
 else
-    echo "✅ DB_DATABASE is set: $DB_DATABASE"
+    echo "✅ DB_NAME is set: $DB_NAME"
+fi
+
+if [ -z "$DB_USER" ]; then
+    echo "❌ DB_USER is not set!"
+    echo "💡 Please set DB_USER in your $ENV_FILE"
+    exit 1
+else
+    echo "✅ DB_USER is set: $DB_USER"
+fi
+
+if [ -z "$DB_PASSWORD" ]; then
+    echo "❌ DB_PASSWORD is not set!"
+    echo "💡 Please set DB_PASSWORD in your $ENV_FILE"
+    exit 1
+else
+    echo "✅ DB_PASSWORD is set (${DB_PASSWORD:0:3}...)"
 fi
 
 # 프로덕션 환경에서 추가 검사
