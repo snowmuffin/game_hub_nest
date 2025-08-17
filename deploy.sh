@@ -27,6 +27,79 @@ echo "📋 Using environment file: $ENV_FILE"
 source $ENV_FILE
 echo "✅ Environment variables loaded"
 
+# 🔍 중요한 환경변수 확인
+echo ""
+echo "🔍 Verifying critical environment variables..."
+echo "================================================"
+
+# Steam OAuth 관련 환경변수 확인
+if [ -z "$STEAM_API_KEY" ]; then
+    echo "❌ STEAM_API_KEY is not set!"
+    echo "💡 Please set STEAM_API_KEY in your $ENV_FILE"
+    exit 1
+else
+    echo "✅ STEAM_API_KEY is set (${STEAM_API_KEY:0:8}...)"
+fi
+
+if [ -z "$RETURN_URL" ]; then
+    echo "⚠️  RETURN_URL is not set, using default: http://localhost:3000/auth/steam/return"
+else
+    echo "✅ RETURN_URL is set: $RETURN_URL"
+fi
+
+if [ -z "$REALM" ]; then
+    echo "⚠️  REALM is not set, using default: http://localhost:3000/"
+else
+    echo "✅ REALM is set: $REALM"
+fi
+
+# JWT 관련 환경변수 확인
+if [ -z "$JWT_SECRET" ]; then
+    echo "❌ JWT_SECRET is not set!"
+    echo "💡 Please set JWT_SECRET in your $ENV_FILE"
+    exit 1
+else
+    echo "✅ JWT_SECRET is set (${JWT_SECRET:0:8}...)"
+fi
+
+# 데이터베이스 관련 환경변수 확인
+if [ -z "$DB_HOST" ]; then
+    echo "⚠️  DB_HOST is not set, using default"
+else
+    echo "✅ DB_HOST is set: $DB_HOST"
+fi
+
+if [ -z "$DB_DATABASE" ]; then
+    echo "❌ DB_DATABASE is not set!"
+    echo "💡 Please set DB_DATABASE in your $ENV_FILE"
+    exit 1
+else
+    echo "✅ DB_DATABASE is set: $DB_DATABASE"
+fi
+
+# 프로덕션 환경에서 추가 검사
+if [ "$NODE_ENV" = "production" ]; then
+    if [ -z "$DOMAIN" ]; then
+        echo "❌ DOMAIN is not set for production!"
+        echo "💡 Please set DOMAIN in your $ENV_FILE"
+        exit 1
+    else
+        echo "✅ DOMAIN is set: $DOMAIN"
+    fi
+    
+    # HTTPS 관련 URL 확인
+    if [[ "$RETURN_URL" != https://* ]] && [[ "$RETURN_URL" != http://localhost* ]]; then
+        echo "⚠️  RETURN_URL should use HTTPS in production: $RETURN_URL"
+    fi
+    
+    if [[ "$REALM" != https://* ]] && [[ "$REALM" != http://localhost* ]]; then
+        echo "⚠️  REALM should use HTTPS in production: $REALM"
+    fi
+fi
+
+echo "================================================"
+echo ""
+
 # 📊 Node.js 버전 확인
 NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
 echo "📊 Current Node.js version: $(node --version)"
