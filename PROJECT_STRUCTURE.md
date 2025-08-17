@@ -1,68 +1,68 @@
-# Game Hub NestJS Backend - 프로젝트 구조 가이드
+# Game Hub NestJS Backend - Project Structure Guide
 
-## 📁 디렉토리 구조
+## 📁 Directory Layout
 
 ```
 game_hub_nest/
-├── 📝 환경 설정 및 문서
-│   ├── .env.example                    # 환경변수 템플릿
-│   ├── package.json                    # 프로젝트 의존성 및 스크립트
-│   ├── tsconfig.json                   # TypeScript 설정
-│   ├── nest-cli.json                   # NestJS CLI 설정
-│   ├── ecosystem.config.js             # PM2 배포 설정
-│   ├── docker-compose.yml              # Docker 개발환경
-│   ├── Dockerfile                      # Docker 이미지 빌드
-│   ├── nginx.conf.example              # Nginx 설정 템플릿
-│   └── .gitignore                      # Git 제외 파일 목록
+├── 📝 Config & Root Docs
+│   ├── .env.example                    # Environment variable template
+│   ├── package.json                    # Dependencies & scripts
+│   ├── tsconfig.json                   # TypeScript config
+│   ├── nest-cli.json                   # Nest CLI config
+│   ├── ecosystem.config.js             # PM2 process config
+│   ├── docker-compose.yml              # Dev/test docker stack
+│   ├── Dockerfile                      # Image build recipe
+│   ├── nginx.conf.example              # Nginx reverse proxy template
+│   └── .gitignore                      # Git ignore rules
 │
-├── 🚀 배포 및 운영
-│   ├── deploy.sh                       # 자동 배포 스크립트
-│   ├── start-dev.sh                    # 개발환경 시작 스크립트
-│   ├── cleanup.sh                      # 프로젝트 정리 스크립트
-│   ├── server-setup.sh                 # 서버 초기 설정
-│   ├── DEPLOYMENT.md                   # 배포 가이드
-│   ├── AWS_DEPLOYMENT_GUIDE.md         # AWS 배포 가이드
-│   └── logs/                           # 애플리케이션 로그
+├── 🚀 Deployment & Ops
+│   ├── deploy.sh                       # Automated deployment script
+│   ├── start-dev.sh                    # Local dev bootstrap
+│   ├── cleanup.sh                      # Cleanup helper
+│   ├── server-setup.sh                 # Initial server provisioning
+│   ├── DEPLOYMENT.md (missing)         # Deployment guide (referenced, not present)
+│   ├── AWS_DEPLOYMENT_GUIDE.md (missing) # AWS deployment guide (referenced, not present)
+│   └── logs/                           # Runtime logs (git-ignored)
 │
-├── 🗄️ 데이터베이스 관리
-│   ├── src/data-source.ts              # TypeORM 데이터소스 설정
-│   ├── src/migrations/                 # 데이터베이스 마이그레이션
-│   ├── SCHEMA_DESIGN.md                # 스키마 설계 문서
-│   ├── MIGRATION_SAFETY_GUIDE.md       # 안전한 마이그레이션 가이드
-│   └── WALLET_SYSTEM.md                # 지갑 시스템 설계 문서
+├── 🗄️ Database
+│   ├── src/data-source.ts              # TypeORM data source
+│   ├── src/migrations/                 # Migration files
+│   ├── SCHEMA_DESIGN.md (missing)      # Schema design doc (referenced, not present)
+│   ├── MIGRATION_SAFETY_GUIDE.md (missing) # Migration safety doc (use DATABASE_MIGRATION_GUIDE.md)
+│   └── WALLET_SYSTEM.md (missing)      # Wallet design doc (planned)
 │
-├── 📚 프로젝트 문서
-│   ├── README.md                       # 프로젝트 메인 문서
-│   ├── PROJECT_STRUCTURE.md            # 프로젝트 구조 가이드
-│   └── PROJECT_CLEANUP_REPORT.md       # 정리 작업 보고서
+├── 📚 Documentation
+│   ├── README.md                       # Main project overview
+│   ├── PROJECT_STRUCTURE.md            # This structure guide
+│   └── PROJECT_CLEANUP_REPORT.md (missing) # Cleanup report (referenced, not present)
 │
-├── 🎯 핵심 애플리케이션
+├── 🎯 Core Application
 │   ├── src/
-│   │   ├── main.ts                     # 애플리케이션 진입점
-│   │   ├── app.module.ts               # 루트 모듈
-│   │   ├── app.controller.ts           # 기본 컨트롤러
-│   │   └── app.service.ts              # 기본 서비스
+│   │   ├── main.ts                     # Application bootstrap
+│   │   ├── app.module.ts               # Root module
+│   │   ├── app.controller.ts           # Basic controller
+│   │   └── app.service.ts              # Basic service
 │   │
-│   ├── 🔐 인증 시스템
+│   ├── 🔐 Authentication
 │   │   └── src/auth/
-│   │       ├── auth.module.ts          # 인증 모듈
-│   │       ├── auth.controller.ts      # 인증 컨트롤러
-│   │       ├── auth.service.ts         # 인증 서비스
-│   │       ├── jwt-auth.guard.ts       # JWT 가드
-│   │       └── steam.strategy.ts       # Steam OAuth 전략
+│   │       ├── auth.module.ts          # Auth module
+│   │       ├── auth.controller.ts      # Auth endpoints
+│   │       ├── auth.service.ts         # Auth logic
+│   │       ├── jwt-auth.guard.ts       # JWT guard
+│   │       └── steam.strategy.ts       # Steam OAuth strategy
 │   │
-│   ├── 👤 사용자 관리
-│   │   └── src/user/                   # 사용자 모듈
+│   ├── 👤 Users
+│   │   └── src/user/                   # User module
 │   │
-│   ├── 💰 지갑 시스템
+│   ├── 💰 Wallet System
 │   │   └── src/wallet/
 │   │       └── src/entities/
 │   │           ├── wallet.entity.ts
 │   │           ├── currency.entity.ts
 │   │           └── wallet-transaction.entity.ts
 │   │
-│   ├── 🎮 게임 공통
-│   │   ├── src/game/                   # 게임 관리 모듈
+│   ├── 🎮 Game Core
+│   │   ├── src/game/                   # Game registry & logic
 │   │   └── src/entities/
 │   │       ├── game.entity.ts
 │   │       └── game-server.entity.ts
@@ -70,62 +70,62 @@ game_hub_nest/
 │   ├── 🚀 Space Engineers
 │   │   └── src/Space_Engineers/
 │   │       ├── space-engineers.module.ts
-│   │       ├── item/                   # 아이템 관리
-│   │       ├── storage/                # 온라인 스토리지
-│   │       └── damage-logs/            # 데미지 로그
+│   │       ├── item/                   # Item management
+│   │       ├── storage/                # Online storage
+│   │       └── damage-logs/            # Damage logs
 │   │
 │   ├── ⚔️ Valheim
 │   │   └── src/Valheim/
 │   │       ├── valheim.module.ts
-│   │       ├── character/              # 캐릭터 관리
-│   │       ├── world/                  # 월드 관리
-│   │       └── inventory/              # 인벤토리 관리
+│   │       ├── character/              # Character domain
+│   │       ├── world/                  # World domain
+│   │       └── inventory/              # Inventory domain
 │   │
-│   ├── 🛠️ 유틸리티
-│   │   ├── src/middleware/             # 미들웨어 (로깅 등)
-│   │   └── src/utils/                  # 공통 유틸리티
+│   ├── 🛠️ Utilities
+│   │   ├── src/middleware/             # Logging & other middleware
+│   │   └── src/utils/                  # Shared utilities
 │   │
-│   └── 🧪 테스트
-│       └── test/                       # 테스트 파일들
+│   └── 🧪 Tests
+│       └── test/                       # Test files
 ```
 
-## 🔧 주요 구성 요소
+## 🔧 Key Components
 
-### 1. 환경 설정
-- **개발/프로덕션 환경 분리**: `.env` 파일 기반
-- **TypeScript 설정**: 엄격한 타입 체크
-- **ESLint + Prettier**: 코드 품질 관리
+### 1. Environment Configuration
+- Separate dev/prod via `.env`
+- Strict TypeScript compiler settings
+- ESLint + Prettier for style & consistency
 
-### 2. 데이터베이스 아키텍처
-- **하이브리드 스키마 구조**:
-  - `public`: 공통 데이터 (users, wallets, games)
-  - `space_engineers`: Space Engineers 전용 데이터
-  - `valheim`: Valheim 전용 데이터
-- **TypeORM**: ORM 및 마이그레이션 관리
-- **PostgreSQL**: 프로덕션 데이터베이스
+### 2. Database Architecture
+- Hybrid schema layout:
+  - `public`: shared data (users, wallets, games)
+  - `space_engineers`: Space Engineers domain
+  - `valheim`: Valheim domain
+- TypeORM migrations for evolution
+- PostgreSQL as primary store
 
-### 3. 인증 시스템
-- **JWT 토큰**: API 인증
-- **Steam OAuth**: 게임 플랫폼 연동
-- **Role-based Access Control**: 권한 기반 접근 제어
+### 3. Authentication System
+- JWT for API auth
+- Steam OAuth strategy
+- Role-based access control (extensible)
 
-### 4. 멀티게임 지갑 시스템
-- **통합 지갑**: 게임 간 화폐 공유
-- **거래 내역**: 모든 거래 추적
-- **다중 화폐**: 게임별 화폐 지원
+### 4. Multi-Game Wallet System
+- Unified or per‑game currency handling
+- Full transaction history
+- Multi-currency extensibility
 
-### 5. 배포 및 운영
-- **PM2**: 프로세스 관리
-- **Nginx**: 리버스 프록시
-- **Docker**: 컨테이너화
-- **자동 배포**: 스크립트 기반 배포
+### 5. Deployment & Operations
+- PM2 process supervision
+- Nginx reverse proxy
+- Docker containerization
+- Scripted deployment pipeline
 
-## 📊 모듈 의존성
+## 📊 Module Dependencies
 
 ```
 AppModule
-├── ConfigModule (전역)
-├── TypeOrmModule (전역)
+├── ConfigModule (global)
+├── TypeOrmModule (global)
 ├── AuthModule
 │   ├── JwtModule
 │   └── PassportModule
@@ -137,50 +137,53 @@ AppModule
 │   ├── StorageModule
 │   └── DamageLogsModule
 └── ValheimModule
-    ├── CharacterModule
-    ├── WorldModule
-    └── InventoryModule
+  ├── CharacterModule
+  ├── WorldModule
+  └── InventoryModule
 ```
 
-## 🎯 개발 가이드라인
+## 🎯 Development Guidelines
 
-### 1. 새 게임 추가 시
-1. `src/{GameName}/` 디렉토리 생성
-2. `{GameName}Module` 생성
-3. 게임별 스키마 생성
-4. Entity 클래스에 스키마 명시
-5. `AppModule`에 등록
+### 1. Adding a New Game
+1. Create `src/{GameName}/` directory
+2. Implement `{GameName}Module`
+3. Create dedicated DB schema
+4. Annotate entities with `@Entity({ schema: '{game_schema}' })`
+5. Register the module in `AppModule`
 
-### 2. API 개발 시
-1. DTO 클래스 정의
-2. Entity 관계 설정
-3. Service 로직 구현
-4. Controller 엔드포인트 작성
-5. 가드 및 인터셉터 적용
+### 2. Building an API Module
+1. Define DTOs (validation with class-validator)
+2. Model entities & relationships
+3. Implement service logic (transaction boundaries where needed)
+4. Expose controller endpoints with proper HTTP codes
+5. Apply guards/interceptors (auth, logging, caching as needed)
 
-### 3. 데이터베이스 변경 시
-1. 마이그레이션 생성: `npm run migration:generate`
-2. 백업 생성: 자동화된 백업 스크립트 사용
-3. 안전한 배포: 단계별 마이그레이션
+### 3. Database Changes
+1. Generate migration: `npm run migration:generate -- --name <Name>`
+2. Review and adjust SQL if necessary
+3. Backup production DB
+4. Apply: `npm run migration:run`
+5. Monitor logs & rollback with `npm run migration:revert` if issues occur
 
-## 🔍 코드 품질 관리
+## 🔍 Code Quality
 
-- **ESLint**: 코드 스타일 체크
-- **Prettier**: 코드 포맷팅
-- **Jest**: 단위 테스트
-- **TypeScript**: 타입 안전성
-- **Husky**: Git 훅 (예정)
+- **ESLint**: linting rules enforcement
+- **Prettier**: consistent formatting
+- **Jest**: unit & (future) e2e tests
+- **TypeScript**: static type safety
+- **Husky (planned)**: pre-commit hooks
 
-## 📈 성능 최적화
+## 📈 Performance
 
-- **PM2 클러스터 모드**: 멀티 프로세스
-- **데이터베이스 인덱싱**: 쿼리 최적화
-- **캐싱 전략**: Redis (예정)
-- **API 응답 압축**: gzip
+- **PM2 cluster mode** for multi-process scaling
+- **DB indexing** on high-read columns
+- **Redis caching (planned)** for hot paths
+- **Gzip compression** via Nginx or middleware
 
-## 🛡️ 보안 고려사항
+## 🛡️ Security Considerations
 
-- **환경변수**: 민감한 정보 분리
-- **CORS 설정**: 화이트리스트 기반
-- **Rate Limiting**: API 호출 제한 (예정)
-- **Input Validation**: DTO 기반 검증
+- **Environment isolation** for secrets
+- **CORS whitelist** configuration
+- **Rate limiting (planned)** to mitigate abuse
+- **Input validation** via DTOs
+- **JWT rotation (future)** for enhanced token security
