@@ -1,240 +1,283 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# 🌐 Game Hub NestJS - Nginx 설정 스크립트
-# SSL/TLS 인증서 포함 완전한 웹서버 설정
+# Game Hub NestJS - Reusable / Idempotent Nginx Setup Script
+# Re-run safe: cleans old conflicting configs, (re)deploys HTTP->HTTPS & proxy blocks.
 
-set -e
+set -euo pipefail
+IFS=$'\n\t'
 
-echo "🌐 Starting Nginx setup for Game Hub..."
+SCRIPT_NAME=$(basename "$0")
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+# Defaults
+DOMAIN_DEFAULT="api.snowmuffingame.com"
+EMAIL_DEFAULT="admin@snowmuffingame.com"
+BACKEND_HOST_DEFAULT="127.0.0.1"
+BACKEND_PORT_DEFAULT="4000"
+CONFIG_BASENAME="game-hub-nest"
+FORCE=0
+NO_SSL=0
+REISSUE_SSL=0
+RESET=0
+DOMAIN="${DOMAIN:-}" # allow pre-set via env
+EMAIL=""
+BACKEND_HOST="${BACKEND_HOST:-$BACKEND_HOST_DEFAULT}"
+BACKEND_PORT="${BACKEND_PORT:-$BACKEND_PORT_DEFAULT}"
+
+usage() {
+    cat <<USAGE
+$SCRIPT_NAME [options]
+    --domain=DOMAIN         FQDN (default: $DOMAIN_DEFAULT)
+    --email=EMAIL           Certbot email (default: $EMAIL_DEFAULT)
+    --backend-host=HOST     Upstream host (default: $BACKEND_HOST_DEFAULT)
+    --backend-port=PORT     Upstream port (default: $BACKEND_PORT_DEFAULT)
+    --force                 Skip confirmations (non-interactive)
+    --no-ssl                Do not configure / request SSL
+    --reissue-ssl           Force reissue certificate (delete existing)
+    --reset                 Remove old configs for the domain first
+    -h|--help               Show this help
+USAGE
+}
+
+for arg in "$@"; do
+    case $arg in
+        --domain=*) DOMAIN="${arg#*=}" ;;
+        --email=*) EMAIL="${arg#*=}" ;;
+        --backend-host=*) BACKEND_HOST="${arg#*=}" ;;
+        --backend-port=*) BACKEND_PORT="${arg#*=}" ;;
+        --force) FORCE=1 ;;
+        --no-ssl) NO_SSL=0; NO_SSL=1 ;;
+        --reissue-ssl) REISSUE_SSL=1 ;;
+        --reset) RESET=1 ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Unknown option: $arg"; usage; exit 1 ;;
+    esac
+done
+
+# Load .env last (does not override explicit flags)
+if [ -f .env ]; then
+    set -a; source .env; set +a || true
+fi
+
+DOMAIN=${DOMAIN:-$DOMAIN_DEFAULT}
+EMAIL=${EMAIL:-$EMAIL_DEFAULT}
+
+echo "========================================="
+echo "🌐 Nginx setup start"
+echo "Domain        : $DOMAIN"
+echo "Backend       : $BACKEND_HOST:$BACKEND_PORT"
+echo "Email         : $EMAIL"
+echo "SSL disabled? : $NO_SSL"
+echo "Force mode    : $FORCE"
+echo "Reset configs : $RESET"
+echo "Reissue SSL   : $REISSUE_SSL"
+echo "Timestamp     : $TIMESTAMP"
 echo "========================================="
 
-# .env 파일에서 DOMAIN 읽어오기
-if [ -f ".env" ]; then
-    source .env
-    echo "✅ Loaded configuration from .env"
-else
-    echo "⚠️  .env file not found, using defaults"
-fi
-
-# 도메인 설정 확인 (명령행 인수 > .env > 기본값 순서)
-DOMAIN=${1:-${DOMAIN:-api.snowmuffingame.com}}
-echo "🔗 Domain: $DOMAIN"
-
-# Nginx 설치
-if ! command -v nginx &> /dev/null; then
-    echo "📦 Installing Nginx..."
-    
-    # 배포판별 패키지 매니저 감지
-    if command -v dnf &> /dev/null; then
-        # Amazon Linux 2023, RHEL, CentOS, Fedora
-        echo "🔍 Detected: Amazon Linux/RHEL/CentOS/Fedora (using dnf)"
-        sudo dnf update -y
-        sudo dnf install -y nginx
-    elif command -v yum &> /dev/null; then
-        # Amazon Linux 2, older RHEL/CentOS
-        echo "🔍 Detected: Amazon Linux 2/older RHEL/CentOS (using yum)"
-        sudo yum update -y
-        sudo yum install -y nginx
-    elif command -v apt &> /dev/null; then
-        # Ubuntu, Debian
-        echo "🔍 Detected: Ubuntu/Debian (using apt)"
-        sudo apt update
-        sudo apt install -y nginx
-    elif command -v pacman &> /dev/null; then
-        # Arch Linux
-        echo "🔍 Detected: Arch Linux (using pacman)"
-        sudo pacman -Sy --noconfirm nginx
-    else
-        echo "❌ Unsupported package manager. Please install nginx manually."
-        exit 1
+confirm() {
+    local msg="$1"
+    if [ $FORCE -eq 1 ]; then
+        return 0
     fi
-    
-    echo "✅ Nginx installed"
-else
-    echo "✅ Nginx is already installed"
-fi
+    read -r -p "$msg (y/N): " ans
+    [[ $ans =~ ^[Yy]$ ]]
+}
 
-# 설정 파일 생성 (도메인 기반)
-echo "📝 Creating Nginx configuration for $DOMAIN..."
+pkg_install() {
+    local pkg=$1
+    if command -v dnf >/dev/null 2>&1; then sudo dnf install -y "$pkg"; 
+    elif command -v yum >/dev/null 2>&1; then sudo yum install -y "$pkg"; 
+    elif command -v apt >/dev/null 2>&1; then sudo apt update && sudo apt install -y "$pkg"; 
+    elif command -v pacman >/dev/null 2>&1; then sudo pacman -Sy --noconfirm "$pkg"; 
+    else echo "❌ Unsupported package manager"; exit 1; fi
+}
 
-cat > /tmp/game-hub-nest-nginx.conf << EOF
-# Game Hub NestJS - Nginx Configuration
+ensure_nginx() {
+    if ! command -v nginx >/dev/null 2>&1; then
+        echo "📦 Installing nginx..."
+        pkg_install nginx
+    else
+        echo "✅ nginx present"
+    fi
+}
 
-# HTTP Server (개발/테스트용 + HTTPS 리다이렉트)
+ensure_certbot() {
+    if [ $NO_SSL -eq 1 ]; then return 0; fi
+    if ! command -v certbot >/dev/null 2>&1; then
+        echo "📦 Installing certbot + nginx plugin"
+        if command -v dnf >/dev/null 2>&1; then
+            pkg_install certbot
+            pkg_install python3-certbot-nginx || true
+        elif command -v yum >/dev/null 2>&1; then
+            sudo yum install -y epel-release
+            pkg_install certbot
+            pkg_install python3-certbot-nginx || true
+        else
+            pkg_install certbot
+            pkg_install python3-certbot-nginx || true
+        fi
+    else
+        echo "✅ certbot present"
+    fi
+}
+
+detect_layout() {
+    if [ -d /etc/nginx/sites-available ]; then
+        LAYOUT="debian"
+        CONF_DIR="/etc/nginx/sites-available"
+        ENABLED_DIR="/etc/nginx/sites-enabled"
+    else
+        LAYOUT="rhel"
+        CONF_DIR="/etc/nginx/conf.d"
+        ENABLED_DIR="/etc/nginx/conf.d"
+    fi
+    echo "🔍 Layout: $LAYOUT (conf dir: $CONF_DIR)"
+}
+
+backup_dir="/tmp/nginx-backups-$TIMESTAMP"
+mkdir -p "$backup_dir"
+
+remove_conflicts() {
+    echo "🧹 Scanning for existing config referencing $DOMAIN..."
+    local hits
+    hits=$(grep -R "server_name[[:space:]]\+$DOMAIN" "$CONF_DIR" 2>/dev/null || true)
+    if [ -n "$hits" ]; then
+        echo "⚠️  Found existing config(s). Backing up to $backup_dir"
+        echo "$hits" | awk -F: '{print $1}' | sort -u | while read -r f; do
+            [ -f "$f" ] || continue
+            cp "$f" "$backup_dir/"$(basename "$f")
+            if confirm "Remove old config $f?"; then sudo rm -f "$f"; fi
+        done
+    else
+        echo "✅ No conflicting configs"
+    fi
+}
+
+disable_default() {
+    # Common default files
+    for df in /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf; do
+        if [ -f "$df" ]; then
+            cp "$df" "$backup_dir/" 2>/dev/null || true
+            sudo rm -f "$df"
+            echo "🚫 Disabled default: $df"
+        fi
+    done
+}
+
+write_config() {
+    local target="$CONF_DIR/$CONFIG_BASENAME-$DOMAIN.conf"
+    echo "� Writing config -> $target"
+    local acme_root="/var/www/certbot"
+    sudo mkdir -p "$acme_root"
+
+    cat > /tmp/nginx-domain.conf <<CFG
+# Generated by $SCRIPT_NAME at $TIMESTAMP
+
 server {
     listen 80;
-    server_name $DOMAIN _;
+    listen [::]:80;
+    server_name $DOMAIN;
+    # ACME challenge
+    location /.well-known/acme-challenge/ { root $acme_root; }
+    location = /health { proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/health; }
+    # Redirect to HTTPS if SSL enabled
+    $( [ $NO_SSL -eq 1 ] && echo "# SSL disabled: no redirect" || echo "return 301 https://\$host\$request_uri;" )
+}
 
-    # IP로 직접 접근하는 경우 (개발/테스트용)
+$( if [ $NO_SSL -eq 0 ]; then cat <<SSL
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name $DOMAIN;
+
+    ssl_certificate     /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/$DOMAIN/chain.pem;
+
+    # Security headers (basic)
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-Content-Type-Options nosniff;
+    add_header Referrer-Policy strict-origin-when-cross-origin;
+
+    # Gzip (light)
+    gzip on; gzip_types text/plain application/json application/javascript text/css;
+
+    set $upstream "$BACKEND_HOST:$BACKEND_PORT";
     location / {
-        proxy_pass http://127.0.0.1:4000/;
+        proxy_pass http://$BACKEND_HOST:$BACKEND_PORT;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
+        proxy_set_header Connection \${connection_upgrade:-upgrade};
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-        
-        # CORS headers for development
-        add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Credentials' 'true' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS, PATCH' always;
-        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,Cookie' always;
-        
-        if (\$request_method = 'OPTIONS') {
-            add_header 'Access-Control-Allow-Origin' '*';
-            add_header 'Access-Control-Allow-Credentials' 'true';
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
-            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,Cookie';
-            add_header 'Access-Control-Max-Age' 1728000;
-            add_header 'Content-Type' 'text/plain; charset=utf-8';
-            add_header 'Content-Length' 0;
-            return 204;
-        }
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_read_timeout 60s;
     }
 
-    # 헬스체크 엔드포인트
-    location /health {
-        proxy_pass http://127.0.0.1:4000/health;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    # HTTPS로 리다이렉트 (도메인 접근시에만)
-    if (\$host = $DOMAIN) {
-        return 301 https://\$server_name\$request_uri;
-    }
+    location = /health { proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/health; }
 }
-EOF
+SSL
+fi )
+CFG
 
-# 설정 파일 배포
-echo "📝 Deploying Nginx configuration..."
-
-# 배포판별 설정 파일 경로 처리
-if [ -d "/etc/nginx/sites-available" ]; then
-    # Ubuntu/Debian 방식 (sites-available/sites-enabled)
-    echo "🔍 Using Ubuntu/Debian configuration structure"
-    sudo mv /tmp/game-hub-nest-nginx.conf /etc/nginx/sites-available/game-hub-nest
-    
-    # 심볼릭 링크 생성
-    sudo rm -f /etc/nginx/sites-enabled/game-hub-nest
-    sudo ln -s /etc/nginx/sites-available/game-hub-nest /etc/nginx/sites-enabled/
-    
-    # 기본 사이트 비활성화
-    sudo rm -f /etc/nginx/sites-enabled/default
-else
-    # RHEL/CentOS/Amazon Linux 방식 (conf.d)
-    echo "🔍 Using RHEL/CentOS/Amazon Linux configuration structure"
-    
-    # conf.d 디렉토리에 직접 배치
-    sudo mv /tmp/game-hub-nest-nginx.conf /etc/nginx/conf.d/game-hub-nest.conf
-    
-    # 기본 설정 파일 백업 및 비활성화
-    if [ -f "/etc/nginx/conf.d/default.conf" ]; then
-        sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.backup
-        echo "ℹ️ Backed up default.conf to default.conf.backup"
+    sudo mv /tmp/nginx-domain.conf "$target"
+    if [ "$LAYOUT" = "debian" ]; then
+        sudo ln -sf "$target" "$ENABLED_DIR/"
     fi
-fi
+}
 
-# Nginx 설정 테스트
-echo "🔍 Testing Nginx configuration..."
-if sudo nginx -t; then
-    echo "✅ Nginx configuration test passed"
-    
-    # Nginx 재시작
-    echo "🔄 Restarting Nginx..."
-    sudo systemctl restart nginx
-    sudo systemctl enable nginx
-    echo "✅ Nginx restarted and enabled"
-else
-    echo "❌ Nginx configuration test failed"
-    exit 1
-fi
+test_and_reload() {
+    echo "🔍 Testing nginx syntax"; sudo nginx -t
+    echo "� Reloading nginx"; sudo systemctl reload nginx || sudo systemctl restart nginx
+    sudo systemctl enable nginx >/dev/null 2>&1 || true
+    echo "✅ Nginx active: $(systemctl is-active nginx)"
+}
 
-# SSL 인증서 설정
-echo ""
-echo "🔒 Setting up SSL certificate with Let's Encrypt..."
-read -p "Do you want to set up SSL certificate now? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    # Certbot 설치
-    if ! command -v certbot &> /dev/null; then
-        echo "📦 Installing Certbot..."
-        
-        # 배포판별 certbot 설치
-        if command -v dnf &> /dev/null; then
-            # Amazon Linux 2023, RHEL, CentOS, Fedora
-            sudo dnf install -y certbot python3-certbot-nginx
-        elif command -v yum &> /dev/null; then
-            # Amazon Linux 2, older RHEL/CentOS
-            # EPEL 저장소 필요
-            sudo yum install -y epel-release
-            sudo yum install -y certbot python3-certbot-nginx
-        elif command -v apt &> /dev/null; then
-            # Ubuntu, Debian
-            sudo apt install -y certbot python3-certbot-nginx
-        elif command -v pacman &> /dev/null; then
-            # Arch Linux
-            sudo pacman -S --noconfirm certbot certbot-nginx
-        else
-            echo "❌ Unsupported package manager for certbot installation."
-            echo "💡 Please install certbot manually for your distribution."
-            exit 1
-        fi
-        
-        echo "✅ Certbot installed"
+issue_cert() {
+    [ $NO_SSL -eq 1 ] && return 0
+    local live_dir="/etc/letsencrypt/live/$DOMAIN"
+    if [ $REISSUE_SSL -eq 1 ] && [ -d "$live_dir" ]; then
+        echo "♻️  Reissue requested: backing up & removing existing cert"
+        sudo tar -czf "/tmp/cert-$DOMAIN-$TIMESTAMP.tgz" "$live_dir" 2>/dev/null || true
+        sudo rm -rf "/etc/letsencrypt/live/$DOMAIN" "/etc/letsencrypt/archive/$DOMAIN" "/etc/letsencrypt/renewal/$DOMAIN.conf" || true
     fi
-    
-    # SSL 인증서 획득
-    echo "🔐 Obtaining SSL certificate for $DOMAIN..."
-    sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@snowmuffingame.com
-    
-    # 자동 갱신 테스트
-    echo "🔄 Testing certificate auto-renewal..."
-    sudo certbot renew --dry-run
-    
-    echo "✅ SSL certificate setup completed"
-else
-    echo "⏭️ SSL setup skipped. You can run it later with:"
-    echo "   # For Amazon Linux/RHEL/CentOS:"
-    echo "   sudo dnf install certbot python3-certbot-nginx"
-    echo "   # For Ubuntu/Debian:"
-    echo "   sudo apt install certbot python3-certbot-nginx"
-    echo "   # Then obtain certificate:"
-    echo "   sudo certbot --nginx -d $DOMAIN"
-fi
+    if [ ! -d "$live_dir" ]; then
+        echo "🔐 Obtaining certificate for $DOMAIN"
+        sudo certbot certonly --webroot -w /var/www/certbot -d "$DOMAIN" --agree-tos -m "$EMAIL" --non-interactive --quiet || {
+            echo "❌ Cert issuance failed"; exit 1; }
+    else
+        echo "✅ Certificate already exists"
+    fi
+}
 
-# 방화벽 설정
-if command -v ufw &> /dev/null; then
-    echo "🔥 Configuring firewall..."
-    sudo ufw allow 'Nginx Full'
-    sudo ufw allow 22
-    echo "✅ Firewall configured"
-fi
+summary() {
+    cat <<SUM
+=========================================
+✅ Completed Nginx Setup
+Domain     : $DOMAIN
+Backend    : $BACKEND_HOST:$BACKEND_PORT
+SSL        : $( [ $NO_SSL -eq 1 ] && echo disabled || echo enabled )
+Config Dir : $CONF_DIR
+Backups    : $backup_dir
+curl test  : curl -I http://${DOMAIN}/health
+$( [ $NO_SSL -eq 1 ] || echo "HTTPS test : curl -I https://${DOMAIN}/health" )
+=========================================
+SUM
+}
 
-echo ""
-echo "🎉 ==============================================="
-echo "🎉 Nginx setup completed successfully!"
-echo "🎉 ==============================================="
-echo ""
-echo "📊 Configuration Summary:"
-echo "   • Domain: $DOMAIN"
-echo "   • HTTP Port: 80 (redirects to HTTPS)"
-echo "   • HTTPS Port: 443"
-echo "   • Backend: http://127.0.0.1:4000"
-echo ""
-echo "🔗 URLs:"
-echo "   • API: https://$DOMAIN/"
-echo "   • Health: https://$DOMAIN/health"
-echo ""
-echo "🛠️ Management Commands:"
-echo "   • Test config: sudo nginx -t"
-echo "   • Reload: sudo systemctl reload nginx"
-echo "   • Status: sudo systemctl status nginx"
-echo "   • Logs: sudo tail -f /var/log/nginx/access.log"
-echo ""
+main() {
+    ensure_nginx
+    detect_layout
+    disable_default
+    if [ $RESET -eq 1 ]; then remove_conflicts; fi
+    write_config
+    test_and_reload
+    ensure_certbot
+    issue_cert || true
+    if [ $NO_SSL -eq 0 ]; then write_config; test_and_reload; fi
+    summary
+}
+
+main "$@"
