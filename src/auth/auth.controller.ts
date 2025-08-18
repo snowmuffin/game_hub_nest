@@ -6,7 +6,6 @@ import {
   Res,
   UseGuards,
   Query,
-  Body,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response, Request } from 'express';
@@ -24,13 +23,17 @@ export class AuthController {
 
   @Get('steam')
   @UseGuards(AuthGuard('steam'))
-  async steamLogin(@Req() req, @Res() res: Response) {
-    // Steam 인증으로 리다이렉트 (passport-steam이 자동 처리)
+  steamLogin() {
+    // Guard triggers redirect.
   }
 
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
-  async steamLoginReturn(@Req() req, @Res() res: Response) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async steamLoginReturn(
+    @Req() req: Request & { user?: any },
+    @Res() res: Response,
+  ) {
     console.log('Steam return endpoint hit'); // 디버깅용
     console.log('User:', req.user); // 디버깅용
 
@@ -54,7 +57,8 @@ export class AuthController {
     }
 
     try {
-      const user = await this.authService.findOrCreateUser(req.user);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const user = await this.authService.findOrCreateUser((req as any).user);
       console.log('User found/created:', user); // 디버깅용
 
       const accessToken = this.authService.generateJwtToken(user);
@@ -63,12 +67,15 @@ export class AuthController {
 
       console.log('Tokens generated successfully'); // 디버깅용
 
-      // HTTP 환경에서는 secure: false로 설정
+      // Dynamic cookie flags (improved)
+      const isProd = process.env.NODE_ENV === 'production';
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: false, // HTTP 환경에서는 false
-        sameSite: 'lax', // 'strict'에서 'lax'로 변경
-        domain: '.snowmuffingame.com', // 도메인 설정
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
+        domain: '.snowmuffingame.com',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       res.setHeader('Authorization', `Bearer ${accessToken}`);
@@ -90,7 +97,6 @@ export class AuthController {
               'https://se.snowmuffingame.com'
             );
             
-            // 짧은 지연 후 창 닫기
             setTimeout(() => {
               window.close();
             }, 1000);
@@ -126,15 +132,12 @@ export class AuthController {
     @Query('username') username: string,
   ) {
     try {
-      // 테스트 사용자를 생성하거나 기존 사용자 조회
       const testSteamId = steamId || 'test_user_999999';
       const testUsername = username || 'TestUser';
 
-      // 데이터베이스에서 테스트 사용자 조회 또는 생성
       let testUser = await this.userService.findBySteamId(testSteamId);
 
       if (!testUser) {
-        // 테스트 사용자가 없으면 생성
         testUser = await this.userService.createTestUser(
           testSteamId,
           testUsername,
@@ -162,23 +165,25 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refreshAccessToken(@Req() req: Request, @Res() res: Response) {
-    const refreshToken = req.cookies['refreshToken'];
+  refreshAccessToken(
+    @Req() req: Request & { cookies?: Record<string, string> },
+    @Res() res: Response,
+  ) {
+    const refreshToken = req.cookies?.['refreshToken'];
 
     if (!refreshToken) {
       return res.status(401).json({ message: 'Refresh token is missing' });
     }
 
     try {
-      const decoded = this.jwtService.verify(refreshToken, {
+      const decoded = this.jwtService.verify(refreshToken ?? '', {
         secret: process.env.JWT_SECRET || 'defaultSecret',
       });
-
       const user = { id: decoded.sub, username: decoded.username };
       const newAccessToken = this.authService.generateJwtToken(user);
 
       return res.json({ token: newAccessToken });
-    } catch (error) {
+    } catch {
       return res
         .status(401)
         .json({ message: 'Invalid or expired refresh token' });
