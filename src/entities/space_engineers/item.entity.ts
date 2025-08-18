@@ -25,7 +25,7 @@ export class SpaceEngineersItem {
    * Internal game identifier used by Space Engineers engine
    * Matches the item's internal name or ID within the game's data files
    */
-  @Column({ name: 'index_name', type: 'varchar', length: 255 })
+  @Column({ name: 'index_name', type: 'varchar', length: 255, unique: true })
   indexName: string;
 
   /**
