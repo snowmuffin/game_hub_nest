@@ -31,12 +31,27 @@ export class DamageLogsService {
 
   async processDamageLogs(logs: unknown[]): Promise<void> {
     for (const raw of logs) {
-      if (!this.isValidDamageLog(raw)) {
-        console.error(`Invalid log entry: ${JSON.stringify(raw)}`);
+      // Explicit server_id presence check (fail fast if missing or invalid)
+      const candidate = raw as Record<string, unknown> | null;
+      const candidateServerId = candidate?.['server_id'];
+      if (
+        typeof candidateServerId !== 'number' ||
+        Number.isNaN(candidateServerId)
+      ) {
+        console.error(
+          `Missing or invalid server_id on damage log, skipping: ${JSON.stringify(raw)}`,
+        );
         continue;
       }
 
-      const { steam_id, damage /* server_id */ } = raw; // server_id reserved for future multi-server logic
+      if (!this.isValidDamageLog(raw)) {
+        console.error(
+          `Invalid log entry (shape mismatch): ${JSON.stringify(raw)}`,
+        );
+        continue;
+      }
+
+      const { steam_id, damage, server_id } = raw; // server_id validated above
 
       // Basic sanity check (damage should be finite & non-negative)
       if (!Number.isFinite(damage) || damage < 0) {
@@ -67,8 +82,7 @@ export class DamageLogsService {
       }
 
       try {
-        await this.userRepository.increment({ steam_id }, 'score', damage);
-        console.log(`Updated score for steam_id=${steam_id} by ${damage}`);
+        //await this.userRepository.increment({ steam_id }, 'score', damage);
       } catch (error) {
         console.error(`Error updating score for steam_id=${steam_id}:`, error);
       }
