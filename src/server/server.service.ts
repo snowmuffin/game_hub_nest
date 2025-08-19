@@ -100,4 +100,9 @@ export class ServerService {
   async deactivate(id: number): Promise<GameServer> {
     return this.update(id, { isActive: false });
   }
+
+  async getStatus(id: number): Promise<{ status: string }> {
+    const server = await this.findById(id);
+    return { status: server.is_active ? 'active' : 'inactive' };
+  }
 }

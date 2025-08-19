@@ -31,6 +31,10 @@ export class ServerController {
   async get(@Param('id') id: number) {
     return await this.serverService.findById(Number(id));
   }
+  @Get(':id/status')
+  async status(@Param('id') id: number) {
+    return await this.serverService.getStatus(Number(id));
+  }
 
   @Patch(':id')
   async update(@Param('id') id: number, @Body() dto: UpdateServerDto) {
