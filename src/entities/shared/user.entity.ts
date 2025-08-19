@@ -62,4 +62,11 @@ export class User {
   /** Timestamp when the user account was last updated */
   @UpdateDateColumn()
   updated_at: Date;
+
+  /**
+   * Timestamp of the user's last activity (e.g., login or meaningful action)
+   * Nullable for legacy rows; set to current time on create/login.
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  last_active_at: Date | null;
 }

@@ -16,6 +16,7 @@ export class UserService {
     let user = await this.userRepository.findOne({
       where: { steam_id: steamid },
     });
+    const now = new Date();
 
     if (!user) {
       this.logger.log(
@@ -24,8 +25,9 @@ export class UserService {
       user = this.userRepository.create({
         steam_id: steamid,
         username: nickname,
-        created_at: new Date(), // Set created_at to the current timestamp
-        updated_at: new Date(), // Set updated_at to the current timestamp
+        created_at: now, // Set created_at to the current timestamp
+        updated_at: now, // Set updated_at to the current timestamp
+        last_active_at: now, // Initialize last active timestamp
       });
       await this.userRepository.save(user);
       this.logger.log(`New user created: ${JSON.stringify(user)}`);
@@ -34,7 +36,8 @@ export class UserService {
         `User found for steamid=${steamid}, updating nickname...`,
       );
       user.username = nickname;
-      user.updated_at = new Date(); // Update the updated_at timestamp
+      user.updated_at = now; // Update the updated_at timestamp
+      user.last_active_at = now; // Track last activity
       await this.userRepository.save(user);
       this.logger.log(`User updated: ${JSON.stringify(user)}`);
     }
@@ -69,6 +72,7 @@ export class UserService {
       score: 0,
       created_at: new Date(),
       updated_at: new Date(),
+      last_active_at: new Date(),
     });
 
     const savedUser = await this.userRepository.save(testUser);
@@ -94,5 +98,15 @@ export class UserService {
     } else {
       this.logger.log('No test users to clean up');
     }
+  }
+
+  /**
+   * 사용자의 마지막 활동 시간을 현재로 업데이트
+   */
+  async markActivity(steamId: string): Promise<void> {
+    await this.userRepository.update(
+      { steam_id: steamId },
+      { last_active_at: new Date(), updated_at: new Date() },
+    );
   }
 }
