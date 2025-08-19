@@ -6,8 +6,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { SpaceEngineersItem } from './item.entity';
+import { GameServer } from '../shared/game-server.entity';
 
 /**
  * SpaceEngineersDropTable Entity
@@ -27,6 +29,11 @@ export class SpaceEngineersDropTable {
   /** Foreign key reference to the Space Engineers item that can be dropped */
   @Column({ name: 'item_id', type: 'integer' })
   itemId: number;
+
+  /** Foreign key reference to the game server this drop rule belongs to (optional for global rules) */
+  @Index()
+  @Column({ name: 'server_id', type: 'int', nullable: true })
+  serverId: number | null;
 
   /**
    * Cached item name for quick reference and display
@@ -84,4 +91,9 @@ export class SpaceEngineersDropTable {
   @ManyToOne(() => SpaceEngineersItem)
   @JoinColumn({ name: 'item_id' })
   item: SpaceEngineersItem;
+
+  /** Many-to-one relationship: multiple drop entries can be scoped to one server */
+  @ManyToOne(() => GameServer, { nullable: true })
+  @JoinColumn({ name: 'server_id' })
+  server?: GameServer | null;
 }
