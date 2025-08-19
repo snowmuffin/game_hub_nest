@@ -8,27 +8,7 @@ import { Repository } from 'typeorm';
 import { GameServer } from '../entities/shared/game-server.entity';
 import { Game } from '../entities/shared/game.entity';
 import { Currency } from '../entities/shared/currency.entity';
-
-export interface CreateServerDto {
-  gameId: number;
-  code: string;
-  name: string;
-  description?: string;
-  serverUrl?: string;
-  port?: number;
-  currencyId?: number; // optional initial currency
-  metadata?: Record<string, any>;
-}
-
-export interface UpdateServerDto {
-  name?: string;
-  description?: string;
-  serverUrl?: string;
-  port?: number;
-  isActive?: boolean;
-  currencyId?: number | null;
-  metadata?: Record<string, any> | null;
-}
+import { CreateServerDto, UpdateServerDto } from './server.dto';
 
 @Injectable()
 export class ServerService {

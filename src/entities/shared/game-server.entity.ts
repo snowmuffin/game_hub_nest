@@ -53,6 +53,14 @@ export class GameServer {
   @Column({ type: 'varchar', length: 255, nullable: true })
   server_url: string;
 
+  /** Extracted protocol (e.g., http, https, tcp, udp) derived from server_url */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  protocol: string | null;
+
+  /** Hostname or IP (without port) parsed from server_url */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  host: string | null;
+
   /** Network port number for server connections */
   @Column({ type: 'int', nullable: true })
   port: number;
