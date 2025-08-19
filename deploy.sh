@@ -177,7 +177,42 @@ echo "🔨 Building TypeScript application..."
 npm run build
 echo "✅ Application built successfully"
 
-# 📁 로그 디렉토리 생성
+# � 빌드 아티팩트 검증 (dist/main.js 존재 여부 확인)
+if [ ! -d dist ]; then
+    echo "❌ dist directory was not created. Build may have failed silently."
+    echo "📝 Please re-run: npm run build (with verbose logging)"
+    exit 1
+fi
+
+if [ ! -f dist/main.js ]; then
+    echo "⚠️  dist/main.js not found. Attempting to locate compiled main.* files..."
+    FOUND_MAIN=$(find dist -maxdepth 4 -type f -name 'main.js' -o -name 'main.cjs' -o -name 'main.mjs' 2>/dev/null | head -n 1 || true)
+    if [ -n "$FOUND_MAIN" ]; then
+        echo "🔁 Found alternative main file at: $FOUND_MAIN"
+        # 표준 위치 기대치(dist/main.js)에 맞추기 위해 심볼릭 링크 또는 복사본 생성
+        if [ ! -f dist/main.js ]; then
+            ln -s "$(realpath "$FOUND_MAIN")" dist/main.js 2>/dev/null || cp "$FOUND_MAIN" dist/main.js
+            echo "🔗 Linked/Copied $FOUND_MAIN -> dist/main.js"
+        fi
+    else
+        echo "❌ Could not find any main.js / main.(c|m)js inside dist."
+        echo "🧪 Dist directory snapshot (top 60 entries):"
+        find dist -maxdepth 3 -type f | head -n 60
+        echo "📦 Node / TypeScript environment info:"
+        node -v
+        npx nest --version || echo "(nest CLI version check failed)"
+        echo "🛠️  Troubleshooting suggestions:" 
+        echo "   1. Ensure @nestjs/cli is installed (it's a devDependency)."
+        echo "   2. Confirm tsconfig.json has 'outDir': './dist'."
+        echo "   3. Check for build errors above this log (they may have been suppressed)."
+        echo "   4. Run manually: npx nest build --debug"
+        exit 1
+    fi
+fi
+
+echo "🧪 Verified build artifact: dist/main.js"
+
+# �📁 로그 디렉토리 생성
 echo "📁 Setting up log directories..."
 mkdir -p logs
 touch logs/app.log logs/error.log logs/out.log
