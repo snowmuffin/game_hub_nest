@@ -69,4 +69,12 @@ export class User {
    */
   @Column({ type: 'timestamptz', nullable: true })
   last_active_at: Date | null;
+
+  /**
+   * Roles assigned to the user (RBAC basic support)
+   * Stored as text[] in Postgres. Default contains basic USER role.
+   * Examples: ["USER"], ["USER", "ADMIN"].
+   */
+  @Column({ type: 'text', array: true, default: '{"USER"}' })
+  roles: string[];
 }
