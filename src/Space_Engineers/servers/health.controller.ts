@@ -21,6 +21,10 @@ export class HealthController {
       httpStatus?: number;
       detail?: string;
       meta?: Record<string, unknown>;
+      // optional identity fields for auto-registration
+      host?: string;
+      port?: number;
+      displayName?: string;
     },
   ) {
     await this.service.ingest(code, body);

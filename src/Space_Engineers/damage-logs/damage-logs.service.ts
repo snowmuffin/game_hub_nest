@@ -1,20 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/entities/shared/user.entity';
 import { createuser } from '../../utils/createuser';
-import {
-  SPACE_ENGINEERS_CONFIG,
-  SpaceEngineersConfig,
-} from '../space-engineers.config';
 
 @Injectable()
 export class DamageLogsService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @Inject(SPACE_ENGINEERS_CONFIG)
-    private readonly seConfig: SpaceEngineersConfig,
   ) {}
 
   /**
@@ -36,9 +30,6 @@ export class DamageLogsService {
   }
 
   async processDamageLogs(logs: unknown[]): Promise<void> {
-    // Example: resolve server settings (default or per-log in future)
-    const defaultServer = this.seConfig.get();
-    void defaultServer; // currently unused but ensures provider is wired and ready
     for (const raw of logs) {
       // Explicit server_id presence check (fail fast if missing or invalid)
       const candidate = raw as Record<string, unknown> | null;

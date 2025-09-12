@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { Game } from '../../entities/shared/game.entity';
@@ -45,6 +50,9 @@ export class HealthService {
       httpStatus?: number;
       detail?: string;
       meta?: Record<string, unknown>;
+      host?: string;
+      port?: number;
+      displayName?: string;
     },
   ): Promise<void> {
     // Find Space Engineers game to scope server codes
@@ -54,11 +62,55 @@ export class HealthService {
     if (!game)
       throw new NotFoundException('Space Engineers game not configured');
 
-    const server = await this.serverRepo.findOne({
+    let server = await this.serverRepo.findOne({
       where: { game_id: game.id, code },
     });
-    if (!server)
-      throw new NotFoundException(`Server not found for code=${code}`);
+    if (!server) {
+      // Optional auto-registration flow
+      const allowAuto =
+        (process.env.SE_AUTO_REGISTER_SERVERS ?? 'false').toLowerCase() ===
+        'true';
+      if (!allowAuto) {
+        throw new NotFoundException(`Server not found for code=${code}`);
+      }
+
+      // Optional API key gate
+      const requiredKey = process.env.SE_INGEST_API_KEY?.trim();
+      if (requiredKey) {
+        // In a real app, you'd read from an auth header; for simplicity, allow meta.apiKey
+        let provided: unknown = undefined;
+        if (body.meta && typeof body.meta === 'object') {
+          const metaObj: Record<string, unknown> = body.meta;
+          provided = metaObj.apiKey;
+        }
+        if (provided !== requiredKey) {
+          throw new UnauthorizedException('Invalid ingest API key');
+        }
+      }
+
+      // Minimal identity
+      const host = body.host ?? undefined;
+      const port = body.port ?? undefined;
+      if (!host || typeof port !== 'number') {
+        throw new BadRequestException(
+          'Auto-registration requires host (string) and port (number) in payload',
+        );
+      }
+
+      const toCreate: Partial<GameServer> = {
+        game_id: game.id,
+        code,
+        name: body.displayName || code,
+        server_url: host,
+        port,
+        is_active: true, // since it’s reporting health
+        metadata: {
+          source: 'se.auto-registered',
+          firstSeenAt: new Date().toISOString(),
+        },
+      };
+      server = await this.serverRepo.save(this.serverRepo.create(toCreate));
+    }
 
     const observed_at = this.toUtcDate(body.observedAt);
 

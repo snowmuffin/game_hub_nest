@@ -2,11 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ItemModule } from './item/item.module';
 import { DamageLogsModule } from './damage-logs/damage-logs.module';
-import { SpaceEngineersConfigProvider } from './space-engineers.config';
 import { Game } from '../entities/shared/game.entity';
 import { GameServer } from '../entities/shared/game-server.entity';
-import { ServersController } from './servers/servers.controller';
-import { ServersService } from './servers/servers.service';
+// Removed registry-based sync; ingest-based only
 import { HealthController } from './servers/health.controller';
 import { HealthService } from './servers/health.service';
 import { ServerHealthEvent } from '../entities/shared/server-health-event.entity';
@@ -39,13 +37,8 @@ import {
     ItemModule,
     DamageLogsModule,
   ],
-  controllers: [ServersController, HealthController],
-  providers: [SpaceEngineersConfigProvider, ServersService, HealthService],
-  exports: [
-    TypeOrmModule,
-    SpaceEngineersConfigProvider,
-    ServersService,
-    HealthService,
-  ],
+  controllers: [HealthController],
+  providers: [HealthService],
+  exports: [TypeOrmModule, HealthService],
 })
 export class SpaceEngineersModule {}
