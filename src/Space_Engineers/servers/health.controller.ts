@@ -13,6 +13,16 @@ import { HealthService } from '@Space_Engineers/servers/health.service';
 export class HealthController {
   constructor(private readonly service: HealthService) {}
 
+  // List server codes for Space Engineers
+  @Get()
+  async listServerCodes(@Query('includeInactive') includeInactive?: string) {
+    const include = ['1', 'true', 'yes', 'y'].includes(
+      (includeInactive ?? '').toLowerCase(),
+    );
+    const codes = await this.service.getServerCodes(include);
+    return { codes };
+  }
+
   // Server-side listener will call this
   @Post(':code/health')
   @HttpCode(202)

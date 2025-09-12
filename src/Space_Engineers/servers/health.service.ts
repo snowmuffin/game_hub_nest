@@ -61,6 +61,22 @@ export class HealthService {
     return { game, server };
   }
 
+  async getServerCodes(includeInactive = false): Promise<string[]> {
+    const game = await this.gameRepo.findOne({
+      where: { code: 'space_engineers' },
+    });
+    if (!game) return [];
+    const where = includeInactive
+      ? { game_id: game.id }
+      : { game_id: game.id, is_active: true };
+    const servers = await this.serverRepo.find({
+      select: { code: true },
+      where,
+      order: { code: 'ASC' },
+    });
+    return servers.map((s) => s.code);
+  }
+
   async getEvents(
     code: string,
     params: {
