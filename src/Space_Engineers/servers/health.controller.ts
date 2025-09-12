@@ -15,12 +15,20 @@ export class HealthController {
 
   // List server codes for Space Engineers
   @Get()
-  async listServerCodes(@Query('includeInactive') includeInactive?: string) {
+  async listServerCodes(
+    @Query('includeInactive') includeInactive?: string,
+    @Query('withNames') withNames?: string,
+  ) {
     const include = ['1', 'true', 'yes', 'y'].includes(
       (includeInactive ?? '').toLowerCase(),
     );
+    const wantNames = ['1', 'true', 'yes', 'y'].includes(
+      (withNames ?? '').toLowerCase(),
+    );
     const codes = await this.service.getServerCodes(include);
-    return { codes };
+    if (!wantNames) return { codes };
+    const servers = await this.service.getServers(include);
+    return { codes, servers };
   }
 
   // Server-side listener will call this
