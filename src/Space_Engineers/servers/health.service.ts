@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { Between, FindOptionsWhere, IsNull, Repository } from 'typeorm';
 import { Game } from '../../entities/shared/game.entity';
 import { GameServer } from '../../entities/shared/game-server.entity';
 import { ServerHealthEvent } from '../../entities/shared/server-health-event.entity';
@@ -37,6 +37,202 @@ export class HealthService {
     const t = new Date(d);
     t.setSeconds(0, 0);
     return t;
+  }
+
+  private parseIsoOr(input: string | undefined, fallback: Date): Date {
+    if (!input) return fallback;
+    const d = new Date(input);
+    return isNaN(d.getTime()) ? fallback : d;
+  }
+
+  private async getServerOrThrow(
+    code: string,
+  ): Promise<{ game: Game; server: GameServer }> {
+    const game = await this.gameRepo.findOne({
+      where: { code: 'space_engineers' },
+    });
+    if (!game)
+      throw new NotFoundException('Space Engineers game not configured');
+    const server = await this.serverRepo.findOne({
+      where: { game_id: game.id, code },
+    });
+    if (!server)
+      throw new NotFoundException(`Server not found for code=${code}`);
+    return { game, server };
+  }
+
+  async getEvents(
+    code: string,
+    params: {
+      from?: string;
+      to?: string;
+      metricName?: string;
+      limit?: number;
+      order?: 'asc' | 'desc';
+    },
+  ): Promise<
+    Array<{
+      observedAt: string;
+      status: Status;
+      method: 'http' | 'tcp';
+      metricName?: string | null;
+      metricValue?: number | null;
+      metricUnit?: string | null;
+      httpStatus?: number | null;
+      detail?: string | null;
+    }>
+  > {
+    const { server } = await this.getServerOrThrow(code);
+    const now = new Date();
+    const from = this.parseIsoOr(
+      params.from,
+      new Date(now.getTime() - 60 * 60 * 1000),
+    ); // default 1h
+    const to = this.parseIsoOr(params.to, now);
+    const order = params.order ?? 'asc';
+    const limit =
+      params.limit && params.limit > 0 ? Math.min(params.limit, 5000) : 1000;
+
+    const rows = await this.eventRepo.find({
+      where: {
+        server_id: server.id,
+        observed_at: Between(from, to),
+        ...(params.metricName ? { metric_name: params.metricName } : {}),
+      } as unknown as FindOptionsWhere<ServerHealthEvent>,
+      order: { observed_at: order.toUpperCase() as 'ASC' | 'DESC' },
+      take: limit,
+    });
+    return rows.map((r) => ({
+      observedAt: r.observed_at.toISOString(),
+      status: r.status as Status,
+      method: r.method,
+      metricName: r.metric_name ?? null,
+      metricValue: r.metric_value ?? null,
+      metricUnit: r.metric_unit ?? null,
+      httpStatus: r.http_status ?? null,
+      detail: r.detail ?? null,
+    }));
+  }
+
+  async getSnapshots(
+    code: string,
+    params: { from?: string; to?: string; window?: '1m' | '5m' | '1h' },
+  ): Promise<
+    Array<{
+      windowStart: string;
+      windowSize: '1m' | '5m' | '1h';
+      checksTotal: number;
+      checksUp: number;
+      uptimeRatio: number;
+      metricAvg?: number | null;
+      metricP50?: number | null;
+      metricP95?: number | null;
+      metricName?: string | null;
+      metricUnit?: string | null;
+      lastStatus?: Status | null;
+      lastChangeAt?: string | null;
+    }>
+  > {
+    const { server } = await this.getServerOrThrow(code);
+    const now = new Date();
+    const from = this.parseIsoOr(
+      params.from,
+      new Date(now.getTime() - 24 * 60 * 60 * 1000),
+    ); // default 24h
+    const to = this.parseIsoOr(params.to, now);
+    const window = params.window ?? '1m';
+
+    const rows = await this.snapRepo.find({
+      where: {
+        server_id: server.id,
+        window_size: window,
+        window_start: Between(from, to),
+      },
+      order: { window_start: 'ASC' },
+    });
+    return rows.map((s) => ({
+      windowStart: s.window_start.toISOString(),
+      windowSize: s.window_size,
+      checksTotal: s.checks_total,
+      checksUp: s.checks_up,
+      uptimeRatio: Number(s.uptime_ratio),
+      metricAvg: s.metric_avg ?? null,
+      metricP50: s.metric_p50 ?? null,
+      metricP95: s.metric_p95 ?? null,
+      metricName: s.metric_name ?? null,
+      metricUnit: s.metric_unit ?? null,
+      lastStatus: (s.last_status as Status) ?? null,
+      lastChangeAt: s.last_change_at ? s.last_change_at.toISOString() : null,
+    }));
+  }
+
+  async getCurrentStatus(code: string): Promise<{
+    status: Status;
+    observedAt?: string;
+    metricName?: string | null;
+    metricValue?: number | null;
+    metricUnit?: string | null;
+    method?: 'http' | 'tcp';
+    httpStatus?: number | null;
+    outageOpen: boolean;
+    uptime1h?: number | null;
+  }> {
+    const { server } = await this.getServerOrThrow(code);
+    const latest = await this.eventRepo.find({
+      where: { server_id: server.id },
+      order: { observed_at: 'DESC' },
+      take: 1,
+    });
+    const last = latest[0];
+    let status: Status = 'UNKNOWN';
+    let observedAt: string | undefined = undefined;
+    let metricName: string | null | undefined = undefined;
+    let metricValue: number | null | undefined = undefined;
+    let metricUnit: string | null | undefined = undefined;
+    let method: 'http' | 'tcp' | undefined = undefined;
+    let httpStatus: number | null | undefined = undefined;
+    if (last) {
+      status = last.status as Status;
+      observedAt = last.observed_at.toISOString();
+      metricName = last.metric_name ?? null;
+      metricValue = last.metric_value ?? null;
+      metricUnit = last.metric_unit ?? null;
+      method = last.method;
+      httpStatus = last.http_status ?? null;
+    }
+
+    const open = await this.outageRepo.findOne({
+      where: { server_id: server.id, ended_at: IsNull() },
+    });
+
+    // Compute 1h uptime from 1m snapshots
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const snaps = await this.snapRepo.find({
+      where: {
+        server_id: server.id,
+        window_size: '1m',
+        window_start: Between(oneHourAgo, now),
+      },
+    });
+    let uptime1h: number | null = null;
+    if (snaps.length) {
+      const total = snaps.reduce((a, s) => a + s.checks_total, 0);
+      const up = snaps.reduce((a, s) => a + s.checks_up, 0);
+      uptime1h = total > 0 ? up / total : null;
+    }
+
+    return {
+      status,
+      observedAt,
+      metricName,
+      metricValue,
+      metricUnit,
+      method,
+      httpStatus,
+      outageOpen: !!open,
+      uptime1h,
+    };
   }
 
   async ingest(
