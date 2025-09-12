@@ -7,7 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { SpaceEngineersModule } from './Space_Engineers/space-engineers.module';
 import { ValheimModule } from './Valheim/valheim.module';
 import { LoggingMiddleware } from './middleware/logging.middleware';
-import { ItemModule } from './Space_Engineers/item/item.module'; // 예시로 ItemModule 추가
+import { ItemModule } from './Space_Engineers/item/item.module'; // Example: include ItemModule
 import { UserModule } from './user/user.module';
 import { WalletModule } from './wallet/wallet.module';
 import { GameModule } from './game/game.module';
@@ -16,7 +16,10 @@ import { ServerModule } from './server/server.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // 전역 모듈로 설정
+      isGlobal: true, // make ConfigModule global
+      envFilePath: ['.env', 'config/space-engineers/.env'],
+      expandVariables: true,
+      cache: true,
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -27,7 +30,7 @@ import { ServerModule } from './server/server.module';
       database: process.env.DB_NAME,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       ssl:
-        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false, // SSL 설정 추가
+        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false, // enable SSL if configured
     }),
     AuthModule,
     SpaceEngineersModule,

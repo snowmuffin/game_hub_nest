@@ -5,31 +5,31 @@ import { GameService } from './game.service';
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
-  // 모든 게임 조회
+  // Get all games
   @Get()
   async getAllGames() {
     return await this.gameService.getAllGames();
   }
 
-  // 특정 게임 조회
+  // Get a specific game by ID
   @Get(':id')
   async getGameById(@Param('id') id: number) {
     return await this.gameService.getGameById(id);
   }
 
-  // 게임 코드로 조회
+  // Get a game by code
   @Get('code/:code')
   async getGameByCode(@Param('code') code: string) {
     return await this.gameService.getGameByCode(code);
   }
 
-  // 게임의 서버들 조회
+  // Get servers for a game
   @Get(':id/servers')
   async getGameServers(@Param('id') gameId: number) {
     return await this.gameService.getGameServers(gameId);
   }
 
-  // 게임의 화폐들 조회
+  // Get currencies for a game
   @Get(':id/currencies')
   async getGameCurrencies(@Param('id') gameId: number) {
     return await this.gameService.getGameCurrencies(gameId);
@@ -40,7 +40,7 @@ export class GameController {
 export class ServerController {
   constructor(private readonly gameService: GameService) {}
 
-  // 특정 서버 조회
+  // Get a specific server by ID
   @Get(':id')
   async getServerById(@Param('id') id: number) {
     return await this.gameService.getServerById(id);
@@ -51,13 +51,13 @@ export class ServerController {
 export class CurrencyController {
   constructor(private readonly gameService: GameService) {}
 
-  // 모든 화폐 조회
+  // Get all currencies
   @Get()
   async getAllCurrencies() {
     return await this.gameService.getAllCurrencies();
   }
 
-  // 글로벌 화폐들만 조회
+  // Get only global currencies
   @Get('global')
   async getGlobalCurrencies() {
     return await this.gameService.getGlobalCurrencies();
