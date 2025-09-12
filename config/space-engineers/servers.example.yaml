@@ -1,0 +1,17 @@
+servers:
+  - id: se-kr-1
+    host: kr1.example.com
+    port: 27016
+    dropRateMultiplier: 1.0
+    marketplaceEnabled: true
+    limits:
+      maxStorageSlots: 200
+      maxItemStack: 1000
+  - id: se-us-1
+    host: us1.example.com
+    port: 27016
+    dropRateMultiplier: 1.2
+    marketplaceEnabled: true
+    limits:
+      maxStorageSlots: 300
+      maxItemStack: 1500

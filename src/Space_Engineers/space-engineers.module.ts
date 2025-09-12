@@ -2,6 +2,16 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ItemModule } from './item/item.module';
 import { DamageLogsModule } from './damage-logs/damage-logs.module';
+import { SpaceEngineersConfigProvider } from './space-engineers.config';
+import { Game } from '../entities/shared/game.entity';
+import { GameServer } from '../entities/shared/game-server.entity';
+import { ServersController } from './servers/servers.controller';
+import { ServersService } from './servers/servers.service';
+import { HealthController } from './servers/health.controller';
+import { HealthService } from './servers/health.service';
+import { ServerHealthEvent } from '../entities/shared/server-health-event.entity';
+import { ServerHealthSnapshot } from '../entities/shared/server-health-snapshot.entity';
+import { ServerOutage } from '../entities/shared/server-outage.entity';
 import {
   SpaceEngineersItem,
   SpaceEngineersOnlineStorage,
@@ -14,6 +24,11 @@ import {
 @Module({
   imports: [
     TypeOrmModule.forFeature([
+      Game,
+      GameServer,
+      ServerHealthEvent,
+      ServerHealthSnapshot,
+      ServerOutage,
       SpaceEngineersItem,
       SpaceEngineersOnlineStorage,
       SpaceEngineersOnlineStorageItem,
@@ -24,6 +39,13 @@ import {
     ItemModule,
     DamageLogsModule,
   ],
-  exports: [TypeOrmModule],
+  controllers: [ServersController, HealthController],
+  providers: [SpaceEngineersConfigProvider, ServersService, HealthService],
+  exports: [
+    TypeOrmModule,
+    SpaceEngineersConfigProvider,
+    ServersService,
+    HealthService,
+  ],
 })
 export class SpaceEngineersModule {}
