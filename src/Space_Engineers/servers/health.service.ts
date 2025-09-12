@@ -2,7 +2,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
@@ -16,6 +16,7 @@ type Status = 'UP' | 'DOWN' | 'DEGRADED' | 'UNKNOWN';
 
 @Injectable()
 export class HealthService {
+  private readonly logger = new Logger(HealthService.name);
   constructor(
     @InjectRepository(Game) private readonly gameRepo: Repository<Game>,
     @InjectRepository(GameServer)
@@ -55,22 +56,36 @@ export class HealthService {
       displayName?: string;
     },
   ): Promise<void> {
-    // Find Space Engineers game to scope server codes
-    const game = await this.gameRepo.findOne({
+    this.logger.debug(
+      `Health ingest received for code=${code} status=${body.status} method=${body.method}`,
+    );
+    // Find or create Space Engineers game to scope server codes
+    let game = await this.gameRepo.findOne({
       where: { code: 'space_engineers' },
     });
-    if (!game)
-      throw new NotFoundException('Space Engineers game not configured');
+    if (!game) {
+      game = this.gameRepo.create({
+        code: 'space_engineers',
+        name: 'Space Engineers',
+        is_active: true,
+      });
+      game = await this.gameRepo.save(game);
+      this.logger.log('Created Space Engineers game entry via health ingest');
+    }
 
     let server = await this.serverRepo.findOne({
       where: { game_id: game.id, code },
     });
     if (!server) {
       // Optional auto-registration flow
-      const allowAuto =
-        (process.env.SE_AUTO_REGISTER_SERVERS ?? 'false').toLowerCase() ===
-        'true';
+      const allowAuto = ['true', '1', 'yes', 'y'].includes(
+        (process.env.SE_AUTO_REGISTER_SERVERS ?? 'false').toLowerCase(),
+      );
+      this.logger.debug(`Auto-register missing server? allowAuto=${allowAuto}`);
       if (!allowAuto) {
+        this.logger.warn(
+          `Server not found for code=${code} and auto-register disabled`,
+        );
         throw new NotFoundException(`Server not found for code=${code}`);
       }
 
@@ -84,32 +99,59 @@ export class HealthService {
           provided = metaObj.apiKey;
         }
         if (provided !== requiredKey) {
+          this.logger.warn(`Invalid ingest API key for code=${code}`);
           throw new UnauthorizedException('Invalid ingest API key');
         }
+        this.logger.debug(`Ingest API key verified for code=${code}`);
       }
 
-      // Minimal identity
-      const host = body.host ?? undefined;
-      const port = body.port ?? undefined;
-      if (!host || typeof port !== 'number') {
-        throw new BadRequestException(
-          'Auto-registration requires host (string) and port (number) in payload',
-        );
-      }
+      // Minimal identity (host/port optional)
+      const host =
+        typeof body.host === 'string' && body.host.trim() !== ''
+          ? body.host.trim()
+          : undefined;
+      const port =
+        typeof body.port === 'number' && body.port > 0 ? body.port : undefined;
 
       const toCreate: Partial<GameServer> = {
         game_id: game.id,
         code,
         name: body.displayName || code,
-        server_url: host,
-        port,
         is_active: true, // since it’s reporting health
         metadata: {
           source: 'se.auto-registered',
           firstSeenAt: new Date().toISOString(),
         },
       };
+      if (host) toCreate.host = host;
+      if (typeof port === 'number') toCreate.port = port;
       server = await this.serverRepo.save(this.serverRepo.create(toCreate));
+      this.logger.log(
+        `Auto-registered server code=${code} host=${host ?? '-'} port=${port ?? '-'}`,
+      );
+    } else {
+      // Update existing server with incoming host/port if valid and changed
+      const incomingHost =
+        typeof body.host === 'string' && body.host.trim() !== ''
+          ? body.host.trim()
+          : undefined;
+      const incomingPort =
+        typeof body.port === 'number' && body.port > 0 ? body.port : undefined;
+      let changed = false;
+      if (incomingHost && server.host !== incomingHost) {
+        server.host = incomingHost;
+        changed = true;
+      }
+      if (typeof incomingPort === 'number' && server.port !== incomingPort) {
+        server.port = incomingPort;
+        changed = true;
+      }
+      if (changed) {
+        await this.serverRepo.save(server);
+        this.logger.log(
+          `Updated server code=${code} with host/port from ingest`,
+        );
+      }
     }
 
     const observed_at = this.toUtcDate(body.observedAt);
