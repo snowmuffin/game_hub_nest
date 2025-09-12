@@ -1,90 +1,29 @@
 import logger from '../../utils/logger';
+import { AppDataSource } from '../../data-source';
+import { LessThanOrEqual, Repository } from 'typeorm';
+import { SpaceEngineersDropTable } from '@entities/space_engineers/drop-table.entity';
 
-const dropTable: Record<string, number> = {
-  PrototechFrame: 11,
-  PrototechPanel: 4,
-  PrototechCapacitor: 4,
-  PrototechPropulsionUnit: 4,
-  PrototechMachinery: 4,
-  PrototechCircuitry: 4,
-  PrototechCoolingUnit: 8,
-  DefenseUpgradeModule_Level1: 5,
-  DefenseUpgradeModule_Level2: 6,
-  DefenseUpgradeModule_Level3: 7,
-  DefenseUpgradeModule_Level4: 8,
-  DefenseUpgradeModule_Level5: 9,
-  DefenseUpgradeModule_Level6: 10,
-  DefenseUpgradeModule_Level7: 11,
-  DefenseUpgradeModule_Level8: 12,
-  DefenseUpgradeModule_Level9: 13,
-  DefenseUpgradeModule_Level10: 14,
-  AttackUpgradeModule_Level1: 5,
-  AttackUpgradeModule_Level2: 6,
-  AttackUpgradeModule_Level3: 7,
-  AttackUpgradeModule_Level4: 8,
-  AttackUpgradeModule_Level5: 9,
-  AttackUpgradeModule_Level6: 10,
-  AttackUpgradeModule_Level7: 11,
-  AttackUpgradeModule_Level8: 12,
-  AttackUpgradeModule_Level9: 13,
-  AttackUpgradeModule_Level10: 14,
-  PowerEfficiencyUpgradeModule_Level1: 5,
-  PowerEfficiencyUpgradeModule_Level2: 6,
-  PowerEfficiencyUpgradeModule_Level3: 7,
-  PowerEfficiencyUpgradeModule_Level4: 8,
-  PowerEfficiencyUpgradeModule_Level5: 9,
-  PowerEfficiencyUpgradeModule_Level6: 10,
-  PowerEfficiencyUpgradeModule_Level7: 11,
-  PowerEfficiencyUpgradeModule_Level8: 12,
-  PowerEfficiencyUpgradeModule_Level9: 13,
-  PowerEfficiencyUpgradeModule_Level10: 14,
-  BerserkerModule_Level1: 11,
-  BerserkerModule_Level2: 12,
-  BerserkerModule_Level3: 13,
-  BerserkerModule_Level4: 14,
-  BerserkerModule_Level5: 15,
-  BerserkerModule_Level6: 16,
-  BerserkerModule_Level7: 17,
-  BerserkerModule_Level8: 18,
-  BerserkerModule_Level9: 19,
-  BerserkerModule_Level10: 20,
-  SpeedModule_Level1: 11,
-  SpeedModule_Level2: 12,
-  SpeedModule_Level3: 13,
-  SpeedModule_Level4: 14,
-  SpeedModule_Level5: 15,
-  SpeedModule_Level6: 16,
-  SpeedModule_Level7: 17,
-  SpeedModule_Level8: 18,
-  SpeedModule_Level9: 19,
-  SpeedModule_Level10: 20,
-  FortressModule_Level1: 11,
-  FortressModule_Level2: 12,
-  FortressModule_Level3: 13,
-  FortressModule_Level4: 14,
-  FortressModule_Level5: 15,
-  FortressModule_Level6: 16,
-  FortressModule_Level7: 17,
-  FortressModule_Level8: 18,
-  FortressModule_Level9: 19,
-  FortressModule_Level10: 20,
-  Prime_Matter: 3,
-  prototech_scrap: 3,
-  ingot_cerium: 4,
-  ingot_lanthanum: 4,
-  ingot_uranium: 3,
-  ingot_platinum: 3,
-  ingot_gold: 2,
-  ingot_silver: 2,
-};
+// Legacy table removed per requirement: force error when DB entries are missing
 
-export function getDrop(
+export interface GetDropOptions {
+  /** limit drop pool by server; null means global-only; undefined means global or this server */
+  serverId?: number | null;
+  /** provide a custom repository (useful for testing/DI) */
+  repository?: Repository<SpaceEngineersDropTable>;
+}
+
+/**
+ * Returns a dropped item name using the DB-backed drop table.
+ * Falls back to legacy static table if DB/repository is not available.
+ */
+export async function getDrop(
   damage: number,
   mult: number,
   maxRarity: number,
-): string | null {
+  options: GetDropOptions = {},
+): Promise<string | null> {
   logger.info(
-    `getDrop called with damage: ${damage}, mult: ${mult}, maxRarity: ${maxRarity}`,
+    `getDrop called with damage: ${damage}, mult: ${mult}, maxRarity: ${maxRarity}, serverId: ${options.serverId ?? 'any'}`,
   );
 
   const minDropChance = 0.001;
@@ -108,29 +47,98 @@ export function getDrop(
     return null;
   }
 
-  const adjustedWeights: Record<string, number> = {};
-  let totalWeight = 0;
-
-  for (const [item, rarity] of Object.entries(dropTable)) {
-    if (rarity > maxRarity) continue;
-    const adjustedWeight = Math.pow(mult, rarity);
-    adjustedWeights[item] = adjustedWeight;
-    totalWeight += adjustedWeight;
-  }
-
-  let accumulatedProbability = 0;
-  const randomValue = Math.random() * totalWeight;
-
-  for (const [item, weight] of Object.entries(adjustedWeights)) {
-    accumulatedProbability += weight;
-    if (randomValue <= accumulatedProbability) {
-      logger.info(`Item dropped: ${item}`);
-      return item;
+  try {
+    const repository =
+      options.repository ??
+      (AppDataSource.isInitialized
+        ? AppDataSource.getRepository(SpaceEngineersDropTable)
+        : null);
+    if (!repository) {
+      const msg =
+        'AppDataSource is not initialized and no repository provided. Cannot compute drop.';
+      logger.error(msg);
+      throw new Error(msg);
     }
-  }
 
-  logger.warn(
-    'No item dropped after weight calculation. This should not happen.',
-  );
-  return null;
+    // Build WHERE conditions
+    const where = [] as any[];
+    if (options.serverId === null) {
+      // Only global
+      where.push({
+        isActive: true,
+        rarity: LessThanOrEqual(maxRarity),
+        serverId: null,
+      });
+    } else if (typeof options.serverId === 'number') {
+      // This server OR global
+      where.push(
+        {
+          isActive: true,
+          rarity: LessThanOrEqual(maxRarity),
+          serverId: options.serverId,
+        },
+        {
+          isActive: true,
+          rarity: LessThanOrEqual(maxRarity),
+          serverId: null,
+        },
+      );
+    } else {
+      // Any active entry within rarity (ignore server)
+      where.push({
+        isActive: true,
+        rarity: LessThanOrEqual(maxRarity),
+      });
+    }
+
+    const entries = await repository.find({ where });
+
+    if (!entries.length) {
+      const msg = 'No active drop table entries found for given constraints.';
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    const weights: Record<string, number> = {};
+    let totalWeight = 0;
+
+    for (const e of entries) {
+      const drRaw = e.dropRateMultiplier as unknown as number | string;
+      const dropRate =
+        typeof drRaw === 'string' ? parseFloat(drRaw) : Number(drRaw ?? 1);
+      const adjustedWeight =
+        Math.pow(mult, e.rarity) *
+        (isFinite(dropRate) && dropRate > 0 ? dropRate : 1);
+      if (adjustedWeight <= 0) continue;
+      weights[e.itemName] = (weights[e.itemName] ?? 0) + adjustedWeight;
+      totalWeight += adjustedWeight;
+    }
+
+    if (totalWeight <= 0) {
+      const msg = 'Total weight is zero after processing DB entries.';
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    const randomValue = Math.random() * totalWeight;
+    let acc = 0;
+    for (const [item, weight] of Object.entries(weights)) {
+      acc += weight;
+      if (randomValue <= acc) {
+        logger.info(`Item dropped (DB): ${item}`);
+        return item;
+      }
+    }
+
+    logger.warn(
+      'No item selected after DB weight calculation. This should not happen.',
+    );
+    return null;
+  } catch (err) {
+    const msg = `Error using DB drop table: ${
+      err instanceof Error ? err.message : String(err)
+    }`;
+    logger.error(msg);
+    throw err instanceof Error ? err : new Error(msg);
+  }
 }
