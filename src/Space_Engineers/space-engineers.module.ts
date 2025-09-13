@@ -18,6 +18,7 @@ import {
   SpaceEngineersItemDownloadLog,
   SpaceEngineersDropTable,
 } from '../entities/space_engineers';
+import { HangarModule } from './hangar/hangar.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import {
       SpaceEngineersDropTable,
     ]),
     ItemModule,
+    HangarModule,
     DamageLogsModule,
   ],
   controllers: [HealthController],

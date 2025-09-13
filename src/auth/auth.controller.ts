@@ -29,7 +29,6 @@ export class AuthController {
 
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async steamLoginReturn(
     @Req() req: Request & { user?: any },
     @Res() res: Response,
