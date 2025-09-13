@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsArray,
   IsInt,
   IsNumber,
   IsObject,
@@ -33,6 +34,24 @@ export class ListBlocksQueryDto {
   @IsOptional()
   @IsString()
   subtypeId?: string;
+}
+
+class Vector4Dto {
+  @Type(() => Number)
+  @IsNumber()
+  x: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  y: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  z: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  w: number;
 }
 
 class Vector3Dto {
@@ -253,6 +272,181 @@ export class CreateBlockDto {
   @Type(() => Boolean)
   @IsBoolean()
   public?: boolean | null;
+
+  // Visibility/UI
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  guiVisible?: boolean | null;
+
+  // Thruster-specific
+  @IsOptional()
+  @IsString()
+  thrusterType?: string | null;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  silenceableByShipSoundSystem?: boolean | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  forceMagnitude?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  maxPowerConsumption?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  minPowerConsumption?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  slowdownFactor?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  minPlanetaryInfluence?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  maxPlanetaryInfluence?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  effectivenessAtMinInfluence?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  effectivenessAtMaxInfluence?: number | null;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  needsAtmosphereForInfluence?: boolean | null;
+
+  // Thruster FX
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  flameDamageLengthScale?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  flameDamage?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  flameLengthScale?: number | null;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => Vector4Dto)
+  flameIdleColor?: Vector4Dto | null;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => Vector4Dto)
+  flameFullColor?: Vector4Dto | null;
+
+  @IsOptional()
+  @IsString()
+  flamePointMaterial?: string | null;
+
+  @IsOptional()
+  @IsString()
+  flameLengthMaterial?: string | null;
+
+  @IsOptional()
+  @IsString()
+  flameFlare?: string | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  flameVisibilityDistance?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  flameGlareQuerySize?: number | null;
+
+  @IsOptional()
+  @IsString()
+  primarySound?: string | null;
+
+  // Voxel placement and center
+  @IsOptional()
+  @IsObject()
+  voxelPlacement?: Record<string, unknown> | null;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => Vector3Dto)
+  center?: Vector3Dto | null;
+
+  // Tiering/targeting
+  @IsOptional()
+  @IsArray()
+  @Type(() => Number)
+  @IsNumber({}, { each: true })
+  tieredUpdateTimes?: number[] | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  targetingGroups?: string[] | null;
+
+  // Fuel (Hydrogen)
+  @IsOptional()
+  @IsObject()
+  fuelConverter?: Record<string, unknown> | null;
+
+  // Propeller
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  propellerUsesPropellerSystem?: boolean | null;
+
+  @IsOptional()
+  @IsString()
+  propellerSubpartEntityName?: string | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  propellerRoundsPerSecondOnFullSpeed?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  propellerRoundsPerSecondOnIdleSpeed?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  propellerAccelerationTime?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  propellerDecelerationTime?: number | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  propellerMaxVisibleDistance?: number | null;
 
   // Anything not explicitly mapped
   @IsOptional()
