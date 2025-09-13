@@ -38,11 +38,11 @@ export class AuthController {
     @Req() req: RequestWithUser,
     @Res() res: Response,
   ): Promise<void> {
-    console.log('Steam return endpoint hit'); // 디버깅용
-    console.log('User:', req.user); // 디버깅용
+    console.log('Steam return endpoint hit'); // For debugging
+    console.log('User:', req.user); // For debugging
 
     if (!req.user) {
-      console.log('No user found in request'); // 디버깅용
+      console.log('No user found in request'); // For debugging
       res.status(401).send(`
         <script>
           console.log('Authentication failed - no user');
@@ -62,13 +62,13 @@ export class AuthController {
 
     try {
       const user = await this.authService.findOrCreateUser(req.user);
-      console.log('User found/created:', user); // 디버깅용
+      console.log('User found/created:', user); // For debugging
 
       const accessToken = this.authService.generateJwtToken(user);
       const refreshToken = this.authService.generateRefreshToken(user);
       const userData = this.authService.formatUserData(user);
 
-      console.log('Tokens generated successfully'); // 디버깅용
+      console.log('Tokens generated successfully'); // For debugging
 
       // Dynamic cookie flags (improved)
       const isProd = process.env.NODE_ENV === 'production';
@@ -106,12 +106,12 @@ export class AuthController {
           } else {
             console.log('No opener found');
             alert('Authentication successful but cannot close window. Please close manually.');
-            document.body.innerHTML = '<h2>로그인 성공!</h2><p>이 창을 닫아주세요.</p><p>Token: ${accessToken}</p>';
+            document.body.innerHTML = '<h2>Login successful!</h2><p>Please close this window.</p><p>Token: ${accessToken}</p>';
           }
         </script>
       `);
     } catch (error: unknown) {
-      console.error('Error in steamLoginReturn:', error); // 디버깅용
+      console.error('Error in steamLoginReturn:', error); // For debugging
       res.status(500).send(`
         <script>
           console.error('Server error during authentication');

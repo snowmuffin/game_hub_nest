@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, IsNull } from 'typeorm';
 import { Wallet } from '../entities/shared/wallet.entity';
 import { WalletTransaction } from '../entities/shared/wallet-transaction.entity';
 import { User } from '../entities/shared/user.entity';
@@ -52,20 +52,16 @@ export class WalletService {
     @InjectRepository(Currency)
     private currencyRepository: Repository<Currency>,
     private dataSource: DataSource,
-  ) {} // 지갑 생성 또는 조회
+  ) {}
   async getOrCreateWallet(dto: CreateWalletDto): Promise<Wallet> {
-    // 기존 지갑 확인
-    const whereCondition: any = {
+    // Check for an existing wallet
+    const whereCondition = {
       user_id: dto.userId,
       game_id: dto.gameId,
       currency_id: dto.currencyId,
-    };
-
-    if (dto.serverId) {
-      whereCondition.server_id = dto.serverId;
-    } else {
-      whereCondition.server_id = null;
-    }
+      server_id: dto.serverId ?? IsNull(),
+      is_active: true,
+    } as const;
 
     const wallet = await this.walletRepository.findOne({
       where: whereCondition,
@@ -76,7 +72,6 @@ export class WalletService {
       return wallet;
     }
 
-    // 필수 엔티티들 존재 확인
     const user = await this.userRepository.findOne({
       where: { id: dto.userId },
     });
@@ -109,20 +104,6 @@ export class WalletService {
       }
     }
 
-    // 새 지갑 생성
-    const walletData: any = {
-      user_id: dto.userId,
-      game_id: dto.gameId,
-      currency_id: dto.currencyId,
-      balance: 0,
-      locked_balance: 0,
-      is_active: true,
-    };
-
-    if (dto.serverId) {
-      walletData.server_id = dto.serverId;
-    }
-
     const newWallet = new Wallet();
     newWallet.user_id = dto.userId;
     newWallet.game_id = dto.gameId;
@@ -138,7 +119,7 @@ export class WalletService {
     return await this.walletRepository.save(newWallet);
   }
 
-  // 유저의 모든 지갑 조회
+  // Get all active wallets for a user
   async getUserWallets(userId: number): Promise<Wallet[]> {
     return await this.walletRepository.find({
       where: { user_id: userId, is_active: true },
@@ -147,7 +128,7 @@ export class WalletService {
     });
   }
 
-  // 특정 게임의 지갑들 조회
+  // Get active wallets for a user by game
   async getUserWalletsByGame(
     userId: number,
     gameId: number,
@@ -159,12 +140,12 @@ export class WalletService {
     });
   }
 
-  // 지갑 거래 (트랜잭션)
+  // Execute a wallet transaction
   async executeTransaction(
     dto: WalletTransactionDto,
   ): Promise<WalletTransaction> {
     return await this.dataSource.transaction(async (manager) => {
-      // 지갑 조회 및 잠금
+      // Find and lock wallet
       const wallet = await manager.findOne(Wallet, {
         where: { id: dto.walletId },
         lock: { mode: 'pessimistic_write' },
@@ -178,7 +159,6 @@ export class WalletService {
       const amount = Number(dto.amount);
       let newBalance: number;
 
-      // 거래 유형에 따른 잔액 계산
       switch (dto.type) {
         case 'DEPOSIT':
         case 'TRANSFER_IN':
@@ -199,11 +179,9 @@ export class WalletService {
           throw new BadRequestException('Invalid transaction type');
       }
 
-      // 지갑 잔액 업데이트
       wallet.balance = newBalance;
       await manager.save(wallet);
 
-      // 거래 내역 생성
       const transaction = manager.create(WalletTransaction, {
         wallet_id: dto.walletId,
         user_id: wallet.user_id,
@@ -221,7 +199,7 @@ export class WalletService {
     });
   }
 
-  // 지갑 거래 내역 조회
+  // Get a wallet's transaction history
   async getWalletTransactions(
     walletId: number,
     limit: number = 50,
@@ -235,7 +213,7 @@ export class WalletService {
     });
   }
 
-  // 유저의 모든 거래 내역 조회
+  // Get all transactions for a user
   async getUserTransactions(
     userId: number,
     limit: number = 50,
@@ -250,7 +228,7 @@ export class WalletService {
     });
   }
 
-  // 지갑 간 전송
+  // Transfer between wallets
   async transferBetweenWallets(
     fromWalletId: number,
     toWalletId: number,
@@ -260,8 +238,8 @@ export class WalletService {
     fromTransaction: WalletTransaction;
     toTransaction: WalletTransaction;
   }> {
-    return await this.dataSource.transaction(async (manager) => {
-      // 출금 거래
+    return await this.dataSource.transaction(async () => {
+      // Withdraw from source wallet
       const fromTransaction = await this.executeTransaction({
         walletId: fromWalletId,
         type: 'TRANSFER_OUT',
@@ -270,7 +248,7 @@ export class WalletService {
         referenceId: `transfer_${Date.now()}`,
       });
 
-      // 입금 거래
+      // Deposit into destination wallet
       const toTransaction = await this.executeTransaction({
         walletId: toWalletId,
         type: 'TRANSFER_IN',
@@ -283,7 +261,7 @@ export class WalletService {
     });
   }
 
-  // 지갑 잔액 조회
+  // Get wallet balance snapshot
   async getWalletBalance(walletId: number): Promise<{
     balance: number;
     locked_balance: number;
