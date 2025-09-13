@@ -4,6 +4,7 @@ import { IsNull, Repository } from 'typeorm';
 import type { FindOptionsWhere } from 'typeorm';
 import { SpaceEngineersBlock } from 'src/entities/space_engineers';
 import { CreateBlockDto, ListBlocksQueryDto } from './blocks.dto';
+import logger from 'src/utils/logger';
 
 @Injectable()
 export class BlocksService {
@@ -62,15 +63,24 @@ export class BlocksService {
 
     if (existing) {
       Object.assign(existing, mapped);
-      return this.repo.save(existing);
+      const saved = await this.repo.save(existing);
+      logger.info(
+        `[SpaceEngineers][Blocks] Updated block typeId=${saved.typeId}, subtypeId=${saved.subtypeId ?? 'null'}, id=${saved.id}`,
+      );
+      return saved;
     }
 
     const entity = this.repo.create(mapped);
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+    logger.info(
+      `[SpaceEngineers][Blocks] Created block typeId=${saved.typeId}, subtypeId=${saved.subtypeId ?? 'null'}, id=${saved.id}`,
+    );
+    return saved;
   }
 
   async remove(id: number) {
     await this.repo.delete(id);
+    logger.info(`[SpaceEngineers][Blocks] Deleted block id=${id}`);
     return { deleted: true };
   }
 }
