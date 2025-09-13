@@ -143,7 +143,8 @@ export class CreateBlockDto {
 
   // Composition
   @IsOptional()
-  @IsObject()
+  @IsArray()
+  @IsObject({ each: true })
   components?: Array<Record<string, unknown>> | null;
 
   @IsOptional()
@@ -152,12 +153,14 @@ export class CreateBlockDto {
 
   // Placement
   @IsOptional()
-  @IsObject()
+  @IsArray()
+  @IsObject({ each: true })
   mountPoints?: Array<Record<string, unknown>> | null;
 
   // Build visuals
   @IsOptional()
-  @IsObject()
+  @IsArray()
+  @IsObject({ each: true })
   buildProgressModels?: Array<Record<string, unknown>> | null;
 
   // Pairing and symmetry
@@ -452,4 +455,9 @@ export class CreateBlockDto {
   @IsOptional()
   @IsObject()
   extras?: Record<string, unknown> | null;
+
+  // Meta (for ingest API key in body)
+  @IsOptional()
+  @IsObject()
+  meta?: { apiKey?: string } | null;
 }
