@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
+import type { FindOptionsWhere } from 'typeorm';
 import { SpaceEngineersBlock } from 'src/entities/space_engineers';
 import { CreateBlockDto, ListBlocksQueryDto } from './blocks.dto';
 
@@ -25,25 +26,47 @@ export class BlocksService {
   }
 
   async create(dto: CreateBlockDto) {
-    const entity = this.repo.create({
+    const where: FindOptionsWhere<SpaceEngineersBlock> = { typeId: dto.typeId };
+    if (dto.subtypeId === null) {
+      where.subtypeId = IsNull();
+    } else if (dto.subtypeId !== undefined) {
+      where.subtypeId = dto.subtypeId;
+    }
+    const existing = await this.repo.findOne({ where });
+
+    const mapped: Partial<SpaceEngineersBlock> = {
       ...dto,
-      minFieldSize: dto.minFieldSize
-        ? {
-            x: dto.minFieldSize.x,
-            y: dto.minFieldSize.y,
-            z: dto.minFieldSize.z,
-          }
-        : null,
-      maxFieldSize: dto.maxFieldSize
-        ? {
-            x: dto.maxFieldSize.x,
-            y: dto.maxFieldSize.y,
-            z: dto.maxFieldSize.z,
-          }
-        : null,
-    } as Partial<SpaceEngineersBlock>);
-    const saved = await this.repo.save(entity);
-    return saved;
+    } as Partial<SpaceEngineersBlock>;
+    if (dto.minFieldSize) {
+      mapped.minFieldSize = {
+        x: dto.minFieldSize.x,
+        y: dto.minFieldSize.y,
+        z: dto.minFieldSize.z,
+      };
+    }
+    if (dto.maxFieldSize) {
+      mapped.maxFieldSize = {
+        x: dto.maxFieldSize.x,
+        y: dto.maxFieldSize.y,
+        z: dto.maxFieldSize.z,
+      };
+    }
+    if (dto.center) {
+      const c = dto.center;
+      mapped.center = { x: c.x, y: c.y, z: c.z } as unknown as {
+        x: number;
+        y: number;
+        z: number;
+      };
+    }
+
+    if (existing) {
+      Object.assign(existing, mapped);
+      return this.repo.save(existing);
+    }
+
+    const entity = this.repo.create(mapped);
+    return this.repo.save(entity);
   }
 
   async remove(id: number) {
