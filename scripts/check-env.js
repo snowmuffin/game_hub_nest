@@ -9,6 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const axios = require('axios');
+const jwtLib = require('jsonwebtoken');
+const { S3Client, HeadBucketCommand } = require('@aws-sdk/client-s3');
 
 // Pretty printing helpers (no deps)
 const colors = {
@@ -21,6 +24,7 @@ const colors = {
 
 const args = new Set(process.argv.slice(2));
 const STRICT = args.has('--strict');
+const ONLINE = args.has('--online');
 
 function loadEnvFiles() {
   const root = process.cwd();
@@ -42,6 +46,21 @@ const isBoolStr = (v) => typeof v === 'string' && ['true', 'false'].includes(v.t
 const isUrl = (v) => {
   try { new URL(v); return true; } catch { return false; }
 };
+
+// Known formats
+const isAwsRegion = (v) => /^[a-z]{2}-[a-z]+-\d$/.test(String(v || ''));
+const isS3Bucket = (v) =>
+  typeof v === 'string' &&
+  v.length >= 3 &&
+  v.length <= 63 &&
+  /^[a-z0-9.-]+$/.test(v) &&
+  !/^\d+$/.test(v) &&
+  !/[.]{2,}/.test(v) &&
+  !/^-|-$/.test(v) &&
+  !/^\.|\.$/.test(v);
+const isJwtExpiresIn = (v) => /^(\d+)(ms|s|m|h|d|w|y)?$/.test(String(v || ''));
+const isLogLevel = (v) => ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'].includes(String(v || '').toLowerCase());
+const isSteamApiKey = (v) => /^[0-9A-F]{32}$/i.test(String(v || ''));
 
 function validateDomainLike(v) {
   // DOMAIN should be host or host:port (no scheme)
@@ -92,7 +111,7 @@ function optionalCsvUrls(key, friendlyName = key) {
   if (invalid.length) warn(`${friendlyName} (${key}) contains invalid URL(s): ${invalid.join(', ')}`);
 }
 
-function main() {
+async function main() {
   console.log(colors.cyan(colors.bold('Checking environment configuration...')));
   loadEnvFiles();
 
@@ -111,9 +130,28 @@ function main() {
   // Auth / JWT
   const jwt = requireNonEmpty('JWT_SECRET', 'JWT secret');
   if (isNonEmpty(jwt) && jwt.length < 16) warn('JWT_SECRET is short; consider 32+ chars for production.');
+  if (isNonEmpty(process.env.JWT_EXPIRES_IN) && !isJwtExpiresIn(process.env.JWT_EXPIRES_IN)) {
+    err(`JWT_EXPIRES_IN has invalid format (e.g., 3600s, 7d). Got: ${process.env.JWT_EXPIRES_IN}`);
+  }
+  // Offline usability test: sign and verify
+  if (isNonEmpty(jwt)) {
+    try {
+      const token = jwtLib.sign({ sub: 'env-check', iat: Math.floor(Date.now() / 1000) }, jwt, {
+        expiresIn: '60s',
+        algorithm: 'HS256',
+      });
+      const decoded = jwtLib.verify(token, jwt, { algorithms: ['HS256'] });
+      if (!decoded) throw new Error('verify returned empty');
+    } catch (e) {
+      err(`JWT_SECRET failed sign/verify: ${e && e.message ? e.message : String(e)}`);
+    }
+  }
 
   // Steam
-  requireNonEmpty('STEAM_API_KEY', 'Steam API key');
+  const steamKey = requireNonEmpty('STEAM_API_KEY', 'Steam API key');
+  if (isNonEmpty(steamKey) && !isSteamApiKey(steamKey)) {
+    warn('STEAM_API_KEY format looks unusual. Expected a 32-hex key from Steam Web API.');
+  }
   optionalUrl('RETURN_URL', 'Steam return URL');
   optionalUrl('REALM', 'Steam realm');
 
@@ -123,6 +161,9 @@ function main() {
   optionalUrl('BASE_URL', 'Base URL');
   const domain = process.env.DOMAIN;
   if (isNonEmpty(domain) && !validateDomainLike(domain)) warn(`DOMAIN should be host or host:port (no scheme). Got: ${domain}`);
+  if (isNonEmpty(process.env.LOG_LEVEL) && !isLogLevel(process.env.LOG_LEVEL)) {
+    warn(`LOG_LEVEL is not a known level (error,warn,info,http,verbose,debug,silly). Got: ${process.env.LOG_LEVEL}`);
+  }
 
   // CORS
   optionalCsvUrls('CORS_ORIGINS', 'CORS allowed origins');
@@ -141,8 +182,16 @@ function main() {
     warn('Space Engineers hangar features may fail without an S3 bucket configured.');
   }
   if (bucketKey) {
+    const bucketVal = process.env[bucketKey];
+    if (isNonEmpty(bucketVal) && !isS3Bucket(bucketVal)) {
+      err(`S3 bucket name (${bucketKey}) is invalid per S3 naming rules: ${bucketVal}`);
+    }
     if (!isNonEmpty(process.env.AWS_REGION) && !isNonEmpty(process.env.SE_HANGAR_S3_REGION)) {
       warn('AWS region not set (AWS_REGION or SE_HANGAR_S3_REGION). Default may not match your bucket.');
+    }
+    const region = process.env.AWS_REGION || process.env.SE_HANGAR_S3_REGION;
+    if (isNonEmpty(region) && !isAwsRegion(region)) {
+      warn(`AWS region format looks wrong (e.g., ap-northeast-2). Got: ${region}`);
     }
     // Credentials may be provided via IAM; warn only if completely absent
     if (!isNonEmpty(process.env.AWS_ACCESS_KEY_ID) || !isNonEmpty(process.env.AWS_SECRET_ACCESS_KEY)) {
@@ -170,6 +219,88 @@ function main() {
     }
     if (!isNonEmpty(process.env.DOMAIN)) {
       warn('DOMAIN is not set in production; some features may rely on a proper host name.');
+    }
+    if (process.env.DB_SSL !== 'true') {
+      warn('DB_SSL is not true in production; set DB_SSL=true unless you are certain SSL is unnecessary.');
+    }
+  }
+
+  // Optional online checks
+  if (ONLINE) {
+    console.log(colors.cyan('\nRunning online usability checks...'));
+    const pending = [];
+    // Steam API key validation via a harmless request
+    const steamKey = process.env.STEAM_API_KEY;
+    if (isNonEmpty(steamKey)) {
+      const testSteamId = '76561197960434622'; // Valve test account
+      pending.push(
+        axios
+          .get('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/', {
+            params: { key: steamKey, steamids: testSteamId },
+            timeout: 5000,
+            validateStatus: () => true,
+          })
+          .then((resp) => {
+            if (resp.status === 200) {
+              // Some invalid keys may still return 200 but with an error payload; check common shape
+              if (resp.data && resp.data.response) {
+                // Consider it usable if API responds with structured payload
+                console.log(colors.green('✓ STEAM_API_KEY accepted by Steam Web API'));
+              } else {
+                warn('STEAM_API_KEY response shape unexpected; key may be limited or invalid.');
+              }
+            } else if (resp.status === 401 || resp.status === 403) {
+              err(`STEAM_API_KEY appears invalid (HTTP ${resp.status}).`);
+            } else {
+              warn(`Steam API check returned HTTP ${resp.status}; could not confirm key usability.`);
+            }
+          })
+          .catch((e) => {
+            warn(`Steam API online check failed: ${e && e.message ? e.message : String(e)}`);
+          })
+      );
+    }
+
+    // AWS S3: HeadBucket to confirm access
+    const bucket = process.env.SE_HANGAR_S3_BUCKET || process.env.S3_BUCKET;
+    const region = process.env.SE_HANGAR_S3_REGION || process.env.AWS_REGION || 'ap-northeast-2';
+    if (isNonEmpty(bucket)) {
+      try {
+        const cfg = { region };
+        if (isNonEmpty(process.env.AWS_ACCESS_KEY_ID) && isNonEmpty(process.env.AWS_SECRET_ACCESS_KEY)) {
+          cfg.credentials = {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+          };
+        }
+        const s3 = new S3Client(cfg);
+        pending.push(
+          s3
+            .send(new HeadBucketCommand({ Bucket: bucket }))
+            .then(() => {
+              console.log(colors.green(`✓ AWS S3 access confirmed for bucket "${bucket}"`));
+            })
+            .catch((e) => {
+              const msg = e && e.name ? `${e.name}: ${e.message}` : String(e);
+              if (/NotFound|NoSuchBucket|404/.test(msg)) {
+                err(`AWS S3 bucket not found or inaccessible: ${bucket} (${msg})`);
+              } else if (/AccessDenied|Forbidden|403/.test(msg)) {
+                err(`AWS credentials lack access to bucket: ${bucket} (${msg})`);
+              } else {
+                warn(`AWS S3 online check failed: ${msg}`);
+              }
+            })
+        );
+      } catch (e) {
+        warn(`Could not initialize AWS S3 client: ${e && e.message ? e.message : String(e)}`);
+      }
+    }
+
+    // Await all online probes before summary
+    try {
+      await Promise.allSettled(pending);
+    } catch {
+      // ignore, handled above
     }
   }
 
