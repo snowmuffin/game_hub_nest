@@ -6,3 +6,4 @@ export { SpaceEngineersMarketplaceItem } from './marketplace-item.entity';
 export { SpaceEngineersItemDownloadLog } from './item-download-log.entity';
 export { SpaceEngineersDropTable } from './drop-table.entity';
 export { SpaceEngineersHangarGrid } from './hangar-grid.entity';
+export { SpaceEngineersBlock } from './block.entity';
