@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ValheimItemModule } from './item/valheim-item.module';
 import { ValheimInventoryModule } from './inventory/valheim-inventory.module';
 import { ValheimCharacterModule } from './character/valheim-character.module';

@@ -11,6 +11,14 @@ import {
   SpaceEngineersDropTable,
 } from 'src/entities/space_engineers';
 
+type RawItem = {
+  DisplayName?: unknown;
+  Id?: unknown;
+  Description?: unknown;
+  Category?: unknown;
+  Icons?: unknown;
+};
+
 @Injectable()
 export class ItemService {
   private readonly logger = new Logger(ItemService.name);
@@ -32,7 +40,23 @@ export class ItemService {
     private readonly dropTableRepository: Repository<SpaceEngineersDropTable>,
   ) {}
 
-  async getItems(steamId: string): Promise<any[]> {
+  private async resolveSteamId(
+    steamIdOrUserId: string | number,
+  ): Promise<string> {
+    if (typeof steamIdOrUserId === 'number') {
+      const user = await this.userRepository.findOne({
+        where: { id: steamIdOrUserId },
+      });
+      if (!user) {
+        throw new Error(`User not found for id: ${steamIdOrUserId}`);
+      }
+      return user.steam_id;
+    }
+    return steamIdOrUserId;
+  }
+
+  async getItems(steamIdOrUserId: string | number): Promise<any[]> {
+    const steamId = await this.resolveSteamId(steamIdOrUserId);
     this.logger.log(`Getting items for Steam ID: ${steamId}`);
 
     // Get user from database
@@ -81,7 +105,7 @@ export class ItemService {
     return formattedItems;
   }
 
-  private extractFileName(iconPath: any): string {
+  private extractFileName(iconPath: unknown): string {
     if (!iconPath) {
       this.logger.warn('Icon path is empty or undefined.');
       return '';
@@ -94,34 +118,41 @@ export class ItemService {
           return '';
         }
 
-        const normalizedPath = iconPath[0].replace(/\\/g, '/');
-        const fileName = normalizedPath.split('/').pop();
-        return fileName || '';
+        const first = iconPath[0] as unknown;
+        if (typeof first !== 'string') {
+          this.logger.warn('Icon path array first element is not a string.');
+          return '';
+        }
+        const normalizedPath: string = first.replace(/\\/g, '/');
+        const fileName: string | undefined = normalizedPath.split('/').pop();
+        return fileName ?? '';
       }
 
       if (typeof iconPath === 'string') {
-        const normalizedPath = iconPath.replace(/\\/g, '/');
-        const fileName = normalizedPath.split('/').pop();
-        return fileName || '';
+        const normalizedPath: string = iconPath.replace(/\\/g, '/');
+        const fileName: string | undefined = normalizedPath.split('/').pop();
+        return fileName ?? '';
       }
 
       this.logger.warn(
         `Invalid icon path type: ${typeof iconPath}. Expected a string or array.`,
       );
       return '';
-    } catch (error) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       this.logger.warn(
-        `Failed to parse or extract file name from icon path: ${JSON.stringify(iconPath)}. Error: ${error.message}`,
+        `Failed to parse or extract file name from icon path: ${JSON.stringify(iconPath)}. Error: ${message}`,
       );
       return '';
     }
   }
 
   async uploadItem(
-    steamId: string,
+    steamIdOrUserId: string | number,
     identifier: string,
     quantity: number,
   ): Promise<any> {
+    const steamId = await this.resolveSteamId(steamIdOrUserId);
     this.logger.log(
       `Uploading item: Steam ID=${steamId}, Identifier=${identifier}, Quantity=${quantity}`,
     );
@@ -185,9 +216,11 @@ export class ItemService {
         `Successfully uploaded ${quantity}x '${identifier}' for Steam ID=${steamId}`,
       );
       return { message: `${quantity}x '${identifier}' added to storage.` };
-    } catch (error) {
-      this.logger.error(`Error uploading item: ${error.message}`, error.stack);
-      throw error;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Error uploading item: ${message}`, stack);
+      throw error instanceof Error ? error : new Error(message);
     }
   }
 
@@ -259,12 +292,11 @@ export class ItemService {
         message: `Download request for ${quantity}x '${indexName}' is pending confirmation.`,
         timestamp: new Date().toISOString(),
       };
-    } catch (error) {
-      this.logger.error(
-        `Error requesting download: ${error.message}`,
-        error.stack,
-      );
-      throw error;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Error requesting download: ${message}`, stack);
+      throw error instanceof Error ? error : new Error(message);
     }
   }
 
@@ -325,12 +357,11 @@ export class ItemService {
         message: `Successfully confirmed and deducted ${quantity}x '${indexName}' from storage.`,
         timestamp: new Date().toISOString(),
       };
-    } catch (error) {
-      this.logger.error(
-        `Error confirming download: ${error.message}`,
-        error.stack,
-      );
-      throw error;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Error confirming download: ${message}`, stack);
+      throw error instanceof Error ? error : new Error(message);
     }
   }
 
@@ -378,16 +409,19 @@ export class ItemService {
         message: `Download request for ${quantity}x '${indexName}' has been canceled.`,
         timestamp: new Date().toISOString(),
       };
-    } catch (error) {
-      this.logger.error(
-        `Error canceling download: ${error.message}`,
-        error.stack,
-      );
-      throw error;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Error canceling download: ${message}`, stack);
+      throw error instanceof Error ? error : new Error(message);
     }
   }
 
-  async upgradeItem(steamId: string, targetItem: string): Promise<any> {
+  async upgradeItem(
+    steamIdOrUserId: string | number,
+    targetItem: string,
+  ): Promise<any> {
+    const steamId = await this.resolveSteamId(steamIdOrUserId);
     this.logger.log(
       `Upgrading item: Steam ID=${steamId}, Target Item=${targetItem}`,
     );
@@ -399,7 +433,7 @@ export class ItemService {
     );
   }
 
-  async getBlueprints(): Promise<any> {
+  getBlueprints(): any {
     this.logger.log(`Fetching blueprints`);
 
     // Note: This method requires a blueprints table/entity that doesn't exist yet
@@ -409,29 +443,44 @@ export class ItemService {
     );
   }
 
-  async updateItems(itemList: any[]): Promise<any> {
+  async updateItems(itemList: RawItem[]): Promise<any> {
     this.logger.log(`Updating items: ${JSON.stringify(itemList)}`);
 
     for (const item of itemList) {
-      if (
-        !item.DisplayName ||
-        !item.Id ||
-        (typeof item.Id === 'string' &&
-          item.Id.includes('MyObjectBuilder_TreeObject'))
-      ) {
+      const displayName =
+        typeof item.DisplayName === 'string' ? item.DisplayName : undefined;
+      const id = typeof item.Id === 'string' ? item.Id : undefined;
+      const description =
+        typeof item.Description === 'string' ? item.Description : undefined;
+      const category =
+        typeof item.Category === 'string' ? item.Category : undefined;
+      const icons = Array.isArray(item.Icons)
+        ? item.Icons.filter((v): v is string => typeof v === 'string')
+        : undefined;
+
+      if (!displayName || !id || id.includes('MyObjectBuilder_TreeObject')) {
         this.logger.warn(
           `Skipping item (invalid or excluded): ${JSON.stringify(item)}`,
         );
         continue;
       }
 
-      const mappedItem = {
-        displayName: item.DisplayName,
+      type MappedItem = {
+        displayName: string;
+        rarity: number;
+        description?: string;
+        category?: string;
+        icons: string[];
+        indexName: string;
+      };
+
+      const mappedItem: MappedItem = {
+        displayName,
         rarity: 1,
-        description: item.Description || null,
-        category: item.Category || this.determineCategory(item.Id),
-        icons: item.Icons || [],
-        indexName: item.Id,
+        description: description ?? undefined,
+        category: category ?? this.determineCategory(id),
+        icons: icons ?? [],
+        indexName: id,
       };
 
       try {
@@ -444,20 +493,27 @@ export class ItemService {
           // Update existing item
           existingItem.displayName = mappedItem.displayName;
           existingItem.rarity = mappedItem.rarity;
-          existingItem.description = mappedItem.description;
-          existingItem.category = mappedItem.category;
+          if (mappedItem.description !== undefined) {
+            existingItem.description = mappedItem.description;
+          }
+          if (mappedItem.category !== undefined) {
+            existingItem.category = mappedItem.category;
+          }
           existingItem.icons = mappedItem.icons;
           await this.itemRepository.save(existingItem);
         } else {
           // Create new item
-          const newItem = this.itemRepository.create(mappedItem);
+          const newItem = this.itemRepository.create(
+            mappedItem as unknown as Partial<SpaceEngineersItem>,
+          );
           await this.itemRepository.save(newItem);
         }
 
         this.logger.log(`Successfully processed item: ${mappedItem.indexName}`);
-      } catch (error) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         this.logger.error(
-          `Failed to process item ${mappedItem.indexName}: ${error.message}`,
+          `Failed to process item ${mappedItem.indexName}: ${message}`,
         );
         continue;
       }

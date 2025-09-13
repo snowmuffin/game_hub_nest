@@ -7,6 +7,8 @@ import {
   Query,
   UseGuards,
   Request,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   WalletService,
@@ -14,6 +16,9 @@ import {
   WalletTransactionDto,
 } from './wallet.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { Request as ExpressRequest } from 'express';
+
+type AuthenticatedRequest = ExpressRequest & { user: { id: number } };
 
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
@@ -22,27 +27,33 @@ export class WalletController {
 
   // Create or fetch a wallet
   @Post('create')
-  async createWallet(@Body() createWalletDto: CreateWalletDto, @Request() req) {
-    // Restrict to the requesting user's ID
+  async createWallet(
+    @Body() createWalletDto: CreateWalletDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    // Force the userId to be the authenticated user's ID
     createWalletDto.userId = req.user.id;
     return await this.walletService.getOrCreateWallet(createWalletDto);
   }
 
   // Get my wallets
   @Get('my-wallets')
-  async getMyWallets(@Request() req) {
+  async getMyWallets(@Request() req: AuthenticatedRequest) {
     return await this.walletService.getUserWallets(req.user.id);
   }
 
   // Get my wallets for a specific game
   @Get('my-wallets/game/:gameId')
-  async getMyWalletsByGame(@Param('gameId') gameId: number, @Request() req) {
+  async getMyWalletsByGame(
+    @Param('gameId', ParseIntPipe) gameId: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return await this.walletService.getUserWalletsByGame(req.user.id, gameId);
   }
 
   // Get wallet balance
   @Get(':walletId/balance')
-  async getWalletBalance(@Param('walletId') walletId: number) {
+  async getWalletBalance(@Param('walletId', ParseIntPipe) walletId: number) {
     return await this.walletService.getWalletBalance(walletId);
   }
 
@@ -55,9 +66,9 @@ export class WalletController {
   // Get wallet transaction history
   @Get(':walletId/transactions')
   async getWalletTransactions(
-    @Param('walletId') walletId: number,
-    @Query('limit') limit: number = 50,
-    @Query('offset') offset: number = 0,
+    @Param('walletId', ParseIntPipe) walletId: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
   ) {
     return await this.walletService.getWalletTransactions(
       walletId,
@@ -69,9 +80,9 @@ export class WalletController {
   // Get all my transaction history
   @Get('my-transactions')
   async getMyTransactions(
-    @Request() req,
-    @Query('limit') limit: number = 50,
-    @Query('offset') offset: number = 0,
+    @Request() req: AuthenticatedRequest,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
   ) {
     return await this.walletService.getUserTransactions(
       req.user.id,

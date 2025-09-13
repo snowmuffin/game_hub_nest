@@ -33,6 +33,12 @@ export interface UpdateInventoryItemDto {
   enchantments?: any;
 }
 
+export interface InventoryStats {
+  total_items: number;
+  items_by_type: { type: string; count: number }[];
+  storage_distribution: { storage_type: string; count: number }[];
+}
+
 @Injectable()
 export class ValheimInventoryService {
   private readonly logger = new Logger(ValheimInventoryService.name);
@@ -83,9 +89,8 @@ export class ValheimInventoryService {
       .select('SUM(inventory.quantity)', 'total')
       .where('inventory.user_id = :userId', { userId })
       .andWhere('inventory.item_id = :itemId', { itemId })
-      .getRawOne();
-
-    return parseInt(result.total) || 0;
+      .getRawOne<{ total: string | null }>();
+    return parseInt(result?.total ?? '0') || 0;
   }
 
   /**
@@ -256,32 +261,43 @@ export class ValheimInventoryService {
   /**
    * 사용자의 인벤토리 통계
    */
-  async getInventoryStats(userId: number): Promise<any> {
+  async getInventoryStats(userId: number): Promise<InventoryStats> {
     const totalItems = await this.inventoryRepository
       .createQueryBuilder('inventory')
       .select('SUM(inventory.quantity)', 'total')
       .where('inventory.user_id = :userId', { userId })
-      .getRawOne();
+      .getRawOne<{ total: string | null }>();
 
-    const itemTypes = await this.inventoryRepository
+    const itemTypesRaw = await this.inventoryRepository
       .createQueryBuilder('inventory')
       .leftJoin('inventory.item', 'item')
-      .select('item.type, SUM(inventory.quantity) as count')
+      .select('item.type', 'type')
+      .addSelect('SUM(inventory.quantity)', 'count')
       .where('inventory.user_id = :userId', { userId })
       .groupBy('item.type')
-      .getRawMany();
+      .getRawMany<{ type: string | null; count: string | null }>();
 
-    const storageDistribution = await this.inventoryRepository
+    const storageDistributionRaw = await this.inventoryRepository
       .createQueryBuilder('inventory')
       .select('inventory.storage_type, COUNT(*) as count')
       .where('inventory.user_id = :userId', { userId })
       .groupBy('inventory.storage_type')
-      .getRawMany();
+      .getRawMany<{ storage_type: string | null; count: string | null }>();
+
+    const items_by_type = itemTypesRaw.map((r) => ({
+      type: r.type ?? '',
+      count: parseInt(r.count ?? '0') || 0,
+    }));
+
+    const storage_distribution = storageDistributionRaw.map((r) => ({
+      storage_type: r.storage_type ?? '',
+      count: parseInt(r.count ?? '0') || 0,
+    }));
 
     return {
-      total_items: parseInt(totalItems.total) || 0,
-      items_by_type: itemTypes,
-      storage_distribution: storageDistribution,
+      total_items: parseInt(totalItems?.total ?? '0') || 0,
+      items_by_type,
+      storage_distribution,
     };
   }
 

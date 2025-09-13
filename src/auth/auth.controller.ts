@@ -13,6 +13,11 @@ import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 
+type SteamProfileMinimal = { steam_id: string; username: string };
+type DecodedToken = { sub: number; username: string };
+type RequestWithUser = Request & { user?: SteamProfileMinimal };
+type RequestWithCookies = Request & { cookies?: Record<string, unknown> };
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -29,16 +34,15 @@ export class AuthController {
 
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async steamLoginReturn(
-    @Req() req: Request & { user?: any },
+    @Req() req: RequestWithUser,
     @Res() res: Response,
-  ) {
-    console.log('Steam return endpoint hit'); // 디버깅용
-    console.log('User:', req.user); // 디버깅용
+  ): Promise<void> {
+    console.log('Steam return endpoint hit'); // For debugging
+    console.log('User:', req.user); // For debugging
 
     if (!req.user) {
-      console.log('No user found in request'); // 디버깅용
+      console.log('No user found in request'); // For debugging
       res.status(401).send(`
         <script>
           console.log('Authentication failed - no user');
@@ -57,15 +61,14 @@ export class AuthController {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      const user = await this.authService.findOrCreateUser((req as any).user);
-      console.log('User found/created:', user); // 디버깅용
+      const user = await this.authService.findOrCreateUser(req.user);
+      console.log('User found/created:', user); // For debugging
 
       const accessToken = this.authService.generateJwtToken(user);
       const refreshToken = this.authService.generateRefreshToken(user);
       const userData = this.authService.formatUserData(user);
 
-      console.log('Tokens generated successfully'); // 디버깅용
+      console.log('Tokens generated successfully'); // For debugging
 
       // Dynamic cookie flags (improved)
       const isProd = process.env.NODE_ENV === 'production';
@@ -103,12 +106,12 @@ export class AuthController {
           } else {
             console.log('No opener found');
             alert('Authentication successful but cannot close window. Please close manually.');
-            document.body.innerHTML = '<h2>로그인 성공!</h2><p>이 창을 닫아주세요.</p><p>Token: ${accessToken}</p>';
+            document.body.innerHTML = '<h2>Login successful!</h2><p>Please close this window.</p><p>Token: ${accessToken}</p>';
           }
         </script>
       `);
-    } catch (error) {
-      console.error('Error in steamLoginReturn:', error); // 디버깅용
+    } catch (error: unknown) {
+      console.error('Error in steamLoginReturn:', error); // For debugging
       res.status(500).send(`
         <script>
           console.error('Server error during authentication');
@@ -130,7 +133,10 @@ export class AuthController {
   async generateTestToken(
     @Query('steam_id') steamId: string,
     @Query('username') username: string,
-  ) {
+  ): Promise<{
+    accessToken: string;
+    user: { id: number; steam_id: string; username: string };
+  }> {
     try {
       const testSteamId = steamId || 'test_user_999999';
       const testUsername = username || 'TestUser';
@@ -158,28 +164,35 @@ export class AuthController {
           username: testUser.username,
         },
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error generating test token:', error);
       throw new Error('Failed to generate test token');
     }
   }
 
   @Post('refresh')
-  refreshAccessToken(
-    @Req() req: Request & { cookies?: Record<string, string> },
-    @Res() res: Response,
-  ) {
-    const refreshToken = req.cookies?.['refreshToken'];
+  refreshAccessToken(@Req() req: RequestWithCookies, @Res() res: Response) {
+    const cookiesUnknown = req.cookies as unknown;
+    let refreshToken: string | undefined;
+    if (typeof cookiesUnknown === 'object' && cookiesUnknown !== null) {
+      const candidate = (cookiesUnknown as Record<string, unknown>)[
+        'refreshToken'
+      ];
+      refreshToken = typeof candidate === 'string' ? candidate : undefined;
+    }
 
     if (!refreshToken) {
       return res.status(401).json({ message: 'Refresh token is missing' });
     }
 
     try {
-      const decoded = this.jwtService.verify(refreshToken ?? '', {
+      const decoded = this.jwtService.verify<DecodedToken>(refreshToken, {
         secret: process.env.JWT_SECRET || 'defaultSecret',
       });
-      const user = { id: decoded.sub, username: decoded.username };
+      const user: { id: number; username: string } = {
+        id: decoded.sub,
+        username: decoded.username,
+      };
       const newAccessToken = this.authService.generateJwtToken(user);
 
       return res.json({ token: newAccessToken });

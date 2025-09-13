@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   ValheimItem,
   ValheimItemType,
@@ -46,6 +46,13 @@ export interface ValheimItemSearchDto {
   is_tradeable?: boolean;
   is_teleportable?: boolean;
   name?: string;
+}
+
+export interface ItemStats {
+  total_items: number;
+  items_by_type: { type: string; count: number }[];
+  tradeable_items: number;
+  teleportable_items: number;
 }
 
 @Injectable()
@@ -217,14 +224,15 @@ export class ValheimItemService {
   /**
    * 아이템 통계
    */
-  async getItemStats(): Promise<any> {
+  async getItemStats(): Promise<ItemStats> {
     const totalItems = await this.valheimItemRepository.count();
 
-    const itemsByType = await this.valheimItemRepository
+    const itemsByTypeRaw = await this.valheimItemRepository
       .createQueryBuilder('item')
-      .select('item.type, COUNT(*) as count')
+      .select('item.type', 'type')
+      .addSelect('COUNT(*)', 'count')
       .groupBy('item.type')
-      .getRawMany();
+      .getRawMany<{ type: string | null; count: string | null }>();
 
     const tradeableCount = await this.valheimItemRepository.count({
       where: { is_tradeable: true },
@@ -234,9 +242,14 @@ export class ValheimItemService {
       where: { is_teleportable: true },
     });
 
+    const items_by_type = itemsByTypeRaw.map((r) => ({
+      type: r.type ?? '',
+      count: parseInt(r.count ?? '0') || 0,
+    }));
+
     return {
       total_items: totalItems,
-      items_by_type: itemsByType,
+      items_by_type,
       tradeable_items: tradeableCount,
       teleportable_items: teleportableCount,
     };

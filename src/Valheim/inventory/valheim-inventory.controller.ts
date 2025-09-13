@@ -6,7 +6,6 @@ import {
   Delete,
   Body,
   Param,
-  Query,
   UseGuards,
   ParseIntPipe,
   Req,
@@ -17,6 +16,9 @@ import {
   AddItemToInventoryDto,
   UpdateInventoryItemDto,
 } from './valheim-inventory.service';
+import { ValheimInventory } from '../../entities/valheim/valheim-inventory.entity';
+
+type AuthenticatedRequest = { user: { id: number } };
 
 @Controller('valheim/inventory')
 @UseGuards(JwtAuthGuard)
@@ -27,8 +29,10 @@ export class ValheimInventoryController {
    * 현재 사용자의 전체 인벤토리 조회
    */
   @Get()
-  async getMyInventory(@Req() req: any) {
-    const userId = req.user.id;
+  async getMyInventory(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ValheimInventory[]> {
+    const userId = Number(req.user.id);
     return await this.inventoryService.getUserInventory(userId);
   }
 
@@ -36,7 +40,9 @@ export class ValheimInventoryController {
    * 특정 사용자의 인벤토리 조회 (관리자용)
    */
   @Get('user/:userId')
-  async getUserInventory(@Param('userId', ParseIntPipe) userId: number) {
+  async getUserInventory(
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<ValheimInventory[]> {
     return await this.inventoryService.getUserInventory(userId);
   }
 
@@ -45,10 +51,10 @@ export class ValheimInventoryController {
    */
   @Get('storage/:storageType')
   async getInventoryByStorageType(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('storageType') storageType: string,
-  ) {
-    const userId = req.user.id;
+  ): Promise<ValheimInventory[]> {
+    const userId = Number(req.user.id);
     return await this.inventoryService.getUserInventoryByStorageType(
       userId,
       storageType,
@@ -60,10 +66,10 @@ export class ValheimInventoryController {
    */
   @Get('item/:itemId/quantity')
   async getItemQuantity(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('itemId', ParseIntPipe) itemId: number,
-  ) {
-    const userId = req.user.id;
+  ): Promise<{ item_id: number; quantity: number }> {
+    const userId = Number(req.user.id);
     const quantity = await this.inventoryService.getItemQuantity(
       userId,
       itemId,
@@ -75,8 +81,12 @@ export class ValheimInventoryController {
    * 인벤토리 통계
    */
   @Get('stats')
-  async getInventoryStats(@Req() req: any) {
-    const userId = req.user.id;
+  async getInventoryStats(@Req() req: AuthenticatedRequest): Promise<{
+    total_items: number;
+    items_by_type: { type: string; count: number }[];
+    storage_distribution: { storage_type: string; count: number }[];
+  }> {
+    const userId = Number(req.user.id);
     return await this.inventoryService.getInventoryStats(userId);
   }
 
@@ -84,9 +94,12 @@ export class ValheimInventoryController {
    * 인벤토리에 아이템 추가
    */
   @Post('add')
-  async addItem(@Req() req: any, @Body() addDto: AddItemToInventoryDto) {
+  async addItem(
+    @Req() req: AuthenticatedRequest,
+    @Body() addDto: AddItemToInventoryDto,
+  ): Promise<ValheimInventory> {
     // 사용자 ID를 토큰에서 설정
-    addDto.user_id = req.user.id;
+    addDto.user_id = Number(req.user.id);
     return await this.inventoryService.addItem(addDto);
   }
 
@@ -95,10 +108,10 @@ export class ValheimInventoryController {
    */
   @Delete('remove')
   async removeItem(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() body: { item_id: number; quantity: number },
-  ) {
-    const userId = req.user.id;
+  ): Promise<{ message: string }> {
+    const userId = Number(req.user.id);
     await this.inventoryService.removeItem(userId, body.item_id, body.quantity);
     return { message: 'Item removed successfully' };
   }
@@ -110,7 +123,7 @@ export class ValheimInventoryController {
   async updateInventoryItem(
     @Param('inventoryId', ParseIntPipe) inventoryId: number,
     @Body() updateDto: UpdateInventoryItemDto,
-  ) {
+  ): Promise<ValheimInventory> {
     return await this.inventoryService.updateInventoryItem(
       inventoryId,
       updateDto,
@@ -124,7 +137,7 @@ export class ValheimInventoryController {
   async moveItem(
     @Param('inventoryId', ParseIntPipe) inventoryId: number,
     @Body() body: { storage_type: string; storage_location?: string },
-  ) {
+  ): Promise<ValheimInventory> {
     return await this.inventoryService.moveItem(
       inventoryId,
       body.storage_type,
@@ -136,8 +149,10 @@ export class ValheimInventoryController {
    * 인벤토리 초기화
    */
   @Delete('clear')
-  async clearInventory(@Req() req: any) {
-    const userId = req.user.id;
+  async clearInventory(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    const userId = Number(req.user.id);
     await this.inventoryService.clearInventory(userId);
     return { message: 'Inventory cleared successfully' };
   }
