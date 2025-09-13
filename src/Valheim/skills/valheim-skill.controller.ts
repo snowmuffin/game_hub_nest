@@ -83,7 +83,7 @@ export class ValheimSkillController {
   }
 
   @Get('available')
-  async getAvailableSkills(): Promise<string[]> {
+  getAvailableSkills(): string[] {
     return this.skillService.getAvailableSkills();
   }
 

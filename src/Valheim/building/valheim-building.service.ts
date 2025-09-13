@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { ValheimBuilding } from '../../entities/valheim/valheim-building.entity';
 
 export interface CreateBuildingDto {
@@ -97,7 +97,10 @@ export class ValheimBuildingService {
     buildingType: string,
     serverId?: string,
   ): Promise<ValheimBuilding[]> {
-    const where: any = { buildingType, isActive: true };
+    const where: FindOptionsWhere<ValheimBuilding> = {
+      buildingType,
+      isActive: true,
+    };
     if (serverId) {
       where.serverId = serverId;
     }

@@ -83,7 +83,12 @@ export class ValheimItemController {
    * 아이템 통계
    */
   @Get('stats/overview')
-  async getItemStats() {
+  async getItemStats(): Promise<{
+    total_items: number;
+    items_by_type: { type: string; count: number }[];
+    tradeable_items: number;
+    teleportable_items: number;
+  }> {
     return await this.valheimItemService.getItemStats();
   }
 

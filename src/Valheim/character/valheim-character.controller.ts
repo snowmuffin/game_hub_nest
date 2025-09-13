@@ -18,6 +18,9 @@ import {
   UpdateCharacterDto,
   UpdateSkillsDto,
 } from './valheim-character.service';
+import { ValheimCharacter } from '../../entities/valheim/valheim-character.entity';
+
+type AuthenticatedRequest = { user: { id: number } };
 
 @Controller('valheim/character')
 export class ValheimCharacterController {
@@ -27,7 +30,7 @@ export class ValheimCharacterController {
    * 모든 캐릭터 조회 (랭킹)
    */
   @Get()
-  async getAllCharacters() {
+  async getAllCharacters(): Promise<ValheimCharacter[]> {
     return await this.characterService.findAll();
   }
 
@@ -36,8 +39,10 @@ export class ValheimCharacterController {
    */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getMyCharacter(@Req() req: any) {
-    const userId = req.user.id;
+  async getMyCharacter(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ValheimCharacter> {
+    const userId = Number(req.user.id);
     return await this.characterService.findByUserId(userId);
   }
 
@@ -45,7 +50,9 @@ export class ValheimCharacterController {
    * 특정 캐릭터 조회
    */
   @Get(':id')
-  async getCharacterById(@Param('id', ParseIntPipe) id: number) {
+  async getCharacterById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ValheimCharacter> {
     return await this.characterService.findById(id);
   }
 
@@ -53,7 +60,9 @@ export class ValheimCharacterController {
    * 레벨 랭킹 조회
    */
   @Get('rankings/level')
-  async getLevelRankings(@Query('limit') limit: string = '10') {
+  async getLevelRankings(
+    @Query('limit') limit: string = '10',
+  ): Promise<ValheimCharacter[]> {
     return await this.characterService.getLevelRankings(parseInt(limit));
   }
 
@@ -64,7 +73,7 @@ export class ValheimCharacterController {
   async getSkillRankings(
     @Param('skillName') skillName: string,
     @Query('limit') limit: string = '10',
-  ) {
+  ): Promise<ValheimCharacter[]> {
     return await this.characterService.getSkillRankings(
       skillName,
       parseInt(limit),
@@ -75,7 +84,9 @@ export class ValheimCharacterController {
    * 플레이 시간 랭킹 조회
    */
   @Get('rankings/playtime')
-  async getPlayTimeRankings(@Query('limit') limit: string = '10') {
+  async getPlayTimeRankings(
+    @Query('limit') limit: string = '10',
+  ): Promise<ValheimCharacter[]> {
     return await this.characterService.getPlayTimeRankings(parseInt(limit));
   }
 
@@ -83,7 +94,12 @@ export class ValheimCharacterController {
    * 캐릭터 통계
    */
   @Get('stats/overview')
-  async getCharacterStats() {
+  async getCharacterStats(): Promise<{
+    total_characters: number;
+    average_level: number;
+    max_level: number;
+    total_play_time_hours: number;
+  }> {
     return await this.characterService.getCharacterStats();
   }
 
@@ -93,10 +109,10 @@ export class ValheimCharacterController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async createCharacter(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() createDto: CreateCharacterDto,
-  ) {
-    createDto.user_id = req.user.id;
+  ): Promise<ValheimCharacter> {
+    createDto.user_id = Number(req.user.id);
     return await this.characterService.create(createDto);
   }
 
@@ -106,10 +122,10 @@ export class ValheimCharacterController {
   @Put()
   @UseGuards(JwtAuthGuard)
   async updateCharacter(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() updateDto: UpdateCharacterDto,
-  ) {
-    const userId = req.user.id;
+  ): Promise<ValheimCharacter> {
+    const userId = Number(req.user.id);
     return await this.characterService.update(userId, updateDto);
   }
 
@@ -118,8 +134,11 @@ export class ValheimCharacterController {
    */
   @Put('skills')
   @UseGuards(JwtAuthGuard)
-  async updateSkills(@Req() req: any, @Body() skillsDto: UpdateSkillsDto) {
-    const userId = req.user.id;
+  async updateSkills(
+    @Req() req: AuthenticatedRequest,
+    @Body() skillsDto: UpdateSkillsDto,
+  ): Promise<ValheimCharacter> {
+    const userId = Number(req.user.id);
     return await this.characterService.updateSkills(userId, skillsDto);
   }
 
@@ -128,8 +147,11 @@ export class ValheimCharacterController {
    */
   @Post('boss/defeat')
   @UseGuards(JwtAuthGuard)
-  async defeatBoss(@Req() req: any, @Body() body: { boss_name: string }) {
-    const userId = req.user.id;
+  async defeatBoss(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { boss_name: string },
+  ): Promise<ValheimCharacter> {
+    const userId = Number(req.user.id);
     return await this.characterService.defeatBoss(userId, body.boss_name);
   }
 
@@ -139,10 +161,10 @@ export class ValheimCharacterController {
   @Post('location/discover')
   @UseGuards(JwtAuthGuard)
   async discoverLocation(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() body: { location_name: string },
-  ) {
-    const userId = req.user.id;
+  ): Promise<ValheimCharacter> {
+    const userId = Number(req.user.id);
     return await this.characterService.discoverLocation(
       userId,
       body.location_name,
@@ -154,8 +176,11 @@ export class ValheimCharacterController {
    */
   @Post('recipe/unlock')
   @UseGuards(JwtAuthGuard)
-  async unlockRecipe(@Req() req: any, @Body() body: { recipe_name: string }) {
-    const userId = req.user.id;
+  async unlockRecipe(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { recipe_name: string },
+  ): Promise<ValheimCharacter> {
+    const userId = Number(req.user.id);
     return await this.characterService.unlockRecipe(userId, body.recipe_name);
   }
 
@@ -164,8 +189,10 @@ export class ValheimCharacterController {
    */
   @Delete()
   @UseGuards(JwtAuthGuard)
-  async deleteCharacter(@Req() req: any) {
-    const userId = req.user.id;
+  async deleteCharacter(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    const userId = Number(req.user.id);
     await this.characterService.delete(userId);
     return { message: 'Character deleted successfully' };
   }

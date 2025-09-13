@@ -13,6 +13,11 @@ import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 
+type SteamProfileMinimal = { steam_id: string; username: string };
+type DecodedToken = { sub: number; username: string };
+type RequestWithUser = Request & { user?: SteamProfileMinimal };
+type RequestWithCookies = Request & { cookies?: Record<string, unknown> };
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -30,9 +35,9 @@ export class AuthController {
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
   async steamLoginReturn(
-    @Req() req: Request & { user?: any },
+    @Req() req: RequestWithUser,
     @Res() res: Response,
-  ) {
+  ): Promise<void> {
     console.log('Steam return endpoint hit'); // 디버깅용
     console.log('User:', req.user); // 디버깅용
 
@@ -56,8 +61,7 @@ export class AuthController {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      const user = await this.authService.findOrCreateUser((req as any).user);
+      const user = await this.authService.findOrCreateUser(req.user);
       console.log('User found/created:', user); // 디버깅용
 
       const accessToken = this.authService.generateJwtToken(user);
@@ -106,7 +110,7 @@ export class AuthController {
           }
         </script>
       `);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error in steamLoginReturn:', error); // 디버깅용
       res.status(500).send(`
         <script>
@@ -129,7 +133,10 @@ export class AuthController {
   async generateTestToken(
     @Query('steam_id') steamId: string,
     @Query('username') username: string,
-  ) {
+  ): Promise<{
+    accessToken: string;
+    user: { id: number; steam_id: string; username: string };
+  }> {
     try {
       const testSteamId = steamId || 'test_user_999999';
       const testUsername = username || 'TestUser';
@@ -157,28 +164,35 @@ export class AuthController {
           username: testUser.username,
         },
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error generating test token:', error);
       throw new Error('Failed to generate test token');
     }
   }
 
   @Post('refresh')
-  refreshAccessToken(
-    @Req() req: Request & { cookies?: Record<string, string> },
-    @Res() res: Response,
-  ) {
-    const refreshToken = req.cookies?.['refreshToken'];
+  refreshAccessToken(@Req() req: RequestWithCookies, @Res() res: Response) {
+    const cookiesUnknown = req.cookies as unknown;
+    let refreshToken: string | undefined;
+    if (typeof cookiesUnknown === 'object' && cookiesUnknown !== null) {
+      const candidate = (cookiesUnknown as Record<string, unknown>)[
+        'refreshToken'
+      ];
+      refreshToken = typeof candidate === 'string' ? candidate : undefined;
+    }
 
     if (!refreshToken) {
       return res.status(401).json({ message: 'Refresh token is missing' });
     }
 
     try {
-      const decoded = this.jwtService.verify(refreshToken ?? '', {
+      const decoded = this.jwtService.verify<DecodedToken>(refreshToken, {
         secret: process.env.JWT_SECRET || 'defaultSecret',
       });
-      const user = { id: decoded.sub, username: decoded.username };
+      const user: { id: number; username: string } = {
+        id: decoded.sub,
+        username: decoded.username,
+      };
       const newAccessToken = this.authService.generateJwtToken(user);
 
       return res.json({ token: newAccessToken });

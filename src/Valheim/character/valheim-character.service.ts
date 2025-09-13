@@ -56,6 +56,13 @@ export interface UpdateSkillsDto {
   skill_farming?: number;
 }
 
+export interface CharacterStats {
+  total_characters: number;
+  average_level: number;
+  max_level: number;
+  total_play_time_hours: number;
+}
+
 @Injectable()
 export class ValheimCharacterService {
   private readonly logger = new Logger(ValheimCharacterService.name);
@@ -317,7 +324,7 @@ export class ValheimCharacterService {
   /**
    * 캐릭터 통계
    */
-  async getCharacterStats(): Promise<any> {
+  async getCharacterStats(): Promise<CharacterStats> {
     const totalCharacters = await this.characterRepository.count({
       where: { is_active: true },
     });
@@ -326,27 +333,33 @@ export class ValheimCharacterService {
       .createQueryBuilder('character')
       .select('AVG(character.level)', 'avg_level')
       .where('character.is_active = :isActive', { isActive: true })
-      .getRawOne();
+      .getRawOne<{ avg_level: string | null }>();
 
     const maxLevel = await this.characterRepository
       .createQueryBuilder('character')
       .select('MAX(character.level)', 'max_level')
       .where('character.is_active = :isActive', { isActive: true })
-      .getRawOne();
+      .getRawOne<{ max_level: string | null }>();
 
     const totalPlayTime = await this.characterRepository
       .createQueryBuilder('character')
       .select('SUM(character.play_time_seconds)', 'total_play_time')
       .where('character.is_active = :isActive', { isActive: true })
-      .getRawOne();
+      .getRawOne<{ total_play_time: string | null }>();
+
+    const average_level = Math.round(
+      parseFloat(avgLevel?.avg_level ?? '0') || 0,
+    );
+    const max_level = parseInt(maxLevel?.max_level ?? '0') || 0;
+    const total_play_time_hours = Math.round(
+      (parseInt(totalPlayTime?.total_play_time ?? '0') || 0) / 3600,
+    );
 
     return {
       total_characters: totalCharacters,
-      average_level: Math.round(parseFloat(avgLevel.avg_level) || 0),
-      max_level: parseInt(maxLevel.max_level) || 0,
-      total_play_time_hours: Math.round(
-        (parseInt(totalPlayTime.total_play_time) || 0) / 3600,
-      ),
+      average_level,
+      max_level,
+      total_play_time_hours,
     };
   }
 }
