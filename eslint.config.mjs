@@ -13,6 +13,7 @@ export default tseslint.config(
     ignores: [
       'eslint.config.mjs',
       'dist/**',
+  'src/Space_EngineERS/**',
     ],
   },
   eslint.configs.recommended,
