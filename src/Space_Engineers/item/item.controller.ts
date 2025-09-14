@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Query,
+  Param,
   Body,
   Req,
   Logger,
@@ -34,6 +36,32 @@ export class ItemController {
   private readonly logger = new Logger(ItemController.name);
 
   constructor(private readonly itemService: ItemService) {}
+
+  // Public catalog endpoints for in-game item dictionary
+  @Get('catalog')
+  async getCatalog(
+    @Query('q') q?: string,
+    @Query('category') category?: string,
+    @Query('rarityMin') rarityMin?: string,
+    @Query('rarityMax') rarityMax?: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '50',
+    @Query('sort') sort: string = 'displayName:ASC',
+  ): Promise<unknown> {
+    this.logger.log(
+      `GET /space_engineers/item/catalog q=${q ?? ''} category=${category ?? ''} rarityMin=${rarityMin ?? ''} rarityMax=${rarityMax ?? ''} page=${page} limit=${limit} sort=${sort}`,
+    );
+    const options = {
+      q,
+      category,
+      rarityMin: rarityMin ? Number(rarityMin) : undefined,
+      rarityMax: rarityMax ? Number(rarityMax) : undefined,
+      page: Math.max(1, Number(page) || 1),
+      limit: Math.min(200, Math.max(1, Number(limit) || 50)),
+      sort,
+    } as const;
+    return await this.itemService.searchCatalog(options);
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard) // Apply auth guard
@@ -100,5 +128,14 @@ export class ItemController {
   getBlueprints(): unknown {
     this.logger.log(`GET /space_engineers/item/blueprints`);
     return this.itemService.getBlueprints();
+  }
+
+  // Keep parameter route last to avoid shadowing static routes like 'blueprints'
+  @Get(':identifier')
+  async getItemByIdentifier(
+    @Param('identifier') identifier: string,
+  ): Promise<unknown> {
+    this.logger.log(`GET /space_engineers/item/${identifier}`);
+    return await this.itemService.getItemByIdentifier(identifier);
   }
 }

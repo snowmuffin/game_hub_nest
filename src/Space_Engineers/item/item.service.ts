@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/entities/shared/user.entity';
@@ -39,6 +39,166 @@ export class ItemService {
     @InjectRepository(SpaceEngineersDropTable)
     private readonly dropTableRepository: Repository<SpaceEngineersDropTable>,
   ) {}
+
+  // Catalog search for item dictionary
+  async searchCatalog(options: {
+    q?: string;
+    category?: string;
+    rarityMin?: number;
+    rarityMax?: number;
+    page: number;
+    limit: number;
+    sort: string;
+  }): Promise<{
+    data: Array<{
+      id: number;
+      indexName: string;
+      displayName: string;
+      rarity: number;
+      description?: string | null;
+      category?: string | null;
+      icons: unknown;
+      iconFile?: string;
+      updatedAt: Date;
+    }>;
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    sort: { field: string; direction: 'ASC' | 'DESC' };
+    filters: {
+      q?: string;
+      category?: string;
+      rarityMin?: number;
+      rarityMax?: number;
+    };
+  }> {
+    const { q, category, rarityMin, rarityMax } = options;
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(200, Math.max(1, options.limit || 50));
+
+    // Parse sort: allowlist fields only
+    const [rawField, rawDir] = (options.sort || 'displayName:ASC').split(':');
+    const field = (rawField || 'displayName').trim();
+    const direction =
+      (rawDir || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+    const sortable: Record<string, string> = {
+      id: 'item.id',
+      indexName: 'item.indexName',
+      displayName: 'item.displayName',
+      rarity: 'item.rarity',
+      createdAt: 'item.createdAt',
+      updatedAt: 'item.updatedAt',
+    };
+    const orderBy = sortable[field] ?? sortable.displayName;
+
+    const qb = this.itemRepository.createQueryBuilder('item');
+
+    if (q && q.trim()) {
+      const term = `%${q.trim()}%`;
+      qb.andWhere(
+        '(item.displayName ILIKE :term OR item.indexName ILIKE :term)',
+        { term },
+      );
+    }
+    if (category && category.trim()) {
+      qb.andWhere('item.category = :category', { category: category.trim() });
+    }
+    if (typeof rarityMin === 'number') {
+      qb.andWhere('item.rarity >= :rarityMin', { rarityMin });
+    }
+    if (typeof rarityMax === 'number') {
+      qb.andWhere('item.rarity <= :rarityMax', { rarityMax });
+    }
+    qb.orderBy(orderBy, direction);
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    const data = items.map((it) => ({
+      id: it.id,
+      indexName: it.indexName,
+      displayName: it.displayName,
+      rarity: it.rarity,
+      description: it.description ?? null,
+      category: it.category ?? null,
+      icons: this.normalizeIcons(it.icons),
+      iconFile: this.extractFileName(
+        Array.isArray(it.icons) ? it.icons[0] : it.icons,
+      ),
+      updatedAt: it.updatedAt,
+    }));
+
+    return {
+      data,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      sort: { field: orderBy.replace('item.', ''), direction },
+      filters: { q, category, rarityMin, rarityMax },
+    };
+  }
+
+  async getItemByIdentifier(identifier: string): Promise<{
+    id: number;
+    indexName: string;
+    displayName: string;
+    rarity: number;
+    description?: string | null;
+    category?: string | null;
+    icons: unknown;
+    iconFile?: string;
+    updatedAt: Date;
+  }> {
+    let item: SpaceEngineersItem | null = null;
+    // If contains '/', it's an indexName (e.g., MyObjectBuilder_Component/SteelPlate)
+    if (identifier.includes('/')) {
+      item = await this.itemRepository.findOne({
+        where: { indexName: identifier },
+      });
+    } else {
+      const idNum = Number(identifier);
+      if (!Number.isNaN(idNum)) {
+        item = await this.itemRepository.findOne({
+          where: { id: idNum },
+        });
+      }
+      if (!item) {
+        item = await this.itemRepository.findOne({
+          where: { indexName: identifier },
+        });
+      }
+    }
+
+    if (!item) {
+      throw new NotFoundException('Item not found');
+    }
+
+    return {
+      id: item.id,
+      indexName: item.indexName,
+      displayName: item.displayName,
+      rarity: item.rarity,
+      description: item.description ?? null,
+      category: item.category ?? null,
+      icons: this.normalizeIcons(item.icons),
+      iconFile: this.extractFileName(
+        Array.isArray(item.icons) ? item.icons[0] : item.icons,
+      ),
+      updatedAt: item.updatedAt,
+    };
+  }
+
+  private normalizeIcons(value: unknown): string[] | string | null {
+    if (Array.isArray(value)) {
+      return value.filter((v) => typeof v === 'string');
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    return null;
+  }
 
   private async resolveSteamId(
     steamIdOrUserId: string | number,
