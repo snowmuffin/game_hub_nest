@@ -9,71 +9,13 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles, MinRole } from '../auth/roles.decorator';
-import { UserRole, hasRoleOrHigher } from '../entities/shared/user-role.enum';
+import { UserRole } from '../entities/shared/user-role.enum';
 import { AdminUserService } from './admin-user.service';
-
-// Type for authenticated request
-interface AuthenticatedRequest {
-  user: {
-    id: number;
-    steamId: string;
-    username: string;
-    roles: UserRole[];
-  };
-}
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
   constructor(private readonly adminUserService: AdminUserService) {}
-
-  /**
-   * Verify admin access and return admin information
-   * Requires authentication via JWT
-   */
-  @Get('verify-access')
-  verifyAdminAccess(@Request() req: AuthenticatedRequest) {
-    const user = req.user;
-
-    // Check if user has admin privileges (GAME_ADMIN or higher)
-    const isAdmin = hasRoleOrHigher(user.roles, UserRole.GAME_ADMIN);
-
-    if (!isAdmin) {
-      return {
-        statusCode: 403,
-        message: 'Administrator privileges required',
-        error: 'Forbidden',
-      };
-    }
-
-    // Determine admin level based on highest role
-    let adminLevel = 1; // Default level
-    if (hasRoleOrHigher(user.roles, UserRole.SUPER_ADMIN)) {
-      adminLevel = 5;
-    } else if (hasRoleOrHigher(user.roles, UserRole.PLATFORM_ADMIN)) {
-      adminLevel = 4;
-    } else if (hasRoleOrHigher(user.roles, UserRole.SERVER_ADMIN)) {
-      adminLevel = 3;
-    } else if (hasRoleOrHigher(user.roles, UserRole.GAME_ADMIN)) {
-      adminLevel = 2;
-    }
-
-    // Calculate session expiry (30 minutes from now)
-    const sessionExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    const currentTime = new Date().toISOString();
-
-    return {
-      isAdmin: true,
-      adminData: {
-        steamId: user.steamId,
-        username: user.username,
-        isAdmin: true,
-        adminLevel,
-        lastAdminAccess: currentTime,
-      },
-      sessionExpiry,
-    };
-  }
 
   /**
    * Only users with MODERATOR role or higher can access
@@ -127,13 +69,13 @@ export class AdminController {
   @Get('space-engineers/users')
   @MinRole(UserRole.GAME_ADMIN)
   async getSpaceEngineersUsers(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pageNum = parseInt(page || '1');
     const limitNum = parseInt(limit || '50');
-
+    
     return this.adminUserService.getSpaceEngineersUsers(
       req.user.roles,
       pageNum,
@@ -147,10 +89,7 @@ export class AdminController {
    */
   @Get('space-engineers/users/:userId/inventory')
   @MinRole(UserRole.GAME_ADMIN)
-  async getUserInventory(
-    @Request() req: AuthenticatedRequest,
-    @Param('userId') userId: string,
-  ) {
+  async getUserInventory(@Request() req: any, @Param('userId') userId: string) {
     return this.adminUserService.getUserSpaceEngineersInventory(
       req.user.roles,
       parseInt(userId),
@@ -164,7 +103,7 @@ export class AdminController {
   @Get('space-engineers/steam/:steamId/inventory')
   @MinRole(UserRole.GAME_ADMIN)
   async getUserInventoryBySteamId(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: any,
     @Param('steamId') steamId: string,
   ) {
     return this.adminUserService.getUserBySteamId(req.user.roles, steamId);
@@ -177,14 +116,14 @@ export class AdminController {
   @Get('users/search')
   @MinRole(UserRole.GAME_ADMIN)
   async searchUsers(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: any,
     @Query('username') username: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pageNum = parseInt(page || '1');
     const limitNum = parseInt(limit || '20');
-
+    
     return this.adminUserService.searchUsersByUsername(
       req.user.roles,
       username,
