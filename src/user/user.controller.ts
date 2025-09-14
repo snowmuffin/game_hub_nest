@@ -7,7 +7,9 @@ import {
   Options,
   Res,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserService } from './user.service';
 import { User } from 'src/entities/shared/user.entity';
 import { Response } from 'express';
@@ -47,6 +49,7 @@ export class UserController {
   }
 
   @Get('rankings')
+  @UseGuards(JwtAuthGuard)
   async getRankings(): Promise<User[]> {
     this.logger.log('[HTTP] Fetching user rankings...');
     return this.userService.getRankings();
