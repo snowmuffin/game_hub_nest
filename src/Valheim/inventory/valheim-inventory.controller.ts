@@ -26,7 +26,7 @@ export class ValheimInventoryController {
   constructor(private readonly inventoryService: ValheimInventoryService) {}
 
   /**
-   * 현재 사용자의 전체 인벤토리 조회
+   * Get current user's complete inventory
    */
   @Get()
   async getMyInventory(
@@ -37,7 +37,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 특정 사용자의 인벤토리 조회 (관리자용)
+   * Get specific user's inventory (for administrators)
    */
   @Get('user/:userId')
   async getUserInventory(
@@ -47,7 +47,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 보관 타입별 인벤토리 조회
+   * Get inventory by storage type
    */
   @Get('storage/:storageType')
   async getInventoryByStorageType(
@@ -62,7 +62,7 @@ export class ValheimInventoryController {
   }
 
   /**
-   * 특정 아이템의 보유 수량 조회
+   * Get item quantity owned
    */
   @Get('item/:itemId/quantity')
   async getItemQuantity(

@@ -12,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { WalletModule } from './wallet/wallet.module';
 import { GameModule } from './game/game.module';
 import { ServerModule } from './server/server.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ServerModule } from './server/server.module';
     WalletModule,
     GameModule,
     ServerModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

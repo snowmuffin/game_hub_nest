@@ -17,7 +17,7 @@ async function bootstrap() {
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
-  // 🌐 서버 설정
+  // 🌐 Server configuration
   const host = process.env.HOST || '0.0.0.0';
   const port = parseInt(process.env.PORT || '4000', 10);
   const domain = process.env.DOMAIN;
@@ -28,7 +28,7 @@ async function bootstrap() {
     `🚀 Starting Game Hub API in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode...`,
   );
 
-  // 🔧 CORS 설정
+  // 🔧 CORS configuration
   let allowedOrigins: string[] = [];
 
   if (process.env.CORS_ORIGINS) {
@@ -36,7 +36,7 @@ async function bootstrap() {
       origin.trim(),
     );
   } else {
-    // 기본값 설정
+    // Set default values
     allowedOrigins = isProduction
       ? ['https://se.snowmuffingame.com', 'https://snowmuffingame.com']
       : [
@@ -69,10 +69,10 @@ async function bootstrap() {
     preflightContinue: false,
   });
 
-  // 🍪 Cookie parser 미들웨어
+  // 🍪 Cookie parser middleware
   app.use(cookieParser());
 
-  // 🔍 전역 검증 파이프
+  // 🔍 Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

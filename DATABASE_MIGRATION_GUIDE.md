@@ -2,23 +2,23 @@
 
 ## 🎯 Overview
 
-이 프로젝트는 TypeORM을 사용하여 PostgreSQL의 복수 스키마(`space_engineers`, `valheim`)를 관리합니다. 
-**모든 환경에서 마이그레이션을 사용**하여 안전하고 예측 가능한 스키마 관리를 수행합니다.
+This project uses TypeORM to manage multiple PostgreSQL schemas (`space_engineers`, `valheim`).
+**All environments use migrations** for safe and predictable schema management.
 
 ## 🚀 Quick Start
 
-### 🆕 첫 번째 설정 (신규 개발자)
+### 🆕 First Setup (New Developers)
 ```bash
-# 개발 환경 전체 설정 (권장)
+# Complete development environment setup (recommended)
 ./setup-dev.sh
 
-# 또는 수동 설정
-npm run db:init-schemas              # 스키마 생성
-npm run migration:generate -- InitialSchema  # 첫 마이그레이션 생성
-npm run migration:run                # 마이그레이션 실행
+# Or manual setup
+npm run db:init-schemas              # Create schemas
+npm run migration:generate -- InitialSchema  # Generate first migration
+npm run migration:run                # Run migrations
 ```
 
-### 🔄 일상적인 개발
+### 🔄 Daily Development
 ```bash
 # 개발 서버 시작 (마이그레이션 자동 확인 포함)
 ./start-dev.sh
