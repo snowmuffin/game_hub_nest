@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
 import { AdminController } from './admin.controller';
 import { AdminUserService } from './admin-user.service';
 import { User } from '../entities/shared/user.entity';
@@ -13,6 +14,7 @@ import { SpaceEngineersOnlineStorageItem } from '../entities/space_engineers/onl
       SpaceEngineersOnlineStorage,
       SpaceEngineersOnlineStorageItem,
     ]),
+    JwtModule.register({}), // Import JwtModule for JwtAuthGuard
   ],
   controllers: [AdminController],
   providers: [AdminUserService],
