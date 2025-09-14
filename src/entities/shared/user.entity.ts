@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserRole } from './user-role.enum';
 
 /**
  * User Entity
@@ -73,8 +74,8 @@ export class User {
   /**
    * Roles assigned to the user (RBAC basic support)
    * Stored as text[] in Postgres. Default contains basic USER role.
-   * Examples: ["USER"], ["USER", "ADMIN"].
+   * Examples: [UserRole.USER], [UserRole.USER, UserRole.ADMIN].
    */
-  @Column({ type: 'text', array: true, default: '{"USER"}' })
-  roles: string[];
+  @Column({ type: 'text', array: true, default: `{${UserRole.USER}}` })
+  roles: UserRole[];
 }
