@@ -5,6 +5,7 @@ import {
   Param,
   Query,
   Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -12,29 +13,10 @@ import { Roles, MinRole } from '../auth/roles.decorator';
 import { UserRole } from '../entities/shared/user-role.enum';
 import { AdminUserService } from './admin-user.service';
 
-interface AuthenticatedRequest {
-  user: {
-    id: number;
-    username: string;
-    steamId: string;
-    roles: UserRole[];
-  };
-}
-
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
   constructor(private readonly adminUserService: AdminUserService) {}
-
-  /**
-   * Verify admin access and return admin session information
-   * Requires JWT authentication, minimum role validation performed inside
-   */
-  @Get('verify-access')
-  @UseGuards(JwtAuthGuard) // Only JWT authentication, role check inside service
-  async verifyAdminAccess(@Request() req: AuthenticatedRequest) {
-    return await this.adminUserService.verifyAdminAccess(req.user);
-  }
 
   /**
    * Only users with MODERATOR role or higher can access
@@ -88,15 +70,15 @@ export class AdminController {
   @Get('space-engineers/users')
   @MinRole(UserRole.GAME_ADMIN)
   async getSpaceEngineersUsers(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: { user?: { roles?: UserRole[] } },
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pageNum = parseInt(page || '1');
     const limitNum = parseInt(limit || '50');
-    
+    const roles = req.user?.roles ?? [];
     return this.adminUserService.getSpaceEngineersUsers(
-      req.user.roles,
+      roles,
       pageNum,
       limitNum,
     );
@@ -109,11 +91,12 @@ export class AdminController {
   @Get('space-engineers/users/:userId/inventory')
   @MinRole(UserRole.GAME_ADMIN)
   async getUserInventory(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: { user?: { roles?: UserRole[] } },
     @Param('userId') userId: string,
   ) {
+    const roles = req.user?.roles ?? [];
     return this.adminUserService.getUserSpaceEngineersInventory(
-      req.user.roles,
+      roles,
       parseInt(userId),
     );
   }
@@ -125,10 +108,11 @@ export class AdminController {
   @Get('space-engineers/steam/:steamId/inventory')
   @MinRole(UserRole.GAME_ADMIN)
   async getUserInventoryBySteamId(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: { user?: { roles?: UserRole[] } },
     @Param('steamId') steamId: string,
   ) {
-    return this.adminUserService.getUserBySteamId(req.user.roles, steamId);
+    const roles = req.user?.roles ?? [];
+    return this.adminUserService.getUserBySteamId(roles, steamId);
   }
 
   /**
@@ -138,19 +122,37 @@ export class AdminController {
   @Get('users/search')
   @MinRole(UserRole.GAME_ADMIN)
   async searchUsers(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: { user?: { roles?: UserRole[] } },
     @Query('username') username: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pageNum = parseInt(page || '1');
     const limitNum = parseInt(limit || '20');
-    
+    const roles = req.user?.roles ?? [];
     return this.adminUserService.searchUsersByUsername(
-      req.user.roles,
+      roles,
       username,
       pageNum,
       limitNum,
     );
+  }
+
+  /**
+   * Verify admin access and return session info for frontend
+   */
+  @Get('verify-access')
+  async verifyAccess(@Request() req: { user?: { id?: number } }) {
+    // req.user.id is set by JwtAuthGuard
+    const userId = Number(req.user?.id ?? 0);
+    const result = await this.adminUserService.verifyAccess(userId);
+
+    if (!result.isAdmin) {
+      // Consistent with the failure shapes provided in the spec
+      // But since route is JWT-protected, return Forbidden if not admin
+      throw new ForbiddenException('Administrator privileges required');
+    }
+
+    return result;
   }
 }
