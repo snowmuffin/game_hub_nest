@@ -58,6 +58,25 @@ export interface UserListDto {
   spaceEngineersUsers: number;
 }
 
+export interface AdminAccessDto {
+  isAdmin: boolean;
+  adminData: {
+    steamId: string;
+    username: string;
+    isAdmin: boolean;
+    adminLevel: number;
+    lastAdminAccess: string;
+  };
+  sessionExpiry: string;
+}
+
+interface JwtUser {
+  id: number;
+  username: string;
+  steamId: string;
+  roles: UserRole[];
+}
+
 @Injectable()
 export class AdminUserService {
   private readonly logger = new Logger(AdminUserService.name);
@@ -80,6 +99,57 @@ export class AdminUserService {
         'Insufficient permissions. GAME_ADMIN role or higher required.',
       );
     }
+  }
+
+  /**
+   * Get admin level based on user roles
+   */
+  private getAdminLevel(userRoles: UserRole[]): number {
+    if (hasRoleOrHigher(userRoles, UserRole.SUPER_ADMIN)) return 5;
+    if (hasRoleOrHigher(userRoles, UserRole.PLATFORM_ADMIN)) return 4;
+    if (hasRoleOrHigher(userRoles, UserRole.SERVER_ADMIN)) return 3;
+    if (hasRoleOrHigher(userRoles, UserRole.GAME_ADMIN)) return 2;
+    if (hasRoleOrHigher(userRoles, UserRole.MODERATOR)) return 1;
+    return 0;
+  }
+
+  /**
+   * Verify admin access and return session information
+   */
+  async verifyAdminAccess(user: JwtUser): Promise<AdminAccessDto> {
+    // Check if user has admin privileges
+    const isAdmin = hasRoleOrHigher(user.roles, UserRole.GAME_ADMIN);
+    
+    if (!isAdmin) {
+      throw new ForbiddenException('Administrator privileges required');
+    }
+
+    // Calculate session expiry (30 minutes from now)
+    const sessionExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    
+    // Get admin level
+    const adminLevel = this.getAdminLevel(user.roles);
+    
+    // Update last admin access in database
+    await this.userRepository.update(user.id, {
+      last_active_at: new Date(),
+    });
+
+    this.logger.log(
+      `Admin access verified for user ${user.username} (${user.steamId}) with level ${adminLevel}`,
+    );
+
+    return {
+      isAdmin: true,
+      adminData: {
+        steamId: user.steamId,
+        username: user.username,
+        isAdmin: true,
+        adminLevel,
+        lastAdminAccess: new Date().toISOString(),
+      },
+      sessionExpiry,
+    };
   }
 
   /**
