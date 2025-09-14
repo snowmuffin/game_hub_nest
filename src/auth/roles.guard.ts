@@ -3,6 +3,8 @@ import { Reflector } from '@nestjs/core';
 import { UserRole, hasRoleOrHigher } from '../entities/shared/user-role.enum';
 import { User } from '../entities/shared/user.entity';
 import { ROLES_KEY } from './roles.decorator';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 interface RequestWithUser extends Request {
   user?: User;
@@ -10,9 +12,13 @@ interface RequestWithUser extends Request {
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
@@ -27,6 +33,17 @@ export class RolesGuard implements CanActivate {
 
     if (!user) {
       return false; // No user, deny access
+    }
+
+    // If roles are missing on the request user, fetch from DB using the user id
+    if ((!user.roles || user.roles.length === 0) && user.id) {
+      const dbUser = await this.userRepository.findOne({
+        where: { id: user.id },
+      });
+      if (dbUser) {
+        user.roles = dbUser.roles || [];
+        request.user = user;
+      }
     }
 
     // Check if user has any of the required roles or higher
