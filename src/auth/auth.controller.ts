@@ -72,13 +72,36 @@ export class AuthController {
 
       // Dynamic cookie flags (improved)
       const isProd = process.env.NODE_ENV === 'production';
+      // Align cookie lifetime with REFRESH_TOKEN_TTL (default 30d)
+      const rawRefreshTtl = process.env.REFRESH_TOKEN_TTL || '30d';
+      const parseTtlToMs = (ttl: string): number => {
+        // supports formats like '15m', '6h', '7d', '3600s'
+        const m = ttl.match(/^(\d+)([smhd])$/i);
+        if (!m) {
+          // fallback: try parse as number of seconds
+          const seconds = Number(ttl);
+          if (!Number.isNaN(seconds)) return seconds * 1000;
+          // final fallback 30 days
+          return 30 * 24 * 60 * 60 * 1000;
+        }
+        const value = Number(m[1]);
+        const unit = m[2].toLowerCase();
+        const unitMs: Record<string, number> = {
+          s: 1000,
+          m: 60 * 1000,
+          h: 60 * 60 * 1000,
+          d: 24 * 60 * 60 * 1000,
+        };
+        return value * unitMs[unit];
+      };
+      const refreshCookieMaxAge = parseTtlToMs(rawRefreshTtl);
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? 'none' : 'lax',
         domain: '.snowmuffingame.com',
         path: '/',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        maxAge: refreshCookieMaxAge,
       });
 
       res.setHeader('Authorization', `Bearer ${accessToken}`);

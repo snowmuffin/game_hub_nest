@@ -16,7 +16,8 @@ import { UserModule } from '../user/user.module';
     JwtModule.registerAsync({
       useFactory: () => ({
         secret: process.env.JWT_SECRET || 'defaultSecret',
-        signOptions: { expiresIn: '6h' },
+        // Default signOptions; actual token lifetimes are set in AuthService
+        signOptions: { expiresIn: process.env.ACCESS_TOKEN_TTL || '6h' },
       }),
     }),
   ],

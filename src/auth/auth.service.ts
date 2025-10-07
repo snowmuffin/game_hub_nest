@@ -21,13 +21,15 @@ export class AuthService {
   // 액세스 토큰 생성
   generateJwtToken(user: Pick<User, 'id' | 'username'>): string {
     const payload = { sub: user.id, username: user.username };
-    return this.jwtService.sign(payload, { expiresIn: '15m' }); // 액세스 토큰 유효 기간: 15분
+    const accessTtl = process.env.ACCESS_TOKEN_TTL || '6h'; // 기본 6시간
+    return this.jwtService.sign(payload, { expiresIn: accessTtl });
   }
 
   // 리프레시 토큰 생성
   generateRefreshToken(user: Pick<User, 'id' | 'username'>): string {
     const payload = { sub: user.id, username: user.username };
-    return this.jwtService.sign(payload, { expiresIn: '7d' }); // 리프레시 토큰 유효 기간: 7일
+    const refreshTtl = process.env.REFRESH_TOKEN_TTL || '30d'; // 기본 30일
+    return this.jwtService.sign(payload, { expiresIn: refreshTtl });
   }
 
   // 사용자 데이터 포맷팅
