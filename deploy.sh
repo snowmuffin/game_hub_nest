@@ -172,6 +172,20 @@ else
     echo "✅ Database schema is up to date"
 fi
 
+# 🧹 Clean dist directory before build
+echo "🧹 Cleaning dist directory..."
+if [ -d "dist" ]; then
+    # Change ownership of dist directory to current user (if needed)
+    if [ "$NODE_ENV" = "production" ]; then
+        sudo chown -R $(whoami):$(id -gn) dist 2>/dev/null || echo "⚠️  Could not change ownership, attempting removal anyway..."
+    fi
+    # Remove dist directory
+    rm -rf dist
+    echo "✅ Dist directory cleaned"
+else
+    echo "ℹ️  No dist directory to clean"
+fi
+
 # 🔨 TypeScript 빌드
 echo "🔨 Building TypeScript application..."
 npm run build
