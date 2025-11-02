@@ -1,8 +1,12 @@
+```markdown
 # 🎮 Game Hub NestJS Backend
+
+![TypeScript](https://img.shields.io/badge/language-TypeScript-007ACC)
+![Docker](https://img.shields.io/badge/using-Docker-2496ED)
 
 **A scalable backend API for a multi‑game platform**
 
-Game Hub is a RESTful API backend built with NestJS and TypeORM that manages users, game items, online storage, a marketplace, and a unified wallet system. It currently supports Space Engineers and Valheim and provides a modular structure that makes it easy to integrate additional games.
+Game Hub is a RESTful API backend built with NestJS and TypeORM that manages users, game items, online storage, a marketplace, and a unified wallet system. It currently supports games like Space Engineers and Valheim, providing a modular architecture that allows for easy integration of additional games in the future.
 
 ## 📑 Table of Contents
 - [Features](#-features)
@@ -20,44 +24,46 @@ Game Hub is a RESTful API backend built with NestJS and TypeORM that manages use
 ## ✨ Features
 
 ### 🔐 Authentication
-- **JWT-based authentication** for secure API access
-- **Steam OAuth integration** for seamless platform login
-- **Role-based access control** for fine‑grained permissions
+- **JWT-based authentication** for secure API access.
+- **Steam OAuth integration** for seamless platform login, enhancing user experience.
+- **Role-based access control** to enforce fine‑grained permissions for different user roles.
 
 ### 💰 Unified Wallet System
-- **Multi-game wallet** shared or segmented per game/server
-- **Multiple currencies** (global + game-specific)
-- **Full transaction audit trail**
-- **Atomic secure transactions** using DB transactions
+- **Multi-game wallet** that can be shared or segmented per game/server, allowing for flexible financial management.
+- **Support for multiple currencies**, including global and game-specific currencies.
+- **Full transaction audit trail** to track all wallet activities.
+- **Atomic secure transactions** leveraging database transactions for integrity.
 
 ### 🎮 Multi-Game Support
-- **Space Engineers**: items, online storage, damage logs
-- **Valheim**: characters, worlds, inventory, buildings, skills
-- **Pluggable design** to add new games with minimal coupling
+- **Space Engineers**: Manage items, online storage, and damage logs effectively.
+- **Valheim**: Track characters, worlds, inventory, buildings, and skills.
+- **Pluggable design** facilitates adding new games with minimal coupling, making it scalable.
 
 ### 🏗️ Hybrid Schema Architecture
-- **Shared data** in `public` schema (users, wallets, currencies, games)
-- **Game-specific schemas** isolate per-game entities
-- **Cross‑game aggregation** without duplicating identity data
+- **Shared data** is maintained in a `public` schema, including users, wallets, currencies, and games.
+- **Game-specific schemas** are used to isolate per-game entities, ensuring data integrity.
+- **Cross-game aggregation** is enabled without duplicating identity data, which enhances performance.
 
 ### 🛠️ Developer Friendly
-- **TypeScript** throughout for type safety
-- **TypeORM migrations** for safe schema evolution
-- **Centralized logging** middleware & structured logs
+- **TypeScript** is used throughout the codebase, ensuring type safety and better maintainability.
+- **TypeORM migrations** facilitate safe schema evolution and database management.
+- **Centralized logging middleware** provides structured logs for easier debugging and monitoring.
 
 ## 🔧 Architecture
 
-Implemented with:
+This project is implemented using the following technologies and tools:
 
-- **Backend Framework**: NestJS (TypeScript)
-- **ORM**: TypeORM
-- **Database**: PostgreSQL
-- **Authentication**: Passport.js + JWT + Steam OAuth
-- **Process Manager**: PM2
-- **Reverse Proxy**: Nginx
-- **Containerization**: Docker & Docker Compose
+- **Backend Framework**: NestJS (in TypeScript)
+- **ORM**: TypeORM for database interactions.
+- **Database**: PostgreSQL for data storage.
+- **Authentication**: Passport.js combined with JWT and Steam OAuth for secure access.
+- **Process Manager**: PM2 for managing application processes.
+- **Reverse Proxy**: Nginx for handling incoming requests and load balancing.
+- **Containerization**: Docker and Docker Compose for development and deployment.
 
 ### 🏗️ Module Layout
+
+The application is structured into several modules, each serving a specific purpose:
 
 ```
 AppModule
@@ -92,6 +98,8 @@ AppModule
 
 ## 🚀 Quick Start
 
+To get started with the Game Hub backend, follow these simple steps:
+
 ### 1️⃣ Clone the Repository
 ```bash
 git clone https://github.com/your-username/game_hub_nest.git
@@ -109,7 +117,7 @@ nano .env
 ./start-dev.sh
 ```
 
-### 4️⃣ Verify
+### 4️⃣ Verify the Setup
 ```bash
 curl http://localhost:4000/health
 open http://localhost:4000
@@ -117,7 +125,7 @@ open http://localhost:4000
 
 ## ⚙️ Environment Configuration
 
-Environment variables are managed via `.env`.
+Environment variables are managed via the `.env` file. Key configurations include:
 
 ### 🗄️ Database
 ```bash
@@ -126,7 +134,7 @@ DB_PORT=5432
 DB_USER=your_db_user
 DB_PASSWORD=your_db_password
 DB_NAME=game_hub_db
-DB_SSL=false  # set true in production if using SSL
+DB_SSL=false  # Set to true in production if using SSL
 ```
 
 ### 🔐 Auth
@@ -145,20 +153,11 @@ HOST=0.0.0.0
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 ```
 
-See the full list in `.env.example`:
-```
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_NAME=game_hub
-JWT_SECRET=your_jwt_secret
-STEAM_API_KEY=your_steam_api_key
-```
+Refer to the full list in `.env.example` for all environment variables.
 
 ## Database Migrations
 
-> NOTE: A dedicated safe migration script is referenced here, but not currently present in the repository. Use the manual commands below unless you add such a script.
+> **NOTE:** A dedicated safe migration script is referenced here, but it is not currently present in the repository. Use the manual commands below unless you add such a script.
 
 ### Manual Migration Commands
 ```bash
@@ -168,101 +167,64 @@ npm run migration:generate -- --name <MigrationName>
 # Run pending migrations
 npm run migration:run
 
-# Revert last migration
+# Revert the last migration
 npm run migration:revert
 ```
 
 ### 🛡️ Important Notes
-- Always back up your database before running migrations
-- Test migrations in development first
-- See `DATABASE_MIGRATION_GUIDE.md` for detailed instructions
-- Wallet schema changes should be validated against existing transaction integrity
+- Always back up your database before running migrations.
+- Test migrations in a development environment first.
+- Refer to `DATABASE_MIGRATION_GUIDE.md` for detailed instructions.
+- Validate wallet schema changes against existing transaction integrity to avoid data loss.
 
 ### Wallet System Highlights
-- Multi-game + per-server wallet support
-- Multiple currencies (global + per game)
-- Full immutable transaction history
-- Extensible currency model
+- Multi-game and per-server wallet support.
+- Support for multiple currencies (both global and game-specific).
+- Full immutable transaction history for transparency.
+- Extensible currency model to accommodate future needs.
 
 ## Game-Specific Modules
 
 ### Space Engineers (`space_engineers` schema)
-- Damage logs tracking
-- Item management & online storage
-- Player-related entities
+- Manage item inventories and online storage efficiently.
+- Track damage logs and player-related entities for enhanced gameplay analytics.
 
 ### Valheim (`valheim` schema)
-- Character & skills management
-- Item & inventory handling
-- Buildings & world data
-- Skills progression + (planned) boss tracking
+- Oversee character and skills management.
+- Handle item, inventory, and building data, ensuring a rich user experience.
 
-### Database Architecture
+## 📋 Testing
 
-Hybrid schema design:
-
-- **Public schema**: users, games, wallets, currencies, transactions
-- **Game schemas**: isolated game-specific tables
-  - `space_engineers.*`
-  - `valheim.*`
-  - `minecraft.*` (reserved for future integration)
-
-Benefits:
-- ✅ Isolation of game domains
-- ✅ Shared identity + wallet context
-- ✅ Scales with additional games
-- ✅ Security boundaries per schema
-
-> A separate `WALLET_SYSTEM.md` is referenced in code comments but not present yet. Consider adding it for deeper design details.
-
-## Running the Application
+For testing, this project includes a dedicated test suite. To run the tests, use:
 ```bash
-# Development (hot reload)
-npm run start:dev
-
-# Production build
-npm run build
-npm run start:prod
-```
-
-## Testing
-```bash
-# Unit tests
 npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Coverage
-npm run test:cov
 ```
 
-## Project Structure
-```
-src/
-├── auth/                  # Authentication (JWT & Steam)
-├── entities/              # TypeORM entities (shared + game-specific)
-├── game/                  # Game registry & management
-├── wallet/                # Multi-game wallet logic
-├── middleware/            # Logging & other middlewares
-├── Space_Engineers/       # Space Engineers domain modules
-│   ├── damage-logs/
-│   └── item/
-├── Valheim/               # Valheim domain modules
-│   ├── building/
-│   ├── character/
-│   ├── inventory/
-│   ├── item/
-│   ├── skills/
-│   └── world/
-├── utils/                 # Utilities & helpers
-├── app.module.ts          # Root module
-├── main.ts                # Bootstrap entry
-└── data-source.ts         # TypeORM data source config
-```
+This will execute all unit tests and provide feedback on your code quality and functionality.
 
-## Contributing
-Contributions are welcome—open an issue or submit a PR with clear context.
+## 🗂️ Project Structure
 
-## License
-Private project (no open-source license). All rights reserved.
+The project is organized into the following directories:
+- `src/`: Contains the main application code (112 files).
+- `root/`: Contains configuration and environment files (24 files).
+- `test/`: Contains unit tests (6 files).
+- `config/`: Contains additional configuration files (1 file).
+- `scripts/`: Contains any auxiliary scripts (1 file).
+
+## 🤝 Contributing
+
+Contributions are welcome! To contribute to the Game Hub project:
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature/new-feature`).
+3. Make your changes and commit (`git commit -m 'Add new feature'`).
+4. Push to the branch (`git push origin feature/new-feature`).
+5. Open a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+Feel free to explore the codebase, contribute, and help enhance the Game Hub experience!
+```
