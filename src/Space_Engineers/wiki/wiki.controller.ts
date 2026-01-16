@@ -22,7 +22,7 @@ import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { UserRole } from '../../entities/shared/user-role.enum';
 
-@Controller('api/space-engineers/wiki')
+@Controller('space-engineers/wiki')
 export class WikiController {
   constructor(private readonly wikiService: WikiService) {}
 
@@ -63,7 +63,7 @@ export class WikiController {
   }
 }
 
-@Controller('api/space-engineers/admin/wiki')
+@Controller('space-engineers/wiki/admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.GAME_ADMIN)
 export class WikiAdminController {
