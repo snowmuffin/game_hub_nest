@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WikiCategory } from '../../entities/space_engineers/wiki-category.entity';
@@ -33,8 +37,17 @@ export class WikiService {
   async getCategories(language: string = 'ko') {
     const categories = await this.categoryRepo
       .createQueryBuilder('category')
-      .leftJoinAndSelect('category.translations', 'translation', 'translation.language = :language', { language })
-      .leftJoinAndSelect('category.articles', 'articles', 'articles.is_published = true')
+      .leftJoinAndSelect(
+        'category.translations',
+        'translation',
+        'translation.language = :language',
+        { language },
+      )
+      .leftJoinAndSelect(
+        'category.articles',
+        'articles',
+        'articles.is_published = true',
+      )
       .where('category.is_published = true')
       .orderBy('category.display_order', 'ASC')
       .getMany();
@@ -55,18 +68,30 @@ export class WikiService {
   async getCategoryBySlug(categorySlug: string, language: string = 'ko') {
     const category = await this.categoryRepo
       .createQueryBuilder('category')
-      .leftJoinAndSelect('category.translations', 'translation', 'translation.language = :language', { language })
+      .leftJoinAndSelect(
+        'category.translations',
+        'translation',
+        'translation.language = :language',
+        { language },
+      )
       .where('category.slug = :categorySlug', { categorySlug })
       .andWhere('category.is_published = true')
       .getOne();
 
     if (!category) {
-      throw new NotFoundException(`Category with slug '${categorySlug}' not found`);
+      throw new NotFoundException(
+        `Category with slug '${categorySlug}' not found`,
+      );
     }
 
     const articles = await this.articleRepo
       .createQueryBuilder('article')
-      .leftJoinAndSelect('article.translations', 'translation', 'translation.language = :language', { language })
+      .leftJoinAndSelect(
+        'article.translations',
+        'translation',
+        'translation.language = :language',
+        { language },
+      )
       .where('article.category_id = :categoryId', { categoryId: category.id })
       .andWhere('article.is_published = true')
       .orderBy('article.display_order', 'ASC')
@@ -92,27 +117,47 @@ export class WikiService {
   /**
    * Get a specific article with full content
    */
-  async getArticle(categorySlug: string, articleSlug: string, language: string = 'ko') {
+  async getArticle(
+    categorySlug: string,
+    articleSlug: string,
+    language: string = 'ko',
+  ) {
     const category = await this.categoryRepo.findOne({
       where: { slug: categorySlug, isPublished: true },
     });
 
     if (!category) {
-      throw new NotFoundException(`Category with slug '${categorySlug}' not found`);
+      throw new NotFoundException(
+        `Category with slug '${categorySlug}' not found`,
+      );
     }
 
     const article = await this.articleRepo
       .createQueryBuilder('article')
-      .leftJoinAndSelect('article.translations', 'translation', 'translation.language = :language', { language })
+      .leftJoinAndSelect(
+        'article.translations',
+        'translation',
+        'translation.language = :language',
+        { language },
+      )
       .leftJoinAndSelect('article.category', 'category')
-      .leftJoinAndSelect('category.translations', 'categoryTranslation', 'categoryTranslation.language = :language', { language })
+      .leftJoinAndSelect(
+        'category.translations',
+        'categoryTranslation',
+        'categoryTranslation.language = :language',
+        { language },
+      )
       .where('article.slug = :articleSlug', { articleSlug })
-      .andWhere('article.category_id = :categoryId', { categoryId: category.id })
+      .andWhere('article.category_id = :categoryId', {
+        categoryId: category.id,
+      })
       .andWhere('article.is_published = true')
       .getOne();
 
     if (!article) {
-      throw new NotFoundException(`Article with slug '${articleSlug}' not found in category '${categorySlug}'`);
+      throw new NotFoundException(
+        `Article with slug '${articleSlug}' not found in category '${categorySlug}'`,
+      );
     }
 
     return {
@@ -138,9 +183,13 @@ export class WikiService {
    */
   async createCategory(data: CategoryCreateDto) {
     // Check if slug already exists
-    const existing = await this.categoryRepo.findOne({ where: { slug: data.slug } });
+    const existing = await this.categoryRepo.findOne({
+      where: { slug: data.slug },
+    });
     if (existing) {
-      throw new BadRequestException(`Category with slug '${data.slug}' already exists`);
+      throw new BadRequestException(
+        `Category with slug '${data.slug}' already exists`,
+      );
     }
 
     const category = this.categoryRepo.create({
@@ -153,7 +202,7 @@ export class WikiService {
     const savedCategory = await this.categoryRepo.save(category);
 
     // Create translations
-    const translations = [];
+    const translations: WikiCategoryI18n[] = [];
     if (data.ko) {
       translations.push(
         this.categoryI18nRepo.create({
@@ -195,7 +244,8 @@ export class WikiService {
     // Update category fields
     if (data.slug !== undefined) category.slug = data.slug;
     if (data.icon !== undefined) category.icon = data.icon;
-    if (data.displayOrder !== undefined) category.displayOrder = data.displayOrder;
+    if (data.displayOrder !== undefined)
+      category.displayOrder = data.displayOrder;
     if (data.isPublished !== undefined) category.isPublished = data.isPublished;
 
     await this.categoryRepo.save(category);
@@ -248,9 +298,13 @@ export class WikiService {
    */
   async createArticle(data: ArticleCreateDto) {
     // Check if category exists
-    const category = await this.categoryRepo.findOne({ where: { id: data.categoryId } });
+    const category = await this.categoryRepo.findOne({
+      where: { id: data.categoryId },
+    });
     if (!category) {
-      throw new NotFoundException(`Category with id ${data.categoryId} not found`);
+      throw new NotFoundException(
+        `Category with id ${data.categoryId} not found`,
+      );
     }
 
     // Check if slug already exists in this category
@@ -258,7 +312,9 @@ export class WikiService {
       where: { categoryId: data.categoryId, slug: data.slug },
     });
     if (existing) {
-      throw new BadRequestException(`Article with slug '${data.slug}' already exists in this category`);
+      throw new BadRequestException(
+        `Article with slug '${data.slug}' already exists in this category`,
+      );
     }
 
     const article = this.articleRepo.create({
@@ -271,7 +327,7 @@ export class WikiService {
     const savedArticle = await this.articleRepo.save(article);
 
     // Create translations
-    const translations = [];
+    const translations: WikiArticleI18n[] = [];
     if (data.ko) {
       translations.push(
         this.articleI18nRepo.create({
@@ -315,7 +371,8 @@ export class WikiService {
     // Update article fields
     if (data.categoryId !== undefined) article.categoryId = data.categoryId;
     if (data.slug !== undefined) article.slug = data.slug;
-    if (data.displayOrder !== undefined) article.displayOrder = data.displayOrder;
+    if (data.displayOrder !== undefined)
+      article.displayOrder = data.displayOrder;
     if (data.isPublished !== undefined) article.isPublished = data.isPublished;
 
     await this.articleRepo.save(article);

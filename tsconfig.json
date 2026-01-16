@@ -9,13 +9,13 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./", // 프로젝트 루트 디렉토리를 기준으로 설정
+    "baseUrl": "./",
     "paths": {
-      "@entities/*": ["src/entities/*"], // 엔티티 경로
-      "@Space_Engineers/*": ["src/Space_Engineers/*"], // 아이템 관련 경로
-      "@shared/*": ["src/shared/*"], // 공유 모듈 경로
-      "@auth/*": ["src/auth/*"], // 인증 관련 경로
-      "@middleware/*": ["src/middleware/*"], // 미들웨어 경로
+      "@entities/*": ["src/entities/*"],
+      "@Space_Engineers/*": ["src/Space_Engineers/*"],
+      "@shared/*": ["src/shared/*"],
+      "@auth/*": ["src/auth/*"],
+      "@middleware/*": ["src/middleware/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

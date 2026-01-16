@@ -20,6 +20,7 @@ import {
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
+import { UserRole } from '../../entities/shared/user-role.enum';
 
 @Controller('api/space-engineers/wiki')
 export class WikiController {
@@ -64,7 +65,7 @@ export class WikiController {
 
 @Controller('api/space-engineers/admin/wiki')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles(UserRole.GAME_ADMIN)
 export class WikiAdminController {
   constructor(private readonly wikiService: WikiService) {}
 

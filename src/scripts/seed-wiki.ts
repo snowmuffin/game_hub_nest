@@ -7,7 +7,7 @@ import { WikiArticleI18n } from '../entities/space_engineers/wiki-article-i18n.e
 /**
  * Wiki Seed Data Script
  * Seeds initial categories and articles for Space Engineers Wiki
- * 
+ *
  * Usage:
  * ts-node src/scripts/seed-wiki.ts
  */
@@ -76,7 +76,7 @@ export async function seedWikiData(dataSource: DataSource) {
   ];
 
   console.log('📦 Creating categories...');
-  const savedCategories = [];
+  const savedCategories: WikiCategory[] = [];
 
   for (const catData of categories) {
     const category = categoryRepo.create({
@@ -180,7 +180,9 @@ export async function seedWikiData(dataSource: DataSource) {
   ];
 
   for (const artData of articles) {
-    const category = savedCategories.find((c) => c.slug === artData.categorySlug);
+    const category = savedCategories.find(
+      (c) => c.slug === artData.categorySlug,
+    );
     if (!category) continue;
 
     const article = articleRepo.create({
