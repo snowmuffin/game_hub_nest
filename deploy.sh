@@ -309,24 +309,72 @@ echo "🏥 Performing health check..."
 echo "⏳ Waiting for application to start..."
 sleep 10
 
+# 포트와 호스트 설정
+HEALTH_CHECK_HOST=${HEALTH_CHECK_HOST:-"localhost"}
+HEALTH_CHECK_PORT=${PORT:-4000}
+HEALTH_CHECK_URL="http://${HEALTH_CHECK_HOST}:${HEALTH_CHECK_PORT}/health"
+
+echo "🔗 Health check URL: $HEALTH_CHECK_URL"
+echo "================================================"
+
 # 🔄 여러 번 시도하여 health check
 MAX_ATTEMPTS=5
 for i in $(seq 1 $MAX_ATTEMPTS); do
+    echo ""
     echo "🔍 Health check attempt $i/$MAX_ATTEMPTS..."
+    echo "📡 Requesting: $HEALTH_CHECK_URL"
     
-    if curl -f -s http://localhost:4000/health > /dev/null 2>&1; then
+    # HTTP 상태 코드와 응답 본문을 함께 가져오기
+    HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" "$HEALTH_CHECK_URL" 2>&1)
+    HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+    HTTP_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+    
+    echo "📊 HTTP Status Code: $HTTP_STATUS"
+    
+    if [ "$HTTP_STATUS" = "200" ]; then
         echo "✅ Health check passed! Application is running healthy."
+        echo "📄 Response:"
+        echo "$HTTP_BODY" | jq '.' 2>/dev/null || echo "$HTTP_BODY"
         break
     else
-        echo "⚠️ Health check failed, retrying in 5 seconds..."
-        sleep 5
+        echo "❌ Health check failed!"
+        echo "📄 Response body:"
+        echo "$HTTP_BODY"
+        echo ""
         
-        if [ $i -eq $MAX_ATTEMPTS ]; then
+        # 추가 디버깅 정보
+        echo "🔍 Debugging information:"
+        echo "   • Testing TCP connection to port $HEALTH_CHECK_PORT..."
+        if nc -z -w 2 "$HEALTH_CHECK_HOST" "$HEALTH_CHECK_PORT" 2>/dev/null; then
+            echo "   ✅ Port $HEALTH_CHECK_PORT is open"
+        else
+            echo "   ❌ Port $HEALTH_CHECK_PORT is not accessible"
+            echo "   💡 Application might not be running or listening on wrong port"
+        fi
+        
+        echo "   • PM2 process status:"
+        pm2 jlist | jq '.[] | select(.name=="game-hub-nest") | {name, pm_id, status, restarts, uptime: .pm2_env.pm_uptime}' 2>/dev/null || pm2 list | grep game-hub-nest
+        
+        echo "   • Latest application logs (last 10 lines):"
+        pm2 logs game-hub-nest --nostream --lines 10 --raw 2>/dev/null || echo "   Could not fetch logs"
+        
+        if [ $i -lt $MAX_ATTEMPTS ]; then
+            echo ""
+            echo "⏳ Retrying in 5 seconds..."
+            sleep 5
+        else
+            echo ""
+            echo "================================================"
             echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
-            echo "📝 Check application logs:"
-            echo "   pm2 logs game-hub-nest"
-            echo "📊 Check PM2 status:"
-            echo "   pm2 status"
+            echo "================================================"
+            echo ""
+            echo "📝 Troubleshooting commands:"
+            echo "   • View full logs: pm2 logs game-hub-nest"
+            echo "   • Check PM2 status: pm2 status"
+            echo "   • Check if port is in use: lsof -i :$HEALTH_CHECK_PORT"
+            echo "   • Manual health check: curl -v $HEALTH_CHECK_URL"
+            echo "   • Restart application: pm2 restart game-hub-nest"
+            echo ""
             exit 1
         fi
     fi
