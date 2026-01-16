@@ -283,9 +283,40 @@ fi
 echo "🛑 Stopping existing PM2 processes..."
 pm2 delete game-hub-nest 2>/dev/null || echo "ℹ️ No existing process found"
 
+# 🌍 Export critical environment variables for PM2
+echo "🌍 Exporting environment variables for PM2..."
+export NODE_ENV="${NODE_ENV}"
+export PORT="${PORT:-4000}"
+export HOST="${HOST:-0.0.0.0}"
+export DB_HOST="${DB_HOST}"
+export DB_PORT="${DB_PORT}"
+export DB_USER="${DB_USER}"
+export DB_PASSWORD="${DB_PASSWORD}"
+export DB_NAME="${DB_NAME}"
+export DB_SSL="${DB_SSL}"
+export STEAM_API_KEY="${STEAM_API_KEY}"
+export STEAM_API_URL="${STEAM_API_URL}"
+export RETURN_URL="${RETURN_URL}"
+export REALM="${REALM}"
+export JWT_SECRET="${JWT_SECRET}"
+export DOMAIN="${DOMAIN}"
+export BASE_URL="${BASE_URL}"
+export BACKEND_URL="${BACKEND_URL}"
+export CORS_ORIGINS="${CORS_ORIGINS:-${Whitelist}}"
+export SE_HANGAR_S3_BUCKET="${SE_HANGAR_S3_BUCKET}"
+export SE_HANGAR_S3_REGION="${SE_HANGAR_S3_REGION}"
+export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
+export HEALTH_CHECK_KEY="${HEALTH_CHECK_KEY}"
+export LOG_LEVEL="${LOG_LEVEL:-info}"
+export LOG_FILE="${LOG_FILE:-./logs/app.log}"
+
+echo "✅ Environment variables exported"
+
 # 🚀 PM2로 애플리케이션 시작
 echo "🚀 Starting application with PM2..."
-pm2 start ecosystem.config.js --env production
+echo "📝 Using configuration from ecosystem.config.js"
+pm2 start ecosystem.config.js
 echo "✅ Application started with PM2"
 
 # 📊 PM2 상태 확인
