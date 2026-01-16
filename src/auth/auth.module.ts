@@ -23,5 +23,6 @@ import { UserModule } from '../user/user.module';
   ],
   controllers: [AuthController],
   providers: [AuthService, SteamStrategy],
+  exports: [JwtModule, PassportModule, AuthService],
 })
 export class AuthModule {}
