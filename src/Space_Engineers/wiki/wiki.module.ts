@@ -6,6 +6,7 @@ import { WikiCategory } from '../../entities/space_engineers/wiki-category.entit
 import { WikiCategoryI18n } from '../../entities/space_engineers/wiki-category-i18n.entity';
 import { WikiArticle } from '../../entities/space_engineers/wiki-article.entity';
 import { WikiArticleI18n } from '../../entities/space_engineers/wiki-article-i18n.entity';
+import { AuthModule } from '../../auth/auth.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WikiArticleI18n } from '../../entities/space_engineers/wiki-article-i18
       WikiArticle,
       WikiArticleI18n,
     ]),
+    AuthModule,
   ],
   controllers: [WikiController, WikiAdminController],
   providers: [WikiService],
