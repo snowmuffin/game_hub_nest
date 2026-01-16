@@ -20,6 +20,7 @@ import {
 } from '../entities/space_engineers';
 import { HangarModule } from './hangar/hangar.module';
 import { BlocksModule } from './blocks/blocks.module';
+import { WikiModule } from './wiki/wiki.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { BlocksModule } from './blocks/blocks.module';
     HangarModule,
     DamageLogsModule,
     BlocksModule,
+    WikiModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

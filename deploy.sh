@@ -157,6 +157,8 @@ npm run db:init-schemas
 echo "� Checking migration status..."
 MIGRATION_STATUS=$(npm run migration:show 2>&1 || echo "no-migrations")
 
+MIGRATIONS_RAN=false
+
 if echo "$MIGRATION_STATUS" | grep -q "No migrations"; then
     echo "📋 No migrations found. This might be the first deployment."
     echo "🎯 In production, you should generate migrations from your entities:"
@@ -168,8 +170,43 @@ elif echo "$MIGRATION_STATUS" | grep -q "pending"; then
     echo "📋 Found pending migrations, running them..."
     npm run migration:run
     echo "✅ Database migrations completed"
+    MIGRATIONS_RAN=true
 else
     echo "✅ Database schema is up to date"
+fi
+
+# 🌱 Wiki 초기 데이터 Seed (마이그레이션이 실행되었을 때만)
+if [ "$MIGRATIONS_RAN" = true ]; then
+    echo ""
+    echo "🌱 Seeding Wiki initial data..."
+    
+    # Wiki 테이블이 비어있는지 확인
+    WIKI_COUNT=$(npm run ts-node -- -e "
+        import('../src/data-source').then(async ({ AppDataSource }) => {
+            try {
+                if (!AppDataSource.isInitialized) {
+                    await AppDataSource.initialize();
+                }
+                const result = await AppDataSource.query('SELECT COUNT(*) as count FROM space_engineers.wiki_categories');
+                console.log(result[0].count);
+                await AppDataSource.destroy();
+                process.exit(0);
+            } catch (error) {
+                console.error('0');
+                process.exit(1);
+            }
+        });
+    " 2>/dev/null | tail -1 || echo "0")
+    
+    if [ "$WIKI_COUNT" = "0" ]; then
+        echo "📝 Wiki tables are empty, running seed script..."
+        npm run ts-node src/scripts/seed-wiki.ts
+        echo "✅ Wiki data seeded successfully"
+    else
+        echo "ℹ️  Wiki data already exists (${WIKI_COUNT} categories found), skipping seed"
+    fi
+else
+    echo "ℹ️  No new migrations ran, skipping Wiki seed"
 fi
 
 # 🧹 Clean dist directory before build
