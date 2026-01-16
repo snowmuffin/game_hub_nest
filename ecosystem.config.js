@@ -22,7 +22,7 @@ module.exports = {
   apps: [
     {
       name: 'game-hub-nest',
-      script: 'dist/main.js',
+      script: 'dist/src/main.js',
       instances: 1,
       exec_mode: 'cluster',
       autorestart: true,
