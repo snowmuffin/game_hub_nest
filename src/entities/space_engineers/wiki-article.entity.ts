@@ -13,7 +13,7 @@ import {
 import { WikiCategory } from './wiki-category.entity';
 import { WikiArticleI18n } from './wiki-article-i18n.entity';
 
-@Entity('wiki_articles')
+@Entity({ name: 'wiki_articles', schema: 'space_engineers' })
 @Unique(['categoryId', 'slug'])
 @Index(['categoryId'])
 export class WikiArticle {

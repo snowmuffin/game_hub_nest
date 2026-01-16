@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { WikiCategory } from './wiki-category.entity';
 
-@Entity('wiki_category_i18n')
+@Entity({ name: 'wiki_category_i18n', schema: 'space_engineers' })
 @Unique(['categoryId', 'language'])
 @Index(['language'])
 export class WikiCategoryI18n {

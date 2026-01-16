@@ -9,7 +9,7 @@ import {
 import { WikiCategoryI18n } from './wiki-category-i18n.entity';
 import { WikiArticle } from './wiki-article.entity';
 
-@Entity('wiki_categories')
+@Entity({ name: 'wiki_categories', schema: 'space_engineers' })
 export class WikiCategory {
   @PrimaryGeneratedColumn()
   id: number;
