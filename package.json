@@ -41,7 +41,6 @@
     "pm2:reload": "pm2 reload game-hub-nest",
     "pm2:logs": "pm2 logs game-hub-nest",
     "pm2:status": "pm2 status",
-  "prepare": "husky",
   "check:env": "node scripts/check-env.js",
   "check:env:strict": "node scripts/check-env.js --strict",
   "check:env:online": "node scripts/check-env.js --online",
