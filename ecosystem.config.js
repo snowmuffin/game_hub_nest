@@ -1,22 +1,6 @@
-const dotenv = require('dotenv');
-const path = require('path');
-
-// 환경에 따라 .env 파일 로드
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
-const envPath = path.resolve(__dirname, envFile);
-
-// .env 파일 존재 확인 및 로드
-try {
-  const result = dotenv.config({ path: envPath });
-  if (result.error) {
-    console.log(`⚠️  ${envFile} not found, falling back to .env`);
-    dotenv.config({ path: path.resolve(__dirname, '.env') });
-  } else {
-    console.log(`✅ Loaded environment from ${envFile}`);
-  }
-} catch (error) {
-  console.log('⚠️  Could not load .env file, using default values');
-}
+// dotenv는 개발 환경에서만 사용 (프로덕션에서는 .env를 직접 로드)
+// PM2는 .env 파일을 자동으로 읽지 않으므로, 프로덕션에서는 환경 변수를 직접 전달하거나
+// PM2 start 시 --env-file 옵션 사용 권장
 
 module.exports = {
   apps: [

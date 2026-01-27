@@ -138,12 +138,27 @@ $SSH_COMMAND "cd $EC2_APP_PATH && bash -s" << 'ENDSSH'
     if command -v pm2 &> /dev/null; then
         echo "🔄 Restarting application with PM2..."
         
-        # ecosystem.config.js가 있으면 사용
+        # .env 파일 존재 확인
+        if [ ! -f ".env" ]; then
+            echo "❌ .env file not found on remote server!"
+            echo "💡 Please create .env file before deploying"
+            exit 1
+        fi
+        
+        # PM2에서 기존 프로세스 중지 및 삭제
+        pm2 stop game-hub-nest 2>/dev/null || true
+        pm2 delete game-hub-nest 2>/dev/null || true
+        
+        # ecosystem.config.js로 시작 (.env는 PM2가 자동으로 로드하지 않으므로 수동 처리)
         if [ -f "ecosystem.config.js" ]; then
-            pm2 reload ecosystem.config.js --update-env
+            # .env를 export하여 환경 변수로 로드
+            set -a
+            source .env
+            set +a
+            pm2 start ecosystem.config.js --update-env
         else
             # 없으면 기본 실행
-            pm2 reload game-hub || pm2 start dist/main.js --name game-hub
+            pm2 start dist/main.js --name game-hub-nest
         fi
         
         pm2 save
