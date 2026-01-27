@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ItemService } from './item.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard'; // Guard path
+import { SeIngestApiKeyGuard } from '../blocks/ingest-api-key.guard';
 
 type AuthenticatedRequest = { user?: { id?: number } };
 
@@ -105,6 +106,7 @@ export class ItemController {
   }
 
   @Post('update-items')
+  @UseGuards(SeIngestApiKeyGuard)
   async updateItems(@Body() itemList: UpdateItemsPayload): Promise<unknown> {
     this.logger.log(`POST /space_engineers/item/update-items`);
     return this.itemService.updateItems(itemList);
