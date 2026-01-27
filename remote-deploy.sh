@@ -92,16 +92,9 @@ if [ -f "ecosystem.config.js" ]; then
     echo "✅ PM2 config included"
 fi
 
-# .env 파일 복사 (production 우선)
-if [ -f ".env.production" ]; then
-    cp .env.production $DEPLOY_DIR/.env
-    echo "✅ Using .env.production"
-elif [ -f ".env" ]; then
-    cp .env $DEPLOY_DIR/.env
-    echo "✅ Using .env"
-else
-    echo "⚠️  No .env file found, deployment may fail on remote server"
-fi
+# ⚠️  .env 파일은 복사하지 않음 - 원격 서버의 기존 .env 사용
+echo "⚠️  .env file will NOT be copied - using existing .env on remote server"
+echo "💡 Make sure your EC2 instance has the correct .env file configured"
 
 echo ""
 echo "🚀 Deploying to EC2..."
@@ -124,11 +117,13 @@ $SSH_COMMAND "mkdir -p $EC2_APP_PATH"
 # 원격 서버에 파일 전송
 echo "📤 Uploading files to EC2..."
 rsync -avz --delete \
+    --exclude='.env' \
+    --exclude='.env.*' \
     -e "ssh -i $EC2_KEY_PATH" \
     $DEPLOY_DIR/ \
     $SSH_CONNECTION:$EC2_APP_PATH/
 
-echo "✅ Files uploaded successfully"
+echo "✅ Files uploaded successfully (excluding .env files)"
 
 # 원격 서버에서 배포 실행
 echo ""
