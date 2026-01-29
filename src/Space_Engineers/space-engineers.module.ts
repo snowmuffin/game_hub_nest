@@ -21,6 +21,7 @@ import {
 import { HangarModule } from './hangar/hangar.module';
 import { BlocksModule } from './blocks/blocks.module';
 import { WikiModule } from './wiki/wiki.module';
+import { IconsModule } from './icons/icons.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { WikiModule } from './wiki/wiki.module';
     DamageLogsModule,
     BlocksModule,
     WikiModule,
+    IconsModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

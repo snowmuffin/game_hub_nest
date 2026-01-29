@@ -1,0 +1,16 @@
+# Icon Uploads Directory
+
+This directory stores DDS icon files uploaded from Space Engineers game.
+
+## Structure
+- Files are stored with sanitized filenames extracted from game paths
+- Example: `Textures\GUI\Icons\Cubes\LargeBlockArmorBlock.dds` → `LargeBlockArmorBlock.dds`
+
+## Access
+- Files are accessible via: `/uploads/icons/{filename}`
+- Served by Express static middleware (configured in main.ts)
+
+## Maintenance
+- Consider implementing cleanup for old/unused files
+- Monitor disk usage as icon count grows
+- Future: migrate to S3/CDN for production scalability

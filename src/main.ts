@@ -13,7 +13,7 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
-  // 📦 Body parser limits for large payloads (Space Engineers items, etc.)
+  // 📦 Body parser limits for large payloads (Space Engineers items, icons, etc.)
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
