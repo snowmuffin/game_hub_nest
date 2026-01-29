@@ -61,26 +61,7 @@ export class IconsService {
         );
       }
 
-      // Extract safe filename
-      const safeFileName = this.extractSafeFileName(dto.fileName);
-      const filePath = path.join(this.uploadDir, safeFileName);
-
-      // Save file
-      await fs.writeFile(filePath, buffer);
-
-      this.logger.log(
-        `Icon uploaded successfully: ${safeFileName} (${buffer.length} bytes)`,
-      );
-
-      // Generate URL (relative path or CDN URL)
-      const url = `/uploads/icons/${safeFileName}`;
-
-      return {
-        success: true,
-        fileName: dto.fileName,
-        url,
-      };
-    } catch (error) { for future use
+      // Extract safe filename for future use
       const safeFileName = this.extractSafeFileName(dto.fileName);
 
       this.logger.log(
@@ -90,4 +71,19 @@ export class IconsService {
       // TODO: Implement file storage (S3/CDN) when needed
       return {
         success: true,
-        fileName: dto.fileName
+        fileName: dto.fileName,
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof InternalServerErrorException
+      ) {
+        throw error;
+      }
+
+      const message = (error as Error).message;
+      this.logger.error(`Icon upload failed: ${message}`);
+      throw new InternalServerErrorException('Failed to upload icon');
+    }
+  }
+}
