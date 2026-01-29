@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
 import type { FindOptionsWhere } from 'typeorm';
 import { SpaceEngineersBlock } from 'src/entities/space_engineers';
+import { IconFile } from 'src/entities/space_engineers/icon-file.entity';
 import { CreateBlockDto, ListBlocksQueryDto } from './blocks.dto';
 import logger from 'src/utils/logger';
 
@@ -11,6 +12,8 @@ export class BlocksService {
   constructor(
     @InjectRepository(SpaceEngineersBlock)
     private readonly repo: Repository<SpaceEngineersBlock>,
+    @InjectRepository(IconFile)
+    private readonly iconFileRepository: Repository<IconFile>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -60,6 +63,18 @@ export class BlocksService {
     const mapped: Partial<SpaceEngineersBlock> = {
       ...dto,
     } as Partial<SpaceEngineersBlock>;
+
+    // Handle icon field: prioritize iconFileName, fallback to icon
+    if (dto.iconFileName) {
+      // New format: filename only
+      mapped.icon = dto.iconFileName;
+    } else if (dto.icon) {
+      // Legacy format: extract filename from full path
+      const normalized = dto.icon.replace(/\\/g, '/');
+      const parts = normalized.split('/');
+      mapped.icon = parts[parts.length - 1] || dto.icon;
+    }
+
     if (dto.minFieldSize) {
       mapped.minFieldSize = {
         x: dto.minFieldSize.x,
@@ -128,5 +143,22 @@ export class BlocksService {
     await this.repo.delete(id);
     logger.info(`[SpaceEngineers][Blocks] Deleted block id=${id}`);
     return { deleted: true };
+  }
+
+  /**
+   * Resolve icon filename to CDN URL
+   * @param fileName Icon filename (e.g., "LargeBlockArmorBlock.dds")
+   * @returns CDN URL or null if not found
+   */
+  async resolveIconUrl(fileName: string | null | undefined): Promise<string | null> {
+    if (!fileName) {
+      return null;
+    }
+
+    const iconFile = await this.iconFileRepository.findOne({
+      where: { fileName },
+    });
+
+    return iconFile?.cdnUrl || null;
   }
 }

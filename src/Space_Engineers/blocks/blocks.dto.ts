@@ -90,7 +90,11 @@ export class CreateBlockDto {
 
   @IsOptional()
   @IsString()
-  icon?: string | null;
+  icon?: string | null; // Legacy: full path
+
+  @IsOptional()
+  @IsString()
+  iconFileName?: string | null; // New: filename only
 
   // Classification
   @IsOptional()
