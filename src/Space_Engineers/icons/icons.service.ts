@@ -5,10 +5,14 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { UploadIconDto } from './icons.dto';
+import { SeS3Service } from '../hangar/s3.service';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class IconsService {
   private readonly logger = new Logger(IconsService.name);
+
+  constructor(private readonly s3Service: SeS3Service) {}
 
   /**
    * Extract safe filename from game path
@@ -61,18 +65,40 @@ export class IconsService {
         );
       }
 
-      // Extract safe filename for future use
+      // Extract safe filename
       const safeFileName = this.extractSafeFileName(dto.fileName);
 
-      this.logger.log(
-        `Icon validated successfully: ${safeFileName} (${buffer.length} bytes) - Not saved to disk`,
-      );
+      // Upload to S3
+      const s3Key = `icons/${safeFileName}`;
+      const bucket = this.s3Service.getBucket();
 
-      // TODO: Implement file storage (S3/CDN) when needed
-      return {
-        success: true,
-        fileName: dto.fileName,
-      };
+      try {
+        await this.s3Service['s3'].send(
+          new PutObjectCommand({
+            Bucket: bucket,
+            Key: s3Key,
+            Body: buffer,
+            ContentType: 'image/vnd-ms.dds',
+            CacheControl: 'public, max-age=31536000', // 1 year
+          }),
+        );
+
+        const cdnUrl = `https://${bucket}.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
+
+        this.logger.log(
+          `Icon uploaded successfully: ${safeFileName} (${buffer.length} bytes) → ${cdnUrl}`,
+        );
+
+        return {
+          success: true,
+          fileName: dto.fileName,
+          url: cdnUrl,
+        };
+      } catch (uploadError) {
+        const message = (uploadError as Error).message;
+        this.logger.error(`S3 upload failed: ${message}`);
+        throw new InternalServerErrorException('Failed to upload icon to S3');
+      }
     } catch (error) {
       if (
         error instanceof BadRequestException ||

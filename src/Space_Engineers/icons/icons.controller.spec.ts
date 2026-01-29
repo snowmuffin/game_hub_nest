@@ -38,6 +38,7 @@ describe('IconsController', () => {
       const result = {
         success: true,
         fileName: dto.fileName,
+        url: 'https://se-hangar.s3.ap-northeast-2.amazonaws.com/icons/LargeBlockArmorBlock.dds',
       };
 
       jest.spyOn(service, 'uploadIcon').mockResolvedValue(result);
@@ -45,3 +46,6 @@ describe('IconsController', () => {
       const uploadResult = await controller.uploadIcon(dto);
 
       expect(uploadResult).toEqual(result);
+    });
+  });
+});
