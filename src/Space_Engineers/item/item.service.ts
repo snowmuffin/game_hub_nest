@@ -119,19 +119,32 @@ export class ItemService {
 
     const [items, total] = await qb.getManyAndCount();
 
-    const data = items.map((it) => ({
-      id: it.id,
-      indexName: it.indexName,
-      displayName: it.displayName,
-      rarity: it.rarity,
-      description: it.description ?? null,
-      category: it.category ?? null,
-      icons: this.normalizeIcons(it.icons),
-      iconFile: this.extractFileName(
-        Array.isArray(it.icons) ? it.icons[0] : it.icons,
-      ),
-      updatedAt: it.updatedAt,
-    }));
+    // Resolve icon filenames to CDN URLs
+    const data = await Promise.all(
+      items.map(async (it) => {
+        const iconFileNames = this.normalizeIcons(it.icons);
+        const fileNamesArray = Array.isArray(iconFileNames)
+          ? iconFileNames
+          : iconFileNames
+            ? [iconFileNames]
+            : [];
+        const iconUrls = await this.resolveIconUrls(fileNamesArray);
+
+        return {
+          id: it.id,
+          indexName: it.indexName,
+          displayName: it.displayName,
+          rarity: it.rarity,
+          description: it.description ?? null,
+          category: it.category ?? null,
+          icons: iconUrls.filter((url) => url !== ''), // CDN URLs
+          iconFile: this.extractFileName(
+            Array.isArray(it.icons) ? it.icons[0] : it.icons,
+          ),
+          updatedAt: it.updatedAt,
+        };
+      }),
+    );
 
     return {
       data,
@@ -179,6 +192,15 @@ export class ItemService {
       throw new NotFoundException('Item not found');
     }
 
+    // Resolve icon filenames to CDN URLs
+    const iconFileNames = this.normalizeIcons(item.icons);
+    const fileNamesArray = Array.isArray(iconFileNames)
+      ? iconFileNames
+      : iconFileNames
+        ? [iconFileNames]
+        : [];
+    const iconUrls = await this.resolveIconUrls(fileNamesArray);
+
     return {
       id: item.id,
       indexName: item.indexName,
@@ -186,7 +208,7 @@ export class ItemService {
       rarity: item.rarity,
       description: item.description ?? null,
       category: item.category ?? null,
-      icons: this.normalizeIcons(item.icons),
+      icons: iconUrls.filter((url) => url !== ''), // CDN URLs
       iconFile: this.extractFileName(
         Array.isArray(item.icons) ? item.icons[0] : item.icons,
       ),
@@ -252,16 +274,29 @@ export class ItemService {
       relations: ['item'],
     });
 
-    const formattedItems = storageItems.map((storageItem) => ({
-      id: storageItem.item.id,
-      displayName: storageItem.item.displayName,
-      rarity: storageItem.item.rarity,
-      description: storageItem.item.description,
-      category: storageItem.item.category,
-      icons: this.extractFileName(storageItem.item.icons),
-      indexName: storageItem.item.indexName,
-      quantity: storageItem.quantity,
-    }));
+    // Resolve icon filenames to CDN URLs for all items
+    const formattedItems = await Promise.all(
+      storageItems.map(async (storageItem) => {
+        const iconFileNames = this.normalizeIcons(storageItem.item.icons);
+        const fileNamesArray = Array.isArray(iconFileNames)
+          ? iconFileNames
+          : iconFileNames
+            ? [iconFileNames]
+            : [];
+        const iconUrls = await this.resolveIconUrls(fileNamesArray);
+
+        return {
+          id: storageItem.item.id,
+          displayName: storageItem.item.displayName,
+          rarity: storageItem.item.rarity,
+          description: storageItem.item.description,
+          category: storageItem.item.category,
+          icons: iconUrls.filter((url) => url !== ''), // CDN URLs
+          indexName: storageItem.item.indexName,
+          quantity: storageItem.quantity,
+        };
+      }),
+    );
 
     this.logger.log(
       `Found ${formattedItems.length} items for Steam ID: ${steamId}`,
