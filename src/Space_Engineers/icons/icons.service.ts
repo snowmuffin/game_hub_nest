@@ -4,15 +4,22 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UploadIconDto } from './icons.dto';
 import { SeS3Service } from '../hangar/s3.service';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { IconFile } from '../../entities/space_engineers/icon-file.entity';
 
 @Injectable()
 export class IconsService {
   private readonly logger = new Logger(IconsService.name);
 
-  constructor(private readonly s3Service: SeS3Service) {}
+  constructor(
+    private readonly s3Service: SeS3Service,
+    @InjectRepository(IconFile)
+    private readonly iconFileRepository: Repository<IconFile>,
+  ) {}
 
   /**
    * Extract safe filename from game path
@@ -84,6 +91,15 @@ export class IconsService {
         );
 
         const cdnUrl = `https://${bucket}.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
+
+        // Save to database (UPSERT)
+        await this.iconFileRepository.upsert(
+          {
+            fileName: safeFileName,
+            cdnUrl: cdnUrl,
+          },
+          ['fileName'], // conflict target
+        );
 
         this.logger.log(
           `Icon uploaded successfully: ${safeFileName} (${buffer.length} bytes) → ${cdnUrl}`,

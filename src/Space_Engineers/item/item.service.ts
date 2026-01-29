@@ -10,13 +10,15 @@ import {
   SpaceEngineersItemDownloadLog,
   SpaceEngineersDropTable,
 } from 'src/entities/space_engineers';
+import { IconFile } from 'src/entities/space_engineers/icon-file.entity';
 
 type RawItem = {
   DisplayName?: unknown;
   Id?: unknown;
   Description?: unknown;
   Category?: unknown;
-  Icons?: unknown;
+  Icons?: unknown; // Legacy: full paths array
+  IconFileNames?: unknown; // New: filenames only array
 };
 
 @Injectable()
@@ -38,6 +40,8 @@ export class ItemService {
     private readonly itemDownloadLogRepository: Repository<SpaceEngineersItemDownloadLog>,
     @InjectRepository(SpaceEngineersDropTable)
     private readonly dropTableRepository: Repository<SpaceEngineersDropTable>,
+    @InjectRepository(IconFile)
+    private readonly iconFileRepository: Repository<IconFile>,
   ) {}
 
   // Catalog search for item dictionary
@@ -614,9 +618,25 @@ export class ItemService {
         typeof item.Description === 'string' ? item.Description : undefined;
       const category =
         typeof item.Category === 'string' ? item.Category : undefined;
-      const icons = Array.isArray(item.Icons)
-        ? item.Icons.filter((v): v is string => typeof v === 'string')
-        : undefined;
+
+      // Support both legacy Icons (full paths) and new IconFileNames (filenames only)
+      let iconFileNames: string[] | undefined;
+      
+      if (Array.isArray(item.IconFileNames)) {
+        // New format: filenames only
+        iconFileNames = item.IconFileNames.filter(
+          (v): v is string => typeof v === 'string',
+        );
+      } else if (Array.isArray(item.Icons)) {
+        // Legacy format: extract filenames from full paths
+        iconFileNames = item.Icons.filter(
+          (v): v is string => typeof v === 'string',
+        ).map((fullPath) => {
+          const normalized = fullPath.replace(/\\/g, '/');
+          const parts = normalized.split('/');
+          return parts[parts.length - 1] || '';
+        }).filter(name => name.length > 0);
+      }
 
       if (!displayName || !id || id.includes('MyObjectBuilder_TreeObject')) {
         this.logger.warn(
@@ -639,7 +659,7 @@ export class ItemService {
         rarity: 1,
         description: description ?? undefined,
         category: category ?? this.determineCategory(id),
-        icons: icons ?? [],
+        icons: iconFileNames ?? [],
         indexName: id,
       };
 
@@ -698,5 +718,29 @@ export class ItemService {
         this.logger.warn(`Unknown category prefix: ${prefix}`);
         return 'Unknown';
     }
+  }
+
+  /**
+   * Resolve icon filenames to CDN URLs
+   * @param fileNames Array of icon filenames (e.g., ["LargeBlockArmorBlock.dds"])
+   * @returns Array of CDN URLs or empty strings for missing icons
+   */
+  async resolveIconUrls(fileNames: string[]): Promise<string[]> {
+    if (!fileNames || fileNames.length === 0) {
+      return [];
+    }
+
+    const iconFiles = await this.iconFileRepository.find({
+      where: fileNames.map((fileName) => ({ fileName })),
+    });
+
+    // Create a map of fileName -> cdnUrl
+    const urlMap = new Map<string, string>();
+    iconFiles.forEach((icon) => {
+      urlMap.set(icon.fileName, icon.cdnUrl);
+    });
+
+    // Return URLs in the same order as input filenames
+    return fileNames.map((fileName) => urlMap.get(fileName) || '');
   }
 }

@@ -14,6 +14,7 @@ import {
   SpaceEngineersItemDownloadLog,
   SpaceEngineersDropTable,
 } from 'src/entities/space_engineers';
+import { IconFile } from 'src/entities/space_engineers/icon-file.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import {
       SpaceEngineersMarketplaceItem,
       SpaceEngineersItemDownloadLog,
       SpaceEngineersDropTable,
+      IconFile,
     ]),
     JwtModule.registerAsync({
       useFactory: () => ({
@@ -38,3 +40,4 @@ import {
   providers: [ItemService, JwtAuthGuard],
 })
 export class ItemModule {}
+
