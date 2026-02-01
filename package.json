@@ -28,7 +28,7 @@
     "db:schema:drop": "npx ts-node ./node_modules/typeorm/cli.js schema:drop --dataSource src/data-source.ts",
     "db:generate-migration": "npm run migration:generate InitialSchema",
     "db:init-schemas": "npx ts-node src/utils/init-schemas.ts",
-  "db:safe-migration": "DB_HOST=${DB_HOST:-localhost} DB_PORT=${DB_PORT:-5432} DB_USER=${DB_USER:-postgres} DB_PASSWORD=${DB_PASSWORD:-password} DB_NAME=${DB_NAME:-snowmuffin} npm run db:init-schemas && npm run migration:run",
+    "db:safe-migration": "DB_HOST=${DB_HOST:-localhost} DB_PORT=${DB_PORT:-5432} DB_USER=${DB_USER:-postgres} DB_PASSWORD=${DB_PASSWORD:-password} DB_NAME=${DB_NAME:-snowmuffin} npm run db:init-schemas && npm run migration:run",
     "db:dev-setup": "npm run db:init-schemas && npm run db:generate-first-migration && npm run migration:run",
     "db:generate-first-migration": "npm run migration:generate -- InitialSchema || echo 'Migration generation completed or no changes detected'",
     "generate:game-module": "node scripts/generate-game-module.js",
@@ -41,14 +41,16 @@
     "pm2:reload": "pm2 reload game-hub-nest",
     "pm2:logs": "pm2 logs game-hub-nest",
     "pm2:status": "pm2 status",
-  "check:env": "node scripts/check-env.js",
-  "check:env:strict": "node scripts/check-env.js --strict",
-  "check:env:online": "node scripts/check-env.js --online",
-  "check:env:online:strict": "node scripts/check-env.js --online --strict"
+    "check:env": "node scripts/check-env.js",
+    "check:env:strict": "node scripts/check-env.js --strict",
+    "check:env:online": "node scripts/check-env.js --online",
+    "check:env:online:strict": "node scripts/check-env.js --online --strict"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "~3.893.0",
+    "@aws-sdk/s3-request-presigner": "~3.893.0",
     "@nestjs/common": "^11.0.1",
-    "@nestjs/config": "^4.0.2",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/mapped-types": "^2.1.0",
@@ -61,8 +63,8 @@
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
-  "jsonwebtoken": "^9.0.2",
-  "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "nest": "file:",
     "passport": "^0.7.0",
@@ -70,9 +72,7 @@
     "pg": "^8.14.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-  "winston": "^3.17.0",
-  "@aws-sdk/client-s3": "^3.744.0",
-  "@aws-sdk/s3-request-presigner": "^3.744.0"
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -133,6 +133,8 @@
     ]
   },
   "overrides": {
-    "braces": "^3.0.3"
+    "braces": "^3.0.3",
+    "fast-xml-parser": "^5.3.4",
+    "lodash": "^4.17.23"
   }
 }
