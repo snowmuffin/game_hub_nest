@@ -38,94 +38,55 @@ export class IconsService {
   }
 
   /**
-   * Convert DDS to PNG using basic uncompressed DDS format
-   * Note: This only works for simple uncompressed DDS files
-   * Compressed DDS formats (DXT1, DXT5, etc.) will fail gracefully
+   * Convert DDS to PNG using ImageMagick
+   * Supports all DDS formats including DXT1, DXT5, etc.
    */
   private async convertDdsToPng(ddsBuffer: Buffer): Promise<Buffer | null> {
+    const { promisify } = require('util');
+    const exec = promisify(require('child_process').exec);
+    const fs = require('fs').promises;
+    const path = require('path');
+    const os = require('os');
+
+    let tmpDdsPath: string | null = null;
+    let tmpPngPath: string | null = null;
+
     try {
-      // DDS header is 128 bytes (4 byte magic + 124 byte DDS_HEADER)
-      if (ddsBuffer.length < 128) {
-        this.logger.warn('DDS buffer too small for conversion');
-        return null;
-      }
+      // Create temporary files
+      const tmpDir = os.tmpdir();
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(7);
+      tmpDdsPath = path.join(tmpDir, `icon_${timestamp}_${randomId}.dds`);
+      tmpPngPath = path.join(tmpDir, `icon_${timestamp}_${randomId}.png`);
 
-      // Read DDS header
-      const height = ddsBuffer.readUInt32LE(12);
-      const width = ddsBuffer.readUInt32LE(16);
-      const pixelFormatFlags = ddsBuffer.readUInt32LE(80);
-      const rgbBitCount = ddsBuffer.readUInt32LE(88);
+      // Write DDS buffer to temp file
+      await fs.writeFile(tmpDdsPath, ddsBuffer);
 
-      this.logger.log(
-        `DDS info: ${width}x${height}, bitCount: ${rgbBitCount}, flags: 0x${pixelFormatFlags.toString(16)}`,
-      );
+      // Convert using ImageMagick
+      this.logger.log(`Converting DDS to PNG using ImageMagick...`);
+      await exec(`convert "${tmpDdsPath}" "${tmpPngPath}"`);
 
-      // Check if it's uncompressed RGB/RGBA (DDPF_RGB flag = 0x40)
-      const DDPF_RGB = 0x40;
-      const DDPF_ALPHAPIXELS = 0x1;
-
-      if (!(pixelFormatFlags & DDPF_RGB)) {
-        this.logger.warn(
-          'DDS is compressed or not RGB format, skipping conversion',
-        );
-        return null;
-      }
-
-      // Determine channels
-      const hasAlpha = (pixelFormatFlags & DDPF_ALPHAPIXELS) !== 0;
-      const channels = hasAlpha ? 4 : 3;
-
-      // Read pixel data (starts after 128 byte header)
-      const pixelData = ddsBuffer.subarray(128);
-      const expectedSize = width * height * channels;
-
-      if (pixelData.length < expectedSize) {
-        this.logger.warn(
-          `Insufficient pixel data: expected ${expectedSize}, got ${pixelData.length}`,
-        );
-        return null;
-      }
-
-      // DDS stores pixels in BGRA order, convert to RGBA for sharp
-      const rgbaData = Buffer.alloc(width * height * channels);
-      for (let i = 0; i < width * height; i++) {
-        const srcOffset = i * channels;
-        const dstOffset = i * channels;
-
-        if (channels === 4) {
-          // BGRA -> RGBA
-          rgbaData[dstOffset + 0] = pixelData[srcOffset + 2]; // R
-          rgbaData[dstOffset + 1] = pixelData[srcOffset + 1]; // G
-          rgbaData[dstOffset + 2] = pixelData[srcOffset + 0]; // B
-          rgbaData[dstOffset + 3] = pixelData[srcOffset + 3]; // A
-        } else {
-          // BGR -> RGB
-          rgbaData[dstOffset + 0] = pixelData[srcOffset + 2]; // R
-          rgbaData[dstOffset + 1] = pixelData[srcOffset + 1]; // G
-          rgbaData[dstOffset + 2] = pixelData[srcOffset + 0]; // B
-        }
-      }
-
-      // Convert to PNG using sharp
-      const pngBuffer = await sharp(rgbaData, {
-        raw: {
-          width,
-          height,
-          channels,
-        },
-      })
-        .png()
-        .toBuffer();
+      // Read PNG buffer
+      const pngBuffer = await fs.readFile(tmpPngPath);
 
       this.logger.log(
         `Successfully converted DDS to PNG: ${ddsBuffer.length} -> ${pngBuffer.length} bytes`,
       );
+
       return pngBuffer;
     } catch (error) {
       this.logger.warn(
         `DDS to PNG conversion failed: ${(error as Error).message}`,
       );
       return null;
+    } finally {
+      // Clean up temporary files
+      try {
+        if (tmpDdsPath) await fs.unlink(tmpDdsPath).catch(() => {});
+        if (tmpPngPath) await fs.unlink(tmpPngPath).catch(() => {});
+      } catch {
+        // Ignore cleanup errors
+      }
     }
   }
 
