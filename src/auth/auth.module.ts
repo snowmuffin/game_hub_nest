@@ -14,11 +14,14 @@ import { UserModule } from '../user/user.module';
     TypeOrmModule.forFeature([User]),
     UserModule,
     JwtModule.registerAsync({
-      useFactory: () => ({
-        secret: process.env.JWT_SECRET || 'defaultSecret',
-        // Default signOptions; actual token lifetimes are set in AuthService
-        signOptions: { expiresIn: process.env.ACCESS_TOKEN_TTL || '6h' },
-      }),
+      useFactory: () => {
+        const expiresIn = process.env.ACCESS_TOKEN_TTL || '6h';
+        return {
+          secret: process.env.JWT_SECRET || 'defaultSecret',
+          // Default signOptions; actual token lifetimes are set in AuthService
+          signOptions: { expiresIn: expiresIn as any },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

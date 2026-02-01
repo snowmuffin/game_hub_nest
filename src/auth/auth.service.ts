@@ -22,14 +22,14 @@ export class AuthService {
   generateJwtToken(user: Pick<User, 'id' | 'username'>): string {
     const payload = { sub: user.id, username: user.username };
     const accessTtl = process.env.ACCESS_TOKEN_TTL || '6h'; // 기본 6시간
-    return this.jwtService.sign(payload, { expiresIn: accessTtl });
+    return this.jwtService.sign(payload, { expiresIn: accessTtl as any });
   }
 
   // 리프레시 토큰 생성
   generateRefreshToken(user: Pick<User, 'id' | 'username'>): string {
     const payload = { sub: user.id, username: user.username };
     const refreshTtl = process.env.REFRESH_TOKEN_TTL || '30d'; // 기본 30일
-    return this.jwtService.sign(payload, { expiresIn: refreshTtl });
+    return this.jwtService.sign(payload, { expiresIn: refreshTtl as any });
   }
 
   // 사용자 데이터 포맷팅
