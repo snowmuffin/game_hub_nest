@@ -43,13 +43,14 @@ export class IconsService {
     error?: string;
   }> {
     try {
-      // Validate MIME type
-      if (dto.mimeType !== 'image/vnd-ms.dds') {
+      // Validate MIME type (allow DDS and PNG)
+      const allowedMimeTypes = ['image/vnd-ms.dds', 'image/png'];
+      if (!allowedMimeTypes.includes(dto.mimeType)) {
         this.logger.warn(
-          `Invalid MIME type: ${dto.mimeType}. Expected: image/vnd-ms.dds`,
+          `Invalid MIME type: ${dto.mimeType}. Expected: ${allowedMimeTypes.join(' or ')}`,
         );
         throw new BadRequestException(
-          'Invalid MIME type. Expected: image/vnd-ms.dds',
+          `Invalid MIME type. Expected: ${allowedMimeTypes.join(' or ')}`,
         );
       }
 
@@ -62,14 +63,33 @@ export class IconsService {
         throw new BadRequestException('Invalid base64 data');
       }
 
-      // Validate decoded data (DDS files start with "DDS " magic bytes: 0x44 0x44 0x53 0x20)
-      if (buffer.length < 4 || buffer.toString('ascii', 0, 4) !== 'DDS ') {
-        this.logger.warn(
-          `Invalid DDS file signature. First 4 bytes: ${buffer.slice(0, 4).toString('hex')}`,
-        );
-        throw new BadRequestException(
-          'Invalid DDS file format (missing DDS signature)',
-        );
+      // Validate decoded data based on file type
+      if (dto.mimeType === 'image/vnd-ms.dds') {
+        // DDS files start with "DDS " magic bytes: 0x44 0x44 0x53 0x20
+        if (buffer.length < 4 || buffer.toString('ascii', 0, 4) !== 'DDS ') {
+          this.logger.warn(
+            `Invalid DDS file signature. First 4 bytes: ${buffer.slice(0, 4).toString('hex')}`,
+          );
+          throw new BadRequestException(
+            'Invalid DDS file format (missing DDS signature)',
+          );
+        }
+      } else if (dto.mimeType === 'image/png') {
+        // PNG files start with PNG signature: 0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A
+        if (
+          buffer.length < 8 ||
+          buffer[0] !== 0x89 ||
+          buffer[1] !== 0x50 ||
+          buffer[2] !== 0x4e ||
+          buffer[3] !== 0x47
+        ) {
+          this.logger.warn(
+            `Invalid PNG file signature. First 8 bytes: ${buffer.slice(0, 8).toString('hex')}`,
+          );
+          throw new BadRequestException(
+            'Invalid PNG file format (missing PNG signature)',
+          );
+        }
       }
 
       // Extract safe filename
