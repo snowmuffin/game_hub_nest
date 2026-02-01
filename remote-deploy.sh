@@ -134,6 +134,12 @@ $SSH_COMMAND "cd $EC2_APP_PATH && bash -s" << 'ENDSSH'
     echo "📦 Installing dependencies..."
     npm ci --production
     
+    echo "🗄️  Running database migrations..."
+    npm run migration:run || {
+        echo "⚠️  Migration failed, but continuing with deployment..."
+        echo "💡 Check the error above and fix migrations if needed"
+    }
+    
     # PM2가 설치되어 있는지 확인
     if command -v pm2 &> /dev/null; then
         echo "🔄 Restarting application with PM2..."
