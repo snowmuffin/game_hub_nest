@@ -769,10 +769,12 @@ export class ItemService {
       where: fileNames.map((fileName) => ({ fileName })),
     });
 
-    // Create a map of fileName -> cdnUrl
+    // Create a map of fileName -> URL (prefer PNG over DDS)
     const urlMap = new Map<string, string>();
     iconFiles.forEach((icon) => {
-      urlMap.set(icon.fileName, icon.cdnUrl);
+      // Prefer PNG URL if available, otherwise use original CDN URL
+      const url = icon.pngCdnUrl || icon.cdnUrl;
+      urlMap.set(icon.fileName, url);
     });
 
     // Return URLs in the same order as input filenames

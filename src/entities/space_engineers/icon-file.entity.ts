@@ -19,6 +19,9 @@ export class IconFile {
   @Column({ name: 'cdn_url', type: 'text' })
   cdnUrl: string;
 
+  @Column({ name: 'png_cdn_url', type: 'text', nullable: true })
+  pngCdnUrl: string | null;
+
   @CreateDateColumn({ name: 'uploaded_at' })
   uploadedAt: Date;
 

@@ -40,6 +40,7 @@ export class IconsService {
     success: boolean;
     fileName: string;
     url?: string;
+    pngUrl?: string;
     error?: string;
   }> {
     try {
@@ -54,7 +55,7 @@ export class IconsService {
         );
       }
 
-      // Decode Base64
+      // Decode Base64 for main file
       let buffer: Buffer;
       try {
         buffer = Buffer.from(dto.data, 'base64');
@@ -92,12 +93,38 @@ export class IconsService {
         }
       }
 
+      // Decode PNG preview if provided
+      let pngBuffer: Buffer | null = null;
+      if (dto.pngData) {
+        try {
+          pngBuffer = Buffer.from(dto.pngData, 'base64');
+          // Validate PNG signature
+          if (
+            pngBuffer.length < 8 ||
+            pngBuffer[0] !== 0x89 ||
+            pngBuffer[1] !== 0x50 ||
+            pngBuffer[2] !== 0x4e ||
+            pngBuffer[3] !== 0x47
+          ) {
+            this.logger.warn('Invalid PNG preview signature, ignoring');
+            pngBuffer = null;
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to decode PNG preview: ${(error as Error).message}`,
+          );
+          pngBuffer = null;
+        }
+      }
+
       // Extract safe filename
       const safeFileName = this.extractSafeFileName(dto.fileName);
-
-      // Upload to S3
-      const s3Key = `icons/${safeFileName}`;
       const bucket = this.s3Service.getBucket();
+
+      // Upload main file (DDS or PNG) to S3
+      const s3Key = `icons/${safeFileName}`;
+      const contentType =
+        dto.mimeType === 'image/png' ? 'image/png' : 'image/vnd-ms.dds';
 
       try {
         await this.s3Service['s3'].send(
@@ -105,18 +132,41 @@ export class IconsService {
             Bucket: bucket,
             Key: s3Key,
             Body: buffer,
-            ContentType: 'image/vnd-ms.dds',
+            ContentType: contentType,
             CacheControl: 'public, max-age=31536000', // 1 year
           }),
         );
 
         const cdnUrl = `https://${bucket}.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
+        let pngCdnUrl: string | null = null;
+
+        // Upload PNG preview if provided
+        if (pngBuffer) {
+          const pngFileName = safeFileName.replace(/\.(dds|DDS)$/, '.png');
+          const pngS3Key = `icons/${pngFileName}`;
+
+          await this.s3Service['s3'].send(
+            new PutObjectCommand({
+              Bucket: bucket,
+              Key: pngS3Key,
+              Body: pngBuffer,
+              ContentType: 'image/png',
+              CacheControl: 'public, max-age=31536000',
+            }),
+          );
+
+          pngCdnUrl = `https://${bucket}.s3.ap-northeast-2.amazonaws.com/${pngS3Key}`;
+          this.logger.log(
+            `PNG preview uploaded: ${pngFileName} (${pngBuffer.length} bytes)`,
+          );
+        }
 
         // Save to database (UPSERT)
         await this.iconFileRepository.upsert(
           {
             fileName: safeFileName,
             cdnUrl: cdnUrl,
+            pngCdnUrl: pngCdnUrl,
           },
           ['fileName'], // conflict target
         );
@@ -129,6 +179,7 @@ export class IconsService {
           success: true,
           fileName: dto.fileName,
           url: cdnUrl,
+          pngUrl: pngCdnUrl || undefined,
         };
       } catch (uploadError) {
         const message = (uploadError as Error).message;

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
 
 export class UploadIconDto {
   /**
@@ -17,9 +17,16 @@ export class UploadIconDto {
   data: string;
 
   /**
-   * MIME type - should be "image/vnd-ms.dds"
+   * MIME type - should be "image/vnd-ms.dds" or "image/png"
    */
   @IsString()
   @IsNotEmpty()
   mimeType: string;
+
+  /**
+   * Optional: Base64-encoded PNG preview version
+   */
+  @IsString()
+  @IsOptional()
+  pngData?: string;
 }
