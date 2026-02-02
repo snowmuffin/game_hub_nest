@@ -7,6 +7,7 @@ import { User } from '../entities/shared/user.entity';
 import { SpaceEngineersOnlineStorage } from '../entities/space_engineers/online-storage.entity';
 import { SpaceEngineersOnlineStorageItem } from '../entities/space_engineers/online-storage-item.entity';
 import { SpaceEngineersItem } from '../entities/space_engineers/item.entity';
+import { IconFile } from '../entities/space_engineers/icon-file.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SpaceEngineersItem } from '../entities/space_engineers/item.entity';
       SpaceEngineersOnlineStorage,
       SpaceEngineersOnlineStorageItem,
       SpaceEngineersItem,
+      IconFile,
     ]),
     JwtModule.register({}), // Import JwtModule for JwtAuthGuard
   ],

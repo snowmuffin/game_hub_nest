@@ -10,6 +10,7 @@ import { User } from '../entities/shared/user.entity';
 import { SpaceEngineersOnlineStorage } from '../entities/space_engineers/online-storage.entity';
 import { SpaceEngineersOnlineStorageItem } from '../entities/space_engineers/online-storage-item.entity';
 import { SpaceEngineersItem } from '../entities/space_engineers/item.entity';
+import { IconFile } from '../entities/space_engineers/icon-file.entity';
 import { UserRole, hasRoleOrHigher } from '../entities/shared/user-role.enum';
 
 export interface StorageInfo {
@@ -84,6 +85,8 @@ export class AdminUserService {
     private readonly storageItemRepository: Repository<SpaceEngineersOnlineStorageItem>,
     @InjectRepository(SpaceEngineersItem)
     private readonly itemRepository: Repository<SpaceEngineersItem>,
+    @InjectRepository(IconFile)
+    private readonly iconFileRepository: Repository<IconFile>,
   ) {}
 
   /**
@@ -350,6 +353,42 @@ export class AdminUserService {
   }
 
   /**
+   * Resolve icon filenames to CDN URLs
+   */
+  private async resolveIconUrls(fileNames: string[]): Promise<string[]> {
+    if (!fileNames || fileNames.length === 0) {
+      return [];
+    }
+
+    const iconFiles = await this.iconFileRepository.find({
+      where: fileNames.map((fileName) => ({ fileName })),
+    });
+
+    // Create a map of fileName -> URL (prefer PNG over DDS)
+    const urlMap = new Map<string, string>();
+    iconFiles.forEach((icon) => {
+      const url = icon.pngCdnUrl || icon.cdnUrl;
+      urlMap.set(icon.fileName, url);
+    });
+
+    // Return URLs in the same order as input filenames
+    return fileNames.map((fileName) => urlMap.get(fileName) || '');
+  }
+
+  /**
+   * Normalize icons field to array of filenames
+   */
+  private normalizeIcons(value: unknown): string[] {
+    if (Array.isArray(value)) {
+      return value.filter((v) => typeof v === 'string');
+    }
+    if (typeof value === 'string') {
+      return [value];
+    }
+    return [];
+  }
+
+  /**
    * Get all Space Engineers items with pagination and filtering
    */
   async getSpaceEngineersItems(
@@ -413,18 +452,28 @@ export class AdminUserService {
 
     const items = await qb.getMany();
 
+    // Resolve icon URLs for all items
+    const itemsWithResolvedIcons = await Promise.all(
+      items.map(async (item) => {
+        const iconFileNames = this.normalizeIcons(item.icons);
+        const iconUrls = await this.resolveIconUrls(iconFileNames);
+
+        return {
+          id: item.id,
+          indexName: item.indexName,
+          displayName: item.displayName,
+          rarity: item.rarity,
+          description: item.description,
+          category: item.category,
+          icons: iconUrls.filter((url) => url !== ''), // Only non-empty URLs
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        };
+      }),
+    );
+
     return {
-      items: items.map((item) => ({
-        id: item.id,
-        indexName: item.indexName,
-        displayName: item.displayName,
-        rarity: item.rarity,
-        description: item.description,
-        category: item.category,
-        icons: item.icons,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-      })),
+      items: itemsWithResolvedIcons,
       totalItems,
       page,
       limit,
