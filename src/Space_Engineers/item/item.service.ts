@@ -1,6 +1,6 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { User } from 'src/entities/shared/user.entity';
 import {
   SpaceEngineersItem,
@@ -42,6 +42,7 @@ export class ItemService {
     private readonly dropTableRepository: Repository<SpaceEngineersDropTable>,
     @InjectRepository(IconFile)
     private readonly iconFileRepository: Repository<IconFile>,
+    private readonly dataSource: DataSource,
   ) {}
 
   // Catalog search for item dictionary
@@ -360,7 +361,21 @@ export class ItemService {
       this.logger.error(
         `Failed to upload item: Identifier is missing. Steam ID=${steamId}, Quantity=${quantity}`,
       );
-      throw new Error('Identifier (itemName or itemId) is required.');
+      throw new BadRequestException('Identifier (itemName or itemId) is required.');
+    }
+
+    if (!quantity || quantity <= 0) {
+      this.logger.error(
+        `Failed to upload item: Invalid quantity=${quantity}. Steam ID=${steamId}`,
+      );
+      throw new BadRequestException('Quantity must be greater than 0.');
+    }
+
+    if (quantity > 1000000) {
+      this.logger.error(
+        `Failed to upload item: Quantity too large=${quantity}. Steam ID=${steamId}`,
+      );
+      throw new BadRequestException('Quantity cannot exceed 1,000,000.');
     }
 
     try {
@@ -432,8 +447,23 @@ export class ItemService {
       this.logger.error(
         `requestDownloadItem: steamId or indexName is undefined. steamId=${steamId}, indexName=${indexName}`,
       );
-      throw new Error('steamId and indexName are required.');
+      throw new BadRequestException('steamId and indexName are required.');
     }
+
+    if (!quantity || quantity <= 0) {
+      this.logger.error(
+        `requestDownloadItem: Invalid quantity=${quantity}. Steam ID=${steamId}`,
+      );
+      throw new BadRequestException('Quantity must be greater than 0.');
+    }
+
+    if (quantity > 1000000) {
+      this.logger.error(
+        `requestDownloadItem: Quantity too large=${quantity}. Steam ID=${steamId}`,
+      );
+      throw new BadRequestException('Quantity cannot exceed 1,000,000.');
+    }
+
     this.logger.log(
       `Requesting download: Steam ID=${steamId}, Item=${indexName}, Quantity=${quantity}`,
     );
@@ -508,40 +538,89 @@ export class ItemService {
       `Confirming download: Steam ID=${steamId}, Item=${indexName}, Quantity=${quantity}`,
     );
 
-    try {
+    if (!steamId || !indexName) {
+      this.logger.error(
+        `confirmDownloadItem: steamId or indexName is undefined. steamId=${steamId}, indexName=${indexName}`,
+      );
+      throw new BadRequestException('steamId and indexName are required.');
+    }
+
+    if (!quantity || quantity <= 0) {
+      this.logger.error(
+        `confirmDownloadItem: Invalid quantity=${quantity}. Steam ID=${steamId}`,
+      );
+      throw new BadRequestException('Quantity must be greater than 0.');
+    }
+
+    // Use transaction to ensure atomicity
+    return await this.dataSource.transaction(async (manager) => {
       // Find storage
-      const storage = await this.onlineStorageRepository.findOne({
+      const storage = await manager.findOne(SpaceEngineersOnlineStorage, {
         where: { steamId },
       });
       if (!storage) {
-        throw new Error(`User with steamId "${steamId}" not found.`);
+        throw new NotFoundException(`User with steamId "${steamId}" not found.`);
       }
 
       // Find item
-      const item = await this.itemRepository.findOne({
+      const item = await manager.findOne(SpaceEngineersItem, {
         where: { indexName },
       });
       if (!item) {
-        throw new Error(`Item with indexName "${indexName}" not found.`);
+        throw new NotFoundException(`Item with indexName "${indexName}" not found.`);
+      }
+
+      // Find pending download log
+      const pendingLog = await manager.findOne(SpaceEngineersItemDownloadLog, {
+        where: { 
+          storageId: storage.id, 
+          itemId: item.id, 
+          quantity,
+          status: 'PENDING' 
+        },
+        order: { createdAt: 'ASC' },
+      });
+
+      if (!pendingLog) {
+        this.logger.warn(
+          `No matching PENDING download log found. Steam ID=${steamId}, Item=${indexName}, Quantity=${quantity}`,
+        );
+        throw new NotFoundException(
+          `No pending download request found for ${quantity}x '${indexName}'.`,
+        );
       }
 
       // Update storage item quantity
-      const storageItem = await this.onlineStorageItemRepository.findOne({
+      const storageItem = await manager.findOne(SpaceEngineersOnlineStorageItem, {
         where: { storageId: storage.id, itemId: item.id },
       });
 
-      if (storageItem) {
-        storageItem.quantity -= quantity;
-        await this.onlineStorageItemRepository.save(storageItem);
+      if (!storageItem) {
+        throw new NotFoundException(
+          `Item "${indexName}" not found in storage.`,
+        );
       }
 
-      // Update download log status
-      await this.itemDownloadLogRepository.update(
-        { storageId: storage.id, itemId: item.id, status: 'PENDING' },
-        { status: 'CONFIRMED' },
-      );
+      if (storageItem.quantity < quantity) {
+        this.logger.error(
+          `Insufficient quantity in storage. Required=${quantity}, Available=${storageItem.quantity}. Steam ID=${steamId}`,
+        );
+        throw new BadRequestException(
+          `Insufficient quantity. Required: ${quantity}, Available: ${storageItem.quantity}`,
+        );
+      }
 
-      const remainingQuantity = storageItem ? storageItem.quantity : 0;
+      // Deduct quantity
+      storageItem.quantity -= quantity;
+      await manager.save(SpaceEngineersOnlineStorageItem, storageItem);
+
+      // Update download log status
+      pendingLog.status = 'CONFIRMED';
+      await manager.save(SpaceEngineersItemDownloadLog, pendingLog);
+
+      this.logger.log(
+        `Successfully confirmed download: Steam ID=${steamId}, Item=${indexName}, Quantity=${quantity}, Remaining=${storageItem.quantity}`,
+      );
 
       return {
         success: true,
@@ -550,18 +629,14 @@ export class ItemService {
           itemId: item.id,
           indexName,
           deducted: quantity,
-          remain: remainingQuantity,
+          remain: storageItem.quantity,
           status: 'CONFIRMED',
         },
         message: `Successfully confirmed and deducted ${quantity}x '${indexName}' from storage.`,
         timestamp: new Date().toISOString(),
       };
+    });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      const stack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(`Error confirming download: ${message}`, stack);
-      throw error instanceof Error ? error : new Error(message);
-    }
   }
 
   async cancelDownloadItem(

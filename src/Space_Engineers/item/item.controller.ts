@@ -17,14 +17,14 @@ import { SeIngestApiKeyGuard } from '../blocks/ingest-api-key.guard';
 type AuthenticatedRequest = { user?: { id?: number } };
 
 type UploadItemBody = {
-  userId: number;
+  steamId: string;
   itemName: string;
   quantity: number;
 };
 
 type DownloadItemBody = {
-  steamid: string;
-  index_name: string;
+  steamId: string;
+  itemName: string;
   quantity: number;
 };
 
@@ -79,30 +79,33 @@ export class ItemController {
   }
 
   @Post('upload')
+  @UseGuards(SeIngestApiKeyGuard)
   async uploadItem(@Body() body: UploadItemBody): Promise<unknown> {
-    const { userId, itemName, quantity } = body;
+    const { steamId, itemName, quantity } = body;
     this.logger.log(
-      `POST /space_engineers/item/upload: User ID=${userId}, Item=${itemName}, Quantity=${quantity}`,
+      `POST /space_engineers/item/upload: Steam ID=${steamId}, Item=${itemName}, Quantity=${quantity}`,
     );
-    return this.itemService.uploadItem(userId, itemName, quantity);
+    return this.itemService.uploadItem(steamId, itemName, quantity);
   }
 
   @Post('download')
+  @UseGuards(SeIngestApiKeyGuard)
   async downloadItem(@Body() body: DownloadItemBody): Promise<unknown> {
-    const { steamid, index_name, quantity } = body;
+    const { steamId, itemName, quantity } = body;
     this.logger.log(
-      `POST /space_engineers/item/download: User ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
+      `POST /space_engineers/item/download: Steam ID=${steamId}, Item=${itemName}, Quantity=${quantity}`,
     );
-    return this.itemService.requestDownloadItem(steamid, index_name, quantity);
+    return this.itemService.requestDownloadItem(steamId, itemName, quantity);
   }
 
   @Post('download/confirm')
+  @UseGuards(SeIngestApiKeyGuard)
   async confirmDownloadItem(@Body() body: DownloadItemBody): Promise<unknown> {
-    const { steamid, index_name, quantity } = body;
+    const { steamId, itemName, quantity } = body;
     this.logger.log(
-      `POST /space_engineers/item/download/confirm: User ID=${steamid}, Item=${index_name}, Quantity=${quantity}`,
+      `POST /space_engineers/item/download/confirm: Steam ID=${steamId}, Item=${itemName}, Quantity=${quantity}`,
     );
-    return this.itemService.confirmDownloadItem(steamid, index_name, quantity);
+    return this.itemService.confirmDownloadItem(steamId, itemName, quantity);
   }
 
   @Post('update-items')
