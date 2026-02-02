@@ -44,7 +44,8 @@
     "check:env": "node scripts/check-env.js",
     "check:env:strict": "node scripts/check-env.js --strict",
     "check:env:online": "node scripts/check-env.js --online",
-    "check:env:online:strict": "node scripts/check-env.js --online --strict"
+    "check:env:online:strict": "node scripts/check-env.js --online --strict",
+    "icons:convert": "npx ts-node src/scripts/convert-icons-to-png.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "~3.893.0",
