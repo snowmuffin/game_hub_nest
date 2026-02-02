@@ -197,6 +197,7 @@ export class IconsService {
             Body: buffer,
             ContentType: contentType,
             CacheControl: 'public, max-age=31536000', // 1 year
+            ACL: 'public-read', // Make file publicly accessible
           }),
         );
 
@@ -215,6 +216,7 @@ export class IconsService {
               Body: pngBuffer,
               ContentType: 'image/png',
               CacheControl: 'public, max-age=31536000',
+              ACL: 'public-read', // Make file publicly accessible
             }),
           );
 
