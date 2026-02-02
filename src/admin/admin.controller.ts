@@ -1,9 +1,11 @@
 import {
   Controller,
   Get,
+  Patch,
   UseGuards,
   Param,
   Query,
+  Body,
   Request,
   ForbiddenException,
 } from '@nestjs/common';
@@ -154,5 +156,53 @@ export class AdminController {
     }
 
     return result;
+  }
+
+  /**
+   * Get all Space Engineers items with pagination and filtering
+   * GAME_ADMIN role or higher required
+   */
+  @Get('space-engineers/items')
+  @MinRole(UserRole.GAME_ADMIN)
+  async getSpaceEngineersItems(
+    @Request() req: { user?: { roles?: UserRole[] } },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('rarityMin') rarityMin?: string,
+    @Query('rarityMax') rarityMax?: string,
+  ) {
+    const roles = req.user?.roles ?? [];
+    const pageNum = parseInt(page || '1');
+    const limitNum = parseInt(limit || '50');
+    return this.adminUserService.getSpaceEngineersItems(
+      roles,
+      pageNum,
+      limitNum,
+      search,
+      category,
+      rarityMin ? parseInt(rarityMin) : undefined,
+      rarityMax ? parseInt(rarityMax) : undefined,
+    );
+  }
+
+  /**
+   * Update Space Engineers item properties
+   * GAME_ADMIN role or higher required
+   */
+  @Patch('space-engineers/items/:itemId')
+  @MinRole(UserRole.GAME_ADMIN)
+  async updateSpaceEngineersItem(
+    @Request() req: { user?: { roles?: UserRole[] } },
+    @Param('itemId') itemId: string,
+    @Body() updateData: { rarity?: number; description?: string; category?: string },
+  ) {
+    const roles = req.user?.roles ?? [];
+    return this.adminUserService.updateSpaceEngineersItem(
+      roles,
+      parseInt(itemId),
+      updateData,
+    );
   }
 }

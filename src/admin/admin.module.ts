@@ -6,6 +6,7 @@ import { AdminUserService } from './admin-user.service';
 import { User } from '../entities/shared/user.entity';
 import { SpaceEngineersOnlineStorage } from '../entities/space_engineers/online-storage.entity';
 import { SpaceEngineersOnlineStorageItem } from '../entities/space_engineers/online-storage-item.entity';
+import { SpaceEngineersItem } from '../entities/space_engineers/item.entity';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { SpaceEngineersOnlineStorageItem } from '../entities/space_engineers/onl
       User,
       SpaceEngineersOnlineStorage,
       SpaceEngineersOnlineStorageItem,
+      SpaceEngineersItem,
     ]),
     JwtModule.register({}), // Import JwtModule for JwtAuthGuard
   ],

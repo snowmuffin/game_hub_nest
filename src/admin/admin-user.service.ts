@@ -9,6 +9,7 @@ import { Repository, Like } from 'typeorm';
 import { User } from '../entities/shared/user.entity';
 import { SpaceEngineersOnlineStorage } from '../entities/space_engineers/online-storage.entity';
 import { SpaceEngineersOnlineStorageItem } from '../entities/space_engineers/online-storage-item.entity';
+import { SpaceEngineersItem } from '../entities/space_engineers/item.entity';
 import { UserRole, hasRoleOrHigher } from '../entities/shared/user-role.enum';
 
 export interface StorageInfo {
@@ -81,6 +82,8 @@ export class AdminUserService {
     private readonly storageRepository: Repository<SpaceEngineersOnlineStorage>,
     @InjectRepository(SpaceEngineersOnlineStorageItem)
     private readonly storageItemRepository: Repository<SpaceEngineersOnlineStorageItem>,
+    @InjectRepository(SpaceEngineersItem)
+    private readonly itemRepository: Repository<SpaceEngineersItem>,
   ) {}
 
   /**
@@ -343,6 +346,141 @@ export class AdminUserService {
         lastAdminAccess,
       },
       sessionExpiry,
+    };
+  }
+
+  /**
+   * Get all Space Engineers items with pagination and filtering
+   */
+  async getSpaceEngineersItems(
+    adminUserRoles: UserRole[],
+    page: number = 1,
+    limit: number = 50,
+    search?: string,
+    category?: string,
+    rarityMin?: number,
+    rarityMax?: number,
+  ): Promise<{
+    items: Array<{
+      id: number;
+      indexName: string;
+      displayName: string;
+      rarity: number;
+      description: string | null;
+      category: string | null;
+      icons: unknown;
+      createdAt: Date;
+      updatedAt: Date;
+    }>;
+    totalItems: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    this.verifyAdminPermission(adminUserRoles);
+
+    const qb = this.itemRepository.createQueryBuilder('item');
+
+    // Apply search filter
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      qb.andWhere(
+        '(item.displayName ILIKE :search OR item.indexName ILIKE :search)',
+        { search: searchTerm },
+      );
+    }
+
+    // Apply category filter
+    if (category && category.trim()) {
+      qb.andWhere('item.category = :category', { category: category.trim() });
+    }
+
+    // Apply rarity filters
+    if (rarityMin !== undefined) {
+      qb.andWhere('item.rarity >= :rarityMin', { rarityMin });
+    }
+    if (rarityMax !== undefined) {
+      qb.andWhere('item.rarity <= :rarityMax', { rarityMax });
+    }
+
+    // Get total count
+    const totalItems = await qb.getCount();
+
+    // Apply pagination
+    qb.orderBy('item.displayName', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const items = await qb.getMany();
+
+    return {
+      items: items.map((item) => ({
+        id: item.id,
+        indexName: item.indexName,
+        displayName: item.displayName,
+        rarity: item.rarity,
+        description: item.description,
+        category: item.category,
+        icons: item.icons,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      })),
+      totalItems,
+      page,
+      limit,
+      totalPages: Math.ceil(totalItems / limit),
+    };
+  }
+
+  /**
+   * Update Space Engineers item properties
+   */
+  async updateSpaceEngineersItem(
+    adminUserRoles: UserRole[],
+    itemId: number,
+    updateData: { rarity?: number; description?: string; category?: string },
+  ): Promise<{
+    id: number;
+    indexName: string;
+    displayName: string;
+    rarity: number;
+    description: string | null;
+    category: string | null;
+    updatedAt: Date;
+  }> {
+    this.verifyAdminPermission(adminUserRoles);
+
+    const item = await this.itemRepository.findOne({ where: { id: itemId } });
+
+    if (!item) {
+      throw new NotFoundException(`Item with ID ${itemId} not found`);
+    }
+
+    // Update fields if provided
+    if (updateData.rarity !== undefined) {
+      item.rarity = updateData.rarity;
+    }
+    if (updateData.description !== undefined) {
+      item.description = updateData.description;
+    }
+    if (updateData.category !== undefined) {
+      item.category = updateData.category;
+    }
+
+    await this.itemRepository.save(item);
+
+    this.logger.log(
+      `Item ${item.id} (${item.displayName}) updated by admin. Changes: ${JSON.stringify(updateData)}`,
+    );
+
+    return {
+      id: item.id,
+      indexName: item.indexName,
+      displayName: item.displayName,
+      rarity: item.rarity,
+      description: item.description,
+      category: item.category,
+      updatedAt: item.updatedAt,
     };
   }
 }
